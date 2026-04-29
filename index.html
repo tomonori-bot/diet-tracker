@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ダイエット進捗トラッカー</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Helvetica Neue', 'Noto Sans JP', sans-serif;
+    background: #f8f9fb;
+    color: #1a1a2e;
+    font-size: 14px;
+    padding: 16px;
+  }
+  h2 { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a2e; }
+  .section { margin-bottom: 20px; }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e8edf3;
+    padding: 16px 18px;
+  }
+  .form-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 11px; font-weight: 600; color: #888; letter-spacing: 0.05em; }
+  input[type=text], input[type=number], input[type=date], textarea {
+    padding: 8px 10px;
+    border: 1px solid #e0e5ed;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #1a1a2e;
+    background: #f8f9fb;
+    outline: none;
+    width: 100%;
+    font-family: inherit;
+  }
+  input:focus, textarea:focus { border-color: #4f7df0; background: #fff; }
+  textarea { resize: vertical; }
+
+  .metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-bottom: 16px; }
+  .metric { background: #fff; border: 1px solid #e8edf3; border-radius: 10px; padding: 10px 12px; }
+  .metric-label { font-size: 10px; font-weight: 600; color: #aaa; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .metric-value { font-size: 20px; font-weight: 700; color: #1a1a2e; }
+  .metric-unit { font-size: 11px; font-weight: 400; color: #888; }
+  .metric-sub { font-size: 11px; color: #888; margin-top: 2px; }
+  .progress-wrap { background: #f0f4ff; border-radius: 20px; height: 6px; margin-top: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 20px; background: linear-gradient(90deg, #4f7df0, #00c9a7); transition: width 0.5s; }
+
+  .tab-row { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tab {
+    font-size: 12px; font-weight: 600; padding: 7px 16px;
+    border-radius: 20px; border: 1px solid #e0e5ed;
+    background: #fff; color: #888; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tab.active { background: #4f7df0; color: #fff; border-color: #4f7df0; }
+
+  .slider-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .slider-row input[type=range] {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 4px; border-radius: 4px; background: #e0e5ed; border: none; padding: 0;
+    cursor: pointer;
+  }
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: #4f7df0; cursor: pointer;
+  }
+  .slider-val { font-size: 15px; font-weight: 700; color: #4f7df0; min-width: 24px; text-align: right; }
+
+  .star-row { display: flex; gap: 4px; margin-top: 4px; }
+  .star { font-size: 20px; cursor: pointer; color: #e0e5ed; transition: color 0.1s; }
+  .star.on { color: #f5a623; }
+
+  button.btn-primary {
+    background: #4f7df0; color: #fff;
+    border: none; border-radius: 8px;
+    padding: 10px 20px; font-size: 13px; font-weight: 600;
+    cursor: pointer; width: 100%; margin-top: 10px;
+    transition: background 0.15s;
+  }
+  button.btn-primary:hover { background: #3a68d8; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { font-size: 10px; font-weight: 700; color: #aaa; letter-spacing: 0.08em; text-align: left; padding: 6px 8px; border-bottom: 1px solid #f0f2f5; }
+  td { padding: 7px 8px; border-bottom: 1px solid #f8f9fb; color: #1a1a2e; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+  .badge-down { background: #e6faf5; color: #00a884; }
+  .badge-up { background: #fff0f0; color: #e05252; }
+  .badge-same { background: #f0f2f5; color: #888; }
+
+  .del-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 13px; padding: 2px 4px; }
+  .del-btn:hover { color: #e05252; }
+
+  .empty { text-align: center; padding: 24px 0; color: #bbb; font-size: 13px; }
+
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; font-size: 11px; color: #888; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+</style>
+</head>
+<body>
+
+<div class="section">
+  <h2>基本設定</h2>
+  <div class="card">
+    <div class="form-row">
+      <div class="form-group">
+        <label>氏名</label>
+        <input type="text" id="name" placeholder="田中 美咲" />
+      </div>
+      <div class="form-group">
+        <label>開始日</label>
+        <input type="date" id="startDate" />
+      </div>
+      <div class="form-group">
+        <label>開始体重 (kg)</label>
+        <input type="number" id="startWeight" placeholder="68" step="0.1" />
+      </div>
+      <div class="form-group">
+        <label>目標体重 (kg)</label>
+        <input type="number" id="targetWeight" placeholder="63" step="0.1" />
+      </div>
+      <div class="form-group">
+        <label>期限（週数）</label>
+        <input type="number" id="weeks" placeholder="12" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="metricsWrap" style="display:none" class="section">
+  <h2>現在の状態</h2>
+  <div class="metrics" id="metrics"></div>
+</div>
+
+<div class="tab-row">
+  <button class="tab active" onclick="switchTab('record')">記録する</button>
+  <button class="tab" onclick="switchTab('log')">履歴</button>
+  <button class="tab" onclick="switchTab('chart')">グラフ</button>
+</div>
+
+<div id="tab-record" class="section">
+  <div class="card">
+    <div class="form-row" style="margin-bottom:12px">
+      <div class="form-group">
+        <label>記録日</label>
+        <input type="date" id="recDate" />
+      </div>
+      <div class="form-group">
+        <label>体重 (kg)</label>
+        <input type="number" id="recWeight" placeholder="67.2" step="0.1" />
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label>痛みレベル（1=なし　10=非常につらい）</label>
+      <div class="slider-row">
+        <span style="font-size:11px;color:#aaa">1</span>
+        <input type="range" min="1" max="10" step="1" value="5" id="painSlider"
+          oninput="document.getElementById('painVal').textContent=this.value" />
+        <span style="font-size:11px;color:#aaa">10</span>
+        <span class="slider-val" id="painVal">5</span>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label>姿勢スコア（1=悪い　5=良い）</label>
+      <div class="star-row" id="postureStars">
+        <span class="star" onclick="setPosture(1)">&#9733;</span>
+        <span class="star" onclick="setPosture(2)">&#9733;</span>
+        <span class="star" onclick="setPosture(3)">&#9733;</span>
+        <span class="star" onclick="setPosture(4)">&#9733;</span>
+        <span class="star" onclick="setPosture(5)">&#9733;</span>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label>モチベーション（1=低い　5=高い）</label>
+      <div class="star-row" id="motiStars">
+        <span class="star" onclick="setMoti(1)">&#9733;</span>
+        <span class="star" onclick="setMoti(2)">&#9733;</span>
+        <span class="star" onclick="setMoti(3)">&#9733;</span>
+        <span class="star" onclick="setMoti(4)">&#9733;</span>
+        <span class="star" onclick="setMoti(5)">&#9733;</span>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label>今週の運動達成率</label>
+      <div class="slider-row">
+        <span style="font-size:11px;color:#aaa">0%</span>
+        <input type="range" min="0" max="100" step="10" value="50" id="exSlider"
+          oninput="document.getElementById('exVal').textContent=this.value+'%'" />
+        <span style="font-size:11px;color:#aaa">100%</span>
+        <span class="slider-val" id="exVal">50%</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>担当者メモ</label>
+      <textarea id="memo" rows="2" placeholder="気になること、次回への提案など"></textarea>
+    </div>
+
+    <button class="btn-primary" onclick="addRecord()">記録を追加する</button>
+  </div>
+</div>
+
+<div id="tab-log" style="display:none" class="section">
+  <div class="card">
+    <div id="logContent"><div class="empty">まだ記録がありません</div></div>
+  </div>
+</div>
+
+<div id="tab-chart" style="display:none" class="section">
+  <div class="card" style="margin-bottom:12px">
+    <h2 style="margin-bottom:12px">体重推移</h2>
+    <div class="chart-legend">
+      <span><span class="legend-dot" style="background:#4f7df0"></span>体重</span>
+      <span><span class="legend-dot" style="background:#f5a623;opacity:0.6"></span>目標</span>
+    </div>
+    <div style="position:relative;width:100%;height:200px">
+      <canvas id="weightChart" role="img" aria-label="体重推移グラフ">体重推移</canvas>
+    </div>
+  </div>
+  <div class="card">
+    <h2 style="margin-bottom:12px">痛み・姿勢・モチベーション</h2>
+    <div class="chart-legend">
+      <span><span class="legend-dot" style="background:#e05252"></span>痛み(/10)</span>
+      <span><span class="legend-dot" style="background:#4f7df0"></span>姿勢(/5)</span>
+      <span><span class="legend-dot" style="background:#f5a623"></span>モチベ(/5)</span>
+    </div>
+    <div style="position:relative;width:100%;height:180px">
+      <canvas id="subChart" role="img" aria-label="痛み・姿勢・モチベーション推移">推移</canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+let records = JSON.parse(localStorage.getItem('dietRecords') || '[]');
+let posture = 3, moti = 3;
+let weightChart = null, subChart = null;
+
+document.getElementById('recDate').value = new Date().toISOString().slice(0,10);
+document.getElementById('startDate').value = new Date().toISOString().slice(0,10);
+
+['name','startDate','startWeight','targetWeight','weeks'].forEach(id => {
+  const saved = localStorage.getItem('cfg_'+id);
+  if (saved) document.getElementById(id).value = saved;
+  document.getElementById(id).addEventListener('change', () => {
+    localStorage.setItem('cfg_'+id, document.getElementById(id).value);
+    updateMetrics();
+  });
+});
+
+function setPosture(v) {
+  posture = v;
+  document.querySelectorAll('#postureStars .star').forEach((s,i) => s.classList.toggle('on', i < v));
+}
+function setMoti(v) {
+  moti = v;
+  document.querySelectorAll('#motiStars .star').forEach((s,i) => s.classList.toggle('on', i < v));
+}
+setPosture(3); setMoti(3);
+
+function switchTab(name) {
+  ['record','log','chart'].forEach((t,i) => {
+    document.getElementById('tab-'+t).style.display = t === name ? '' : 'none';
+    document.querySelectorAll('.tab')[i].classList.toggle('active', t === name);
+  });
+  if (name === 'chart') setTimeout(renderCharts, 50);
+  if (name === 'log') renderLog();
+}
+
+function save() { localStorage.setItem('dietRecords', JSON.stringify(records)); }
+
+function addRecord() {
+  const w = parseFloat(document.getElementById('recWeight').value);
+  if (!w) { alert('体重を入力してください'); return; }
+  records.push({
+    date: document.getElementById('recDate').value,
+    weight: w,
+    pain: parseInt(document.getElementById('painSlider').value),
+    posture, moti,
+    exercise: parseInt(document.getElementById('exSlider').value),
+    memo: document.getElementById('memo').value
+  });
+  records.sort((a,b) => a.date.localeCompare(b.date));
+  save();
+  document.getElementById('recWeight').value = '';
+  document.getElementById('memo').value = '';
+  updateMetrics();
+}
+
+function deleteRecord(i) {
+  if (!confirm('この記録を削除しますか？')) return;
+  records.splice(i,1);
+  save(); updateMetrics(); renderLog();
+}
+
+function updateMetrics() {
+  if (!records.length) { document.getElementById('metricsWrap').style.display='none'; return; }
+  const sw = parseFloat(document.getElementById('startWeight').value);
+  const tw = parseFloat(document.getElementById('targetWeight').value);
+  const latest = records[records.length-1];
+  const diff = sw ? +(latest.weight - sw).toFixed(1) : null;
+  const remaining = tw ? +(latest.weight - tw).toFixed(1) : null;
+  const progress = (sw && tw && sw !== tw) ? Math.min(100, Math.max(0, Math.round((sw - latest.weight)/(sw - tw)*100))) : null;
+
+  document.getElementById('metricsWrap').style.display = '';
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric">
+      <div class="metric-label">最新体重</div>
+      <div class="metric-value">${latest.weight.toFixed(1)}<span class="metric-unit">kg</span></div>
+      ${diff !== null ? `<div class="metric-sub">${diff > 0 ? '+' : ''}${diff}kg</div>` : ''}
+    </div>
+    ${tw ? `<div class="metric">
+      <div class="metric-label">目標まで</div>
+      <div class="metric-value">${remaining !== null ? remaining.toFixed(1) : '-'}<span class="metric-unit">kg</span></div>
+      ${progress !== null ? `<div class="progress-wrap"><div class="progress-fill" style="width:${progress}%"></div></div>` : ''}
+    </div>` : ''}
+    <div class="metric">
+      <div class="metric-label">痛みレベル</div>
+      <div class="metric-value">${latest.pain}<span class="metric-unit">/10</span></div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">姿勢スコア</div>
+      <div class="metric-value">${latest.posture}<span class="metric-unit">/5</span></div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">モチベ</div>
+      <div class="metric-value">${latest.moti}<span class="metric-unit">/5</span></div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">運動達成率</div>
+      <div class="metric-value">${latest.exercise}<span class="metric-unit">%</span></div>
+    </div>
+  `;
+}
+
+function renderLog() {
+  if (!records.length) { document.getElementById('logContent').innerHTML='<div class="empty">まだ記録がありません</div>'; return; }
+  const rows = [...records].reverse().map((r,ri) => {
+    const i = records.length - 1 - ri;
+    const prev = i > 0 ? records[i-1] : null;
+    const diff = prev ? +(r.weight - prev.weight).toFixed(1) : null;
+    const badge = diff === null ? '' : diff < 0 ? `<span class="badge badge-down">${diff}</span>` : diff > 0 ? `<span class="badge badge-up">+${diff}</span>` : `<span class="badge badge-same">±0</span>`;
+    const stars = n => '<span style="color:#f5a623">'+'★'.repeat(n)+'</span>'+'☆'.repeat(5-n);
+    return `<tr>
+      <td>${r.date}</td>
+      <td><strong>${r.weight.toFixed(1)}</strong> ${badge}</td>
+      <td>${r.pain}/10</td>
+      <td>${stars(r.posture)}</td>
+      <td>${stars(r.moti)}</td>
+      <td>${r.exercise}%</td>
+      <td style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888">${r.memo||'-'}</td>
+      <td><button class="del-btn" onclick="deleteRecord(${i})">✕</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('logContent').innerHTML = `
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr><th>日付</th><th>体重</th><th>痛み</th><th>姿勢</th><th>モチベ</th><th>運動</th><th>メモ</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+function renderCharts() {
+  if (!records.length) return;
+  const labels = records.map(r => r.date.slice(5));
+  const tw = parseFloat(document.getElementById('targetWeight').value);
+
+  if (weightChart) weightChart.destroy();
+  weightChart = new Chart(document.getElementById('weightChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: '体重', data: records.map(r => r.weight), borderColor: '#4f7df0', backgroundColor: 'rgba(79,125,240,0.08)', fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#4f7df0' },
+        ...(tw ? [{ label: '目標', data: records.map(()=>tw), borderColor: '#f5a623', borderDash:[5,4], pointRadius:0, fill:false }] : [])
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { callback: v => v+'kg', font:{size:11} }, grid:{color:'rgba(0,0,0,0.05)'} },
+        x: { ticks: { font:{size:11}, maxTicksLimit:8 }, grid:{display:false} }
+      }
+    }
+  });
+
+  if (subChart) subChart.destroy();
+  subChart = new Chart(document.getElementById('subChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'痛み', data: records.map(r=>r.pain), borderColor:'#e05252', pointRadius:3, tension:0.3, fill:false },
+        { label:'姿勢', data: records.map(r=>r.posture), borderColor:'#4f7df0', borderDash:[4,3], pointRadius:3, tension:0.3, fill:false },
+        { label:'モチベ', data: records.map(r=>r.moti), borderColor:'#f5a623', borderDash:[2,3], pointRadius:3, tension:0.3, fill:false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:0, max:10, ticks:{stepSize:2, font:{size:11}}, grid:{color:'rgba(0,0,0,0.05)'} },
+        x: { ticks:{font:{size:11}, maxTicksLimit:8}, grid:{display:false} }
+      }
+    }
+  });
+}
+
+updateMetrics();
+</script>
+</body>
+</html>
