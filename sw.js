@@ -1,8 +1,10 @@
-const CACHE_NAME = 'diet-tracker-v1';
+const CACHE_NAME = 'bodylog-v2';
 const ASSETS = [
   './',
   './index.html',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
+  './index (1).html',
+  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
 ];
 
 // インストール時にキャッシュ
