@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>BodyLog</title>
 <meta name="description" content="患者の体と状態の変化を記録・可視化するアプリ">
-<meta name="theme-color" content="#0c1a2e">
+<meta name="theme-color" content="#4f7df0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="BodyLog">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -15,17 +15,25 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root {
-    --bg: #0d1117;
-    --surface: #161b27;
-    --surface2: #1e2636;
-    --border: rgba(255,255,255,0.10);
-    --text: #f4f6fc;
-    --text2: #8b9ab8;
-    --text3: #4a5878;
-    --accent: #6b9fff;
-    --accent2: #00d4b0;
-    --danger: #ff6b6b;
-    --warn: #ffb84d;
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --surface2: #f0f3fa;
+    --surface3: #e8edf7;
+    --border: #dce3f0;
+    --text: #1a2340;
+    --text2: #5a6a8a;
+    --text3: #a0aec0;
+    --accent: #4f7df0;
+    --accent2: #00b896;
+    --danger: #e85555;
+    --warn: #f59e0b;
+    --accent-light: rgba(79,125,240,0.10);
+    --accent2-light: rgba(0,184,150,0.10);
+    --danger-light: rgba(232,85,85,0.10);
+    --warn-light: rgba(245,158,11,0.10);
+    --shadow-sm: 0 1px 4px rgba(79,125,240,0.07), 0 2px 8px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 16px rgba(79,125,240,0.10), 0 2px 6px rgba(0,0,0,0.06);
+    --shadow-lg: 0 8px 32px rgba(79,125,240,0.14), 0 2px 8px rgba(0,0,0,0.07);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -36,233 +44,327 @@
     min-height: 100vh;
   }
 
-  /* ── 患者選択画面 ── */
+  /* ── 管理画面 ── */
   #clientScreen { min-height: 100vh; padding: 28px 18px; }
   .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-  .app-title {
-    font-size: 22px; font-weight: 700; letter-spacing: -0.5px;
-    color: var(--text);
-  }
-  .app-title span { color: var(--accent); background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .app-title { font-size: 24px; font-weight: 800; letter-spacing: -0.8px; color: var(--text); }
+  .app-title span { color: var(--accent); }
+
   .client-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-    gap: 10px; margin-bottom: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+    gap: 12px; margin-bottom: 12px;
   }
   .client-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 16px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 18px; padding: 18px 16px;
     cursor: pointer; transition: all 0.2s; position: relative;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    box-shadow: var(--shadow-sm);
   }
-  .client-card:hover { border-color: var(--accent); background: var(--surface2); box-shadow: 0 4px 20px rgba(107,159,255,0.15); }
+  .client-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
   .client-avatar {
-    width: 38px; height: 38px; border-radius: 50%;
+    width: 42px; height: 42px; border-radius: 50%;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: #fff; font-size: 15px; font-weight: 700;
+    color: #fff; font-size: 17px; font-weight: 700;
     display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+    box-shadow: 0 3px 10px rgba(79,125,240,0.3);
   }
-  .client-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .client-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
   .client-meta { font-size: 11px; color: var(--text2); line-height: 1.5; }
   .client-del {
     position: absolute; top: 10px; right: 10px;
-    background: none; border: none; color: var(--text3); cursor: pointer; font-size: 13px;
+    background: none; border: none; color: var(--text3); cursor: pointer; font-size: 14px;
+    transition: color 0.15s;
   }
   .client-del:hover { color: var(--danger); }
   .add-client-card {
-    background: transparent; border: 1px dashed var(--text3);
-    border-radius: 16px; padding: 16px; cursor: pointer;
+    background: var(--surface); border: 2px dashed var(--border);
+    border-radius: 18px; padding: 18px 16px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    gap: 8px; color: var(--text2); font-size: 13px; font-weight: 500; transition: all 0.2s;
+    gap: 8px; color: var(--text3); font-size: 13px; font-weight: 600;
+    transition: all 0.2s; box-shadow: var(--shadow-sm);
   }
-  .add-client-card:hover { border-color: var(--accent); color: var(--accent); }
+  .add-client-card:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
   /* モーダル */
   .modal-overlay {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.6); z-index: 100;
-    align-items: center; justify-content: center; backdrop-filter: blur(4px);
+    background: rgba(26,35,64,0.30); z-index: 100;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
   }
   .modal-overlay.open { display: flex; }
   .modal {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 20px; padding: 24px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 22px; padding: 28px;
     width: 90%; max-width: 360px;
+    box-shadow: var(--shadow-lg);
+    animation: modalIn 0.2s ease;
   }
-  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 18px; color: var(--text); }
-  .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+  @keyframes modalIn { from { opacity:0; transform:translateY(12px) scale(0.97); } to { opacity:1; transform:none; } }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 18px; color: var(--text); }
+  .modal-actions { display: flex; gap: 8px; margin-top: 18px; }
 
   /* ── トラッカー画面 ── */
-  #trackerScreen { display: none; padding: 18px; }
-  .back-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  #trackerScreen { display: none; padding: 20px 18px; }
+  .back-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
   .back-btn {
-    background: var(--surface); border: 1px solid var(--border);
+    background: var(--surface); border: 1.5px solid var(--border);
     border-radius: 10px; padding: 7px 14px;
-    font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer;
-    transition: all 0.15s;
+    font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer;
+    transition: all 0.15s; box-shadow: var(--shadow-sm);
   }
-  .back-btn:hover { color: var(--text); border-color: var(--accent); }
-  .current-client { font-size: 16px; font-weight: 700; color: var(--text); }
+  .back-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .current-client { font-size: 17px; font-weight: 800; color: var(--text); }
 
   /* 共通 */
-  h2 { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: var(--text2); text-transform: uppercase; margin-bottom: 10px; }
+  h2 { font-size: 11px; font-weight: 700; letter-spacing: 0.10em; color: var(--text2); text-transform: uppercase; margin-bottom: 10px; }
   .section { margin-bottom: 20px; }
-  .card { background: var(--surface); border-radius: 16px; border: 1px solid var(--border); padding: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+  .card { background: var(--surface); border-radius: 18px; border: 1.5px solid var(--border); padding: 18px; box-shadow: var(--shadow-sm); }
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
   .form-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
   .form-group { display: flex; flex-direction: column; gap: 5px; }
-  .form-group label { font-size: 10px; font-weight: 600; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; }
+  .form-group label { font-size: 10px; font-weight: 700; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; }
   input[type=text], input[type=number], input[type=date], textarea {
-    padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px;
+    padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 10px;
     font-size: 13px; color: var(--text); background: var(--surface2);
-    outline: none; width: 100%; font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none; width: 100%; font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(107,159,255,0.12); }
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(79,125,240,0.12);
+  }
   textarea { resize: vertical; }
 
-  .metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 8px; margin-bottom: 12px; }
-  .metric { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
-  .metric-label { font-size: 9px; font-weight: 600; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
-  .metric-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; letter-spacing: -0.5px; }
-  .metric-unit { font-size: 11px; font-weight: 400; color: var(--text2); }
-  .metric-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  /* メトリクス */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .metric {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 12px 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .metric-label { font-size: 9px; font-weight: 700; color: var(--text2); letter-spacing: 0.10em; text-transform: uppercase; margin-bottom: 6px; }
+  .metric-value { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1; letter-spacing: -0.5px; }
+  .metric-unit { font-size: 11px; font-weight: 500; color: var(--text2); }
+  .metric-sub { font-size: 11px; color: var(--text2); margin-top: 4px; font-weight: 500; }
   .progress-wrap { background: var(--surface2); border-radius: 20px; height: 4px; margin-top: 8px; overflow: hidden; }
   .progress-fill { height: 100%; border-radius: 20px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.5s; }
 
-  .tab-row { display: flex; gap: 4px; margin-bottom: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; }
-  .tab {
-    font-size: 12px; font-weight: 500; padding: 7px 0;
-    border-radius: 9px; border: none; flex: 1; text-align: center;
-    background: transparent; color: var(--text2); cursor: pointer; transition: all 0.15s;
+  /* タブ */
+  .tab-row {
+    display: flex; gap: 4px; margin-bottom: 14px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 4px;
+    box-shadow: var(--shadow-sm);
   }
-  .tab.active { background: linear-gradient(135deg, rgba(107,159,255,0.25), rgba(0,212,176,0.15)); color: var(--text); font-weight: 700; border: 1px solid rgba(107,159,255,0.3); }
+  .tab {
+    font-size: 12px; font-weight: 600; padding: 8px 0;
+    border-radius: 10px; border: none; flex: 1; text-align: center;
+    background: transparent; color: var(--text2); cursor: pointer; transition: all 0.18s;
+  }
+  .tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(79,125,240,0.30); }
 
+  /* スライダー */
   .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
   .slider-row input[type=range] {
     flex: 1; -webkit-appearance: none; appearance: none;
-    height: 3px; border-radius: 4px; background: var(--surface2); border: none; padding: 0; cursor: pointer;
+    height: 4px; border-radius: 4px; background: var(--surface3); border: none; padding: 0; cursor: pointer;
   }
   .slider-row input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
-    background: var(--accent); cursor: pointer; border: 2px solid var(--bg);
+    background: var(--accent); cursor: pointer; border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(79,125,240,0.35);
   }
-  .slider-val { font-size: 16px; font-weight: 700; color: var(--accent); min-width: 28px; text-align: right; }
+  .slider-val { font-size: 16px; font-weight: 800; color: var(--accent); min-width: 32px; text-align: right; }
 
-  .star-row { display: flex; gap: 6px; margin-top: 6px; }
-  .star { font-size: 22px; cursor: pointer; color: var(--text3); transition: color 0.1s; }
+  /* スター */
+  .star-row { display: flex; gap: 4px; margin-top: 6px; }
+  .star { font-size: 22px; cursor: pointer; color: var(--surface3); transition: color 0.1s, transform 0.1s; }
+  .star:hover { transform: scale(1.15); }
   .star.on { color: var(--warn); }
 
+  /* ボタン */
   button.btn-primary {
-    background: linear-gradient(135deg, var(--accent), #5b8fff); color: #fff; border: none; border-radius: 12px;
-    padding: 12px 20px; font-size: 14px; font-weight: 600;
-    cursor: pointer; width: 100%; margin-top: 12px; transition: all 0.2s; letter-spacing: -0.2px;
-    box-shadow: 0 4px 14px rgba(107,159,255,0.3);
+    background: linear-gradient(135deg, var(--accent), #6b8ff5);
+    color: #fff; border: none; border-radius: 12px;
+    padding: 12px 20px; font-size: 14px; font-weight: 700;
+    cursor: pointer; width: 100%; margin-top: 12px;
+    transition: all 0.2s; letter-spacing: -0.2px;
+    box-shadow: 0 4px 14px rgba(79,125,240,0.32);
   }
-  button.btn-primary:hover { opacity: 0.9; box-shadow: 0 6px 20px rgba(107,159,255,0.45); transform: translateY(-1px); }
+  button.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(79,125,240,0.42); }
   button.btn-secondary {
-    background: var(--surface2); color: var(--text2); border: 1px solid var(--border);
-    border-radius: 12px; padding: 12px 20px; font-size: 14px; font-weight: 500;
+    background: var(--surface2); color: var(--text2); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 12px 20px; font-size: 14px; font-weight: 600;
     cursor: pointer; flex: 1; transition: all 0.15s;
   }
-  button.btn-secondary:hover { color: var(--text); }
+  button.btn-secondary:hover { color: var(--text); border-color: var(--accent); }
 
+  /* テーブル */
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { font-size: 9px; font-weight: 600; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
-  td { padding: 8px 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+  th { font-size: 9px; font-weight: 700; color: var(--text2); letter-spacing: 0.10em;
+    text-transform: uppercase; text-align: left; padding: 6px 8px;
+    border-bottom: 1.5px solid var(--border); }
+  td { padding: 8px 8px; border-bottom: 1px solid var(--surface2); color: var(--text); }
   tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--accent-light); }
 
-  .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 6px; }
-  .badge-down { background: rgba(0,212,176,0.15); color: var(--accent2); border: 1px solid rgba(0,212,176,0.2); }
-  .badge-up { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid rgba(255,107,107,0.2); }
-  .badge-same { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
-  .del-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 13px; padding: 2px 4px; }
+  /* バッジ */
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; }
+  .badge-down { background: var(--accent2-light); color: var(--accent2); }
+  .badge-up { background: var(--danger-light); color: var(--danger); }
+  .badge-same { background: var(--surface2); color: var(--text2); }
+  .del-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 13px; padding: 2px 4px; transition: color 0.15s; }
   .del-btn:hover { color: var(--danger); }
-  .empty { text-align: center; padding: 32px 0; color: var(--text2); font-size: 13px; }
-  .chart-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; font-size: 11px; color: var(--text2); }
+  .empty { text-align: center; padding: 32px 0; color: var(--text3); font-size: 13px; }
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; font-size: 11px; color: var(--text2); font-weight: 500; }
   .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-  .divider { height: 1px; background: var(--border); margin: 14px 0; }
 
-  /* ── 患者モード ── */
-  #patientScreen {
-    display: none; min-height: 100vh;
-    background: var(--bg); padding: 0;
-  }
-  .patient-header {
-    padding: 32px 20px 20px;
-    text-align: center;
-    border-bottom: 1px solid var(--border);
-  }
-  .patient-name-label { font-size: 11px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
-  .patient-greeting { font-size: 20px; font-weight: 700; color: var(--text); }
-  .patient-streak {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.2);
-    border-radius: 20px; padding: 4px 12px; margin-top: 8px;
-    font-size: 12px; font-weight: 600; color: var(--warn);
-  }
-  .patient-body { padding: 20px; }
-  .patient-field { margin-bottom: 20px; }
-  .patient-field-label {
-    font-size: 11px; font-weight: 600; color: var(--text2);
-    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;
-  }
-  .weight-input-wrap { position: relative; }
-  .weight-input-big {
-    width: 100%; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 20px; font-size: 40px; font-weight: 700;
-    color: var(--text); text-align: center; outline: none; font-family: inherit;
-  }
-  .weight-input-big:focus { border-color: var(--accent); }
-  .weight-unit { position: absolute; right: 20px; bottom: 22px; font-size: 16px; color: var(--text2); }
-  .moti-big-row { display: flex; justify-content: center; gap: 12px; }
-  .moti-big-star { font-size: 36px; cursor: pointer; color: var(--text3); transition: all 0.15s; }
-  .moti-big-star.on { color: var(--warn); transform: scale(1.1); }
-  .patient-memo { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; font-size: 14px; color: var(--text); outline: none; font-family: inherit; resize: none; }
-  .patient-memo:focus { border-color: var(--accent); }
-  .patient-submit { width: 100%; background: linear-gradient(135deg, var(--accent), #5b8fff); color: #fff; border: none; border-radius: 16px; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; letter-spacing: -0.3px; box-shadow: 0 4px 16px rgba(107,159,255,0.35); transition: all 0.2s; }
-  .patient-submit:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 22px rgba(107,159,255,0.45); }
-  .patient-done { text-align: center; padding: 60px 20px; }
-  .patient-done-icon { font-size: 56px; margin-bottom: 16px; }
-  .patient-done-title { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-  .patient-done-sub { font-size: 14px; color: var(--text2); line-height: 1.6; }
-
-  /* ── QRモーダル ── */
-  #qrModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-  #qrModal.open { display: flex; }
-  .qr-modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 28px 24px; width: 90%; max-width: 320px; text-align: center; }
-  .qr-modal-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-  .qr-modal-sub { font-size: 12px; color: var(--text2); margin-bottom: 20px; }
-  #qrCanvas { border-radius: 12px; background: #fff; padding: 10px; }
-  .qr-url { font-size: 10px; color: var(--text2); margin-top: 12px; word-break: break-all; }
-  .qr-close { margin-top: 16px; width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px; color: var(--text2); font-size: 13px; cursor: pointer; }
-
-  /* ── 継続カウンター ── */
+  /* ストリーク */
   .streak-bar {
     display: flex; align-items: center; gap: 10px;
-    background: rgba(255,184,77,0.08); border: 1px solid rgba(255,184,77,0.2);
-    border-radius: 12px; padding: 10px 14px; margin-bottom: 12px;
-    box-shadow: 0 2px 8px rgba(255,184,77,0.08);
+    background: var(--warn-light); border: 1.5px solid rgba(245,158,11,0.22);
+    border-radius: 14px; padding: 10px 14px; margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(245,158,11,0.08);
   }
   .streak-icon { font-size: 20px; }
-  .streak-text { font-size: 13px; font-weight: 600; color: var(--warn); }
+  .streak-text { font-size: 13px; font-weight: 700; color: var(--warn); }
   .streak-sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
 
   /* QRボタン */
   .qr-btn {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 7px 12px; font-size: 12px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 7px 12px; font-size: 12px; font-weight: 600;
     color: var(--text2); cursor: pointer; display: flex; align-items: center; gap: 5px;
+    transition: all 0.15s; box-shadow: var(--shadow-sm);
   }
-  .qr-btn:hover { color: var(--text); border-color: var(--accent); }
+  .qr-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* QRモーダル */
+  #qrModal { display: none; position: fixed; inset: 0; background: rgba(26,35,64,0.35); z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
+  #qrModal.open { display: flex; }
+  .qr-modal-box {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 22px; padding: 28px 24px;
+    width: 90%; max-width: 340px; text-align: center;
+    box-shadow: var(--shadow-lg);
+    animation: modalIn 0.2s ease;
+  }
+  .qr-modal-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .qr-modal-sub { font-size: 12px; color: var(--text2); margin-bottom: 20px; }
+  #qrCanvas { border-radius: 12px; background: #fff; padding: 10px; display:inline-block; box-shadow: var(--shadow-sm); }
+  .qr-url { font-size: 10px; color: var(--text2); margin-top: 12px; word-break: break-all; }
+  .qr-close { margin-top: 16px; width: 100%; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px; padding: 10px; color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .qr-close:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── 患者モード ── */
+  #patientScreen { display: none; min-height: 100vh; background: var(--bg); }
+  .patient-header {
+    padding: 36px 24px 24px; text-align: center;
+    background: linear-gradient(160deg, #fff 0%, var(--bg) 100%);
+    border-bottom: 1.5px solid var(--border);
+  }
+  .patient-name-label { font-size: 11px; color: var(--text2); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; font-weight: 600; }
+  .patient-greeting { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+  .patient-streak {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--warn-light); border: 1.5px solid rgba(245,158,11,0.22);
+    border-radius: 20px; padding: 5px 14px; margin-top: 10px;
+    font-size: 12px; font-weight: 700; color: var(--warn);
+  }
+  .patient-body { padding: 22px 20px; }
+  .patient-field { margin-bottom: 22px; }
+  .patient-field-label {
+    font-size: 11px; font-weight: 700; color: var(--text2);
+    letter-spacing: 0.10em; text-transform: uppercase; margin-bottom: 10px;
+  }
+  .weight-input-wrap { position: relative; }
+  .weight-input-big {
+    width: 100%; background: var(--surface); border: 2px solid var(--border);
+    border-radius: 18px; padding: 20px; font-size: 42px; font-weight: 800;
+    color: var(--text); text-align: center; outline: none; font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-shadow: var(--shadow-sm);
+  }
+  .weight-input-big:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(79,125,240,0.12); }
+  .weight-unit { position: absolute; right: 22px; bottom: 24px; font-size: 18px; color: var(--text2); font-weight: 600; }
+  .moti-big-row { display: flex; justify-content: center; gap: 12px; }
+  .moti-big-star { font-size: 38px; cursor: pointer; color: var(--surface3); transition: all 0.15s; }
+  .moti-big-star:hover { transform: scale(1.15); }
+  .moti-big-star.on { color: var(--warn); filter: drop-shadow(0 2px 6px rgba(245,158,11,0.4)); }
+  .patient-memo {
+    width: 100%; background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 16px; padding: 14px 16px; font-size: 14px; color: var(--text);
+    outline: none; font-family: inherit; resize: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .patient-memo:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,125,240,0.12); }
+  .patient-submit {
+    width: 100%; background: linear-gradient(135deg, var(--accent), #6b8ff5);
+    color: #fff; border: none; border-radius: 16px; padding: 17px;
+    font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 8px;
+    letter-spacing: -0.3px; box-shadow: 0 4px 16px rgba(79,125,240,0.35);
+    transition: all 0.2s;
+  }
+  .patient-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(79,125,240,0.45); }
+  .patient-done { text-align: center; padding: 70px 24px; }
+  .patient-done-icon { font-size: 60px; margin-bottom: 18px; }
+  .patient-done-title { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 10px; letter-spacing: -0.5px; }
+  .patient-done-sub { font-size: 14px; color: var(--text2); line-height: 1.7; }
+
+  /* 患者データ通知バッジ */
+  .new-badge {
+    display: inline-block; background: var(--danger); color: #fff;
+    font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 6px;
+    margin-left: 5px; vertical-align: middle; animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.6; }
+  }
+
+  /* 患者データ差し込みカード */
+  .patient-data-card {
+    background: linear-gradient(135deg, var(--accent-light), var(--accent2-light));
+    border: 1.5px solid rgba(79,125,240,0.2);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 12px;
+  }
+  .patient-data-label { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .patient-data-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .patient-data-chip {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--text);
+  }
+  .import-btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer;
+    margin-top: 10px; transition: all 0.15s; box-shadow: 0 2px 8px rgba(79,125,240,0.3);
+  }
+  .import-btn:hover { opacity: 0.88; }
+
+  /* デッドラインバナー */
+  #deadlineBanner { border-radius: 14px; padding: 12px 16px; margin-bottom: 14px; border: 1.5px solid; display: none; }
+
+  /* 比較カード */
+  .compare-card {
+    background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 14px 16px; margin-top: 8px;
+  }
 </style>
 </head>
 <body>
 
-<!-- 患者選択画面 -->
+<!-- ── 管理画面 ── -->
 <div id="clientScreen">
   <div class="top-bar">
     <div class="app-title">Body<span>Log</span></div>
   </div>
-  <div style="font-size:12px;color:var(--text2);margin-bottom:20px;letter-spacing:0.02em">患者を選んで記録を開始してください</div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:20px;font-weight:500">患者を選んで記録を開始してください</div>
   <div class="client-grid" id="clientGrid"></div>
   <div class="add-client-card" onclick="openAddModal()">
     <span style="font-size:18px">＋</span> 新しい患者を追加
@@ -273,7 +375,7 @@
 <div class="modal-overlay" id="addModal">
   <div class="modal">
     <h3>新しい患者を追加</h3>
-    <div class="form-group" style="margin-bottom:10px">
+    <div class="form-group" style="margin-bottom:12px">
       <label>氏名</label>
       <input type="text" id="newClientName" placeholder="例：田中 美咲" />
     </div>
@@ -288,7 +390,7 @@
   </div>
 </div>
 
-<!-- トラッカー画面 -->
+<!-- ── トラッカー画面 ── -->
 <div id="trackerScreen">
   <div class="back-bar">
     <button class="back-btn" onclick="goBack()">← 一覧に戻る</button>
@@ -296,6 +398,14 @@
     <button class="qr-btn" onclick="showQrModal()" style="margin-left:auto">
       <span>📱</span> 患者用QR
     </button>
+  </div>
+
+  <!-- 患者から新しいデータが届いた時に表示 -->
+  <div id="patientDataNotice" style="display:none" class="patient-data-card">
+    <div class="patient-data-label">📥 患者から新しい記録が届いています <span class="new-badge">NEW</span></div>
+    <div class="patient-data-row" id="patientDataChips"></div>
+    <button class="import-btn" onclick="importPatientRecord()">記録に取り込む</button>
+    <button onclick="dismissPatientNotice()" style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer;margin-top:8px;display:block">あとで</button>
   </div>
 
   <div class="section">
@@ -307,18 +417,22 @@
         <div class="form-group"><label>目標体重 (kg)</label><input type="number" id="targetWeight" placeholder="63" step="0.1" /></div>
         <div class="form-group"><label>達成期日</label><input type="date" id="weeks" /></div>
       </div>
-      <div id="deadlineBanner" style="display:none;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px">
-        <span id="deadlineEmoji" style="font-size:22px"></span>
-        <div>
-          <div id="deadlineDays" style="font-size:18px;font-weight:800"></div>
-          <div id="deadlineDate" style="font-size:11px;color:#888;margin-top:1px"></div>
-        </div>
-        <div style="flex:1">
-          <div style="background:rgba(255,255,255,0.08);border-radius:20px;height:5px;overflow:hidden">
-            <div id="deadlineProgress" style="height:100%;border-radius:20px;background:var(--accent);opacity:0.9;transition:width 0.5s"></div>
+
+      <div id="deadlineBanner">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span id="deadlineEmoji" style="font-size:22px"></span>
+          <div>
+            <div id="deadlineDays" style="font-size:18px;font-weight:800"></div>
+            <div id="deadlineDate" style="font-size:11px;color:var(--text2);margin-top:2px"></div>
+          </div>
+          <div style="flex:1">
+            <div style="background:rgba(0,0,0,0.06);border-radius:20px;height:5px;overflow:hidden">
+              <div id="deadlineProgress" style="height:100%;border-radius:20px;transition:width 0.5s"></div>
+            </div>
           </div>
         </div>
       </div>
+
       <div class="divider"></div>
       <div class="form-group" style="margin-bottom:10px">
         <label>最終目標</label>
@@ -332,13 +446,14 @@
       <div class="form-group" style="margin-bottom:10px">
         <label>目標達成度（現時点での自己評価）</label>
         <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-          <span style="font-size:11px;color:#aaa">0%</span>
+          <span style="font-size:11px;color:var(--text3)">0%</span>
           <input type="range" min="0" max="100" step="5" value="0" id="achieveSlider"
-            oninput="document.getElementById('achieveVal').textContent=this.value+'%';saveCfgField('achieve',this.value)" style="flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;background:var(--surface2);border:none;padding:0;cursor:pointer" />
-          <span style="font-size:11px;color:var(--text2)">100%</span>
-          <span id="achieveVal" style="font-size:15px;font-weight:700;color:var(--accent);min-width:40px;text-align:right">0%</span>
+            oninput="document.getElementById('achieveVal').textContent=this.value+'%';saveCfgField('achieve',this.value)"
+            style="flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;background:var(--surface3);border:none;padding:0;cursor:pointer" />
+          <span style="font-size:11px;color:var(--text3)">100%</span>
+          <span id="achieveVal" style="font-size:15px;font-weight:800;color:var(--accent);min-width:40px;text-align:right">0%</span>
         </div>
-        <div style="background:var(--surface2);border-radius:20px;height:6px;margin-top:6px;overflow:hidden">
+        <div style="background:var(--surface2);border-radius:20px;height:6px;margin-top:6px;overflow:hidden;border:1px solid var(--border)">
           <div id="achieveBar" style="height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width 0.4s"></div>
         </div>
       </div>
@@ -357,6 +472,7 @@
       <div class="streak-sub" id="streakSub">毎日の記録が続いています</div>
     </div>
   </div>
+
   <div id="metricsWrap" style="display:none" class="section">
     <h2>現在の状態</h2>
     <div class="metrics" id="metrics"></div>
@@ -377,9 +493,9 @@
       <div class="form-group" style="margin-bottom:12px">
         <label>痛みレベル（1=なし　10=非常につらい）</label>
         <div class="slider-row">
-          <span style="font-size:11px;color:#aaa">1</span>
+          <span style="font-size:11px;color:var(--text3)">1</span>
           <input type="range" min="1" max="10" step="1" value="5" id="painSlider" oninput="document.getElementById('painVal').textContent=this.value" />
-          <span style="font-size:11px;color:#aaa">10</span>
+          <span style="font-size:11px;color:var(--text3)">10</span>
           <span class="slider-val" id="painVal">5</span>
         </div>
       </div>
@@ -406,9 +522,9 @@
       <div class="form-group" style="margin-bottom:12px">
         <label>今週の運動達成率</label>
         <div class="slider-row">
-          <span style="font-size:11px;color:#aaa">0%</span>
+          <span style="font-size:11px;color:var(--text3)">0%</span>
           <input type="range" min="0" max="100" step="10" value="50" id="exSlider" oninput="document.getElementById('exVal').textContent=this.value+'%'" />
-          <span style="font-size:11px;color:#aaa">100%</span>
+          <span style="font-size:11px;color:var(--text3)">100%</span>
           <span class="slider-val" id="exVal">50%</span>
         </div>
       </div>
@@ -428,45 +544,139 @@
     <div class="card" style="margin-bottom:12px">
       <h2 style="margin-bottom:8px">体重推移</h2>
       <div class="chart-legend">
-        <span><span class="legend-dot" style="background:#4f7df0"></span>体重</span>
-        <span><span class="legend-dot" style="background:#f5a623"></span>目標</span>
+        <span><span class="legend-dot" style="background:var(--accent)"></span>体重</span>
+        <span><span class="legend-dot" style="background:var(--warn)"></span>目標</span>
       </div>
       <div style="position:relative;width:100%;height:200px"><canvas id="weightChart"></canvas></div>
     </div>
     <div class="card">
       <h2 style="margin-bottom:8px">痛み・姿勢・モチベーション</h2>
       <div class="chart-legend">
-        <span><span class="legend-dot" style="background:#e05252"></span>痛み(/10)</span>
-        <span><span class="legend-dot" style="background:#4f7df0"></span>姿勢(/5)</span>
-        <span><span class="legend-dot" style="background:#f5a623"></span>モチベ(/5)</span>
+        <span><span class="legend-dot" style="background:var(--danger)"></span>痛み(/10)</span>
+        <span><span class="legend-dot" style="background:var(--accent)"></span>姿勢(/5)</span>
+        <span><span class="legend-dot" style="background:var(--warn)"></span>モチベ(/5)</span>
       </div>
       <div style="position:relative;width:100%;height:180px"><canvas id="subChart"></canvas></div>
     </div>
   </div>
 </div>
 
+<!-- ── 患者モード画面 ── -->
+<div id="patientScreen">
+  <div id="patientDone" style="display:none" class="patient-done">
+    <div class="patient-done-icon">🎉</div>
+    <div class="patient-done-title">今日の記録完了！</div>
+    <div class="patient-done-sub">お疲れ様でした。<br>毎日の記録が目標達成への近道です。</div>
+  </div>
+  <div id="patientForm">
+    <div class="patient-header">
+      <div class="patient-name-label">BodyLog</div>
+      <div class="patient-greeting" id="patientGreeting">こんにちは</div>
+      <div class="patient-streak" id="patientStreak" style="display:none">
+        🔥 <span id="patientStreakDays">0</span>日連続記録中
+      </div>
+    </div>
+    <div class="patient-body">
+      <div class="patient-field">
+        <div class="patient-field-label">今日の体重</div>
+        <div class="weight-input-wrap">
+          <input type="number" class="weight-input-big" id="patientWeight" placeholder="68.0" step="0.1" inputmode="decimal" />
+          <span class="weight-unit">kg</span>
+        </div>
+      </div>
+      <div class="patient-field">
+        <div class="patient-field-label">痛みレベル（1=なし　10=非常につらい）</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+          <span style="font-size:11px;color:var(--text2)">1</span>
+          <input type="range" min="1" max="10" step="1" value="3" id="patientPain"
+            oninput="document.getElementById('patientPainVal').textContent=this.value"
+            style="-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:4px;background:var(--surface3);border:none;padding:0;cursor:pointer" />
+          <span style="font-size:11px;color:var(--text2)">10</span>
+          <span id="patientPainVal" style="font-size:18px;font-weight:800;color:var(--accent);min-width:28px;text-align:right">3</span>
+        </div>
+      </div>
+      <div class="patient-field">
+        <div class="patient-field-label">姿勢スコア（1=悪い　5=良い）</div>
+        <div class="moti-big-row" id="patientPostureStars">
+          <span class="moti-big-star" onclick="setPatientPosture(1)">★</span>
+          <span class="moti-big-star" onclick="setPatientPosture(2)">★</span>
+          <span class="moti-big-star" onclick="setPatientPosture(3)">★</span>
+          <span class="moti-big-star" onclick="setPatientPosture(4)">★</span>
+          <span class="moti-big-star" onclick="setPatientPosture(5)">★</span>
+        </div>
+      </div>
+      <div class="patient-field">
+        <div class="patient-field-label">モチベーション（1=低い　5=高い）</div>
+        <div class="moti-big-row" id="patientMotiStars">
+          <span class="moti-big-star" onclick="setPatientMoti(1)">★</span>
+          <span class="moti-big-star" onclick="setPatientMoti(2)">★</span>
+          <span class="moti-big-star" onclick="setPatientMoti(3)">★</span>
+          <span class="moti-big-star" onclick="setPatientMoti(4)">★</span>
+          <span class="moti-big-star" onclick="setPatientMoti(5)">★</span>
+        </div>
+      </div>
+      <div class="patient-field">
+        <div class="patient-field-label">今週の運動達成率</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+          <span style="font-size:11px;color:var(--text2)">0%</span>
+          <input type="range" min="0" max="100" step="10" value="50" id="patientExercise"
+            oninput="document.getElementById('patientExVal').textContent=this.value+'%'"
+            style="-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:4px;background:var(--surface3);border:none;padding:0;cursor:pointer" />
+          <span style="font-size:11px;color:var(--text2)">100%</span>
+          <span id="patientExVal" style="font-size:18px;font-weight:800;color:var(--accent);min-width:44px;text-align:right">50%</span>
+        </div>
+      </div>
+      <div class="patient-field">
+        <div class="patient-field-label">今日のメモ（任意）</div>
+        <textarea class="patient-memo" id="patientMemo" rows="3" placeholder="体調・気になること・頑張ったことなど"></textarea>
+      </div>
+      <button class="patient-submit" onclick="submitPatientRecord()">記録する</button>
+    </div>
+  </div>
+</div>
+
+<!-- QRモーダル -->
+<div id="qrModal">
+  <div class="qr-modal-box">
+    <div class="qr-modal-title" id="qrModalTitle">患者用QRコード</div>
+    <div class="qr-modal-sub">スキャンして毎日の記録をしてもらいましょう</div>
+    <div id="qrCanvas"></div>
+    <div class="qr-url" id="qrUrl"></div>
+    <button class="qr-close" onclick="closeQrModal()">閉じる</button>
+  </div>
+</div>
+
 <script>
+/* ═══════════════════════════════════════════
+   データ管理
+═══════════════════════════════════════════ */
 function getClients() { return JSON.parse(localStorage.getItem('clients') || '[]'); }
 function saveClients(c) { localStorage.setItem('clients', JSON.stringify(c)); }
-function getClientData(id) { return JSON.parse(localStorage.getItem('client_'+id) || '{"cfg":{},"records":[]}'); }
+function getClientData(id) { return JSON.parse(localStorage.getItem('client_'+id) || '{"cfg":{},"records":[],"patientRecords":[]}'); }
 function saveClientData(id, data) { localStorage.setItem('client_'+id, JSON.stringify(data)); }
 
 let currentClientId = null;
 let posture = 3, moti = 3;
 let weightChart = null, subChart = null;
+let pollTimer = null;
 
+/* ═══════════════════════════════════════════
+   患者リスト画面
+═══════════════════════════════════════════ */
 function renderClientGrid() {
   const clients = getClients();
   const grid = document.getElementById('clientGrid');
   grid.innerHTML = clients.map(c => {
     const data = getClientData(c.id);
-    const rec = data.records;
-    const latest = rec.length ? rec[rec.length-1] : null;
+    const latest = data.records.length ? data.records[data.records.length-1] : null;
     const cfg = data.cfg;
+    // 未確認の患者記録があるか
+    const today = new Date().toISOString().slice(0,10);
+    const hasNew = (data.patientRecords || []).some(r => !r.imported && r.date === today);
     return `<div class="client-card" onclick="openClient('${c.id}')">
       <button class="client-del" onclick="event.stopPropagation();deleteClient('${c.id}')">✕</button>
       <div class="client-avatar">${c.name[0]}</div>
-      <div class="client-name">${c.name}</div>
+      <div class="client-name">${c.name}${hasNew ? '<span class="new-badge">NEW</span>' : ''}</div>
       <div class="client-meta">${c.memo || '　'}</div>
       <div class="client-meta" style="margin-top:4px">
         ${latest ? `最新：${latest.weight}kg` : '記録なし'}
@@ -502,6 +712,9 @@ function deleteClient(id) {
   renderClientGrid();
 }
 
+/* ═══════════════════════════════════════════
+   トラッカー画面
+═══════════════════════════════════════════ */
 function openClient(id) {
   currentClientId = id;
   const client = getClients().find(c => c.id === id);
@@ -531,9 +744,12 @@ function openClient(id) {
   document.getElementById('clientScreen').style.display = 'none';
   document.getElementById('trackerScreen').style.display = 'block';
   updateMetrics();
+  checkPatientDataNotice();
+  startPolling();
 }
 
 function goBack() {
+  stopPolling();
   document.getElementById('trackerScreen').style.display = 'none';
   document.getElementById('clientScreen').style.display = 'block';
   if (weightChart) { weightChart.destroy(); weightChart = null; }
@@ -551,7 +767,6 @@ function goBack() {
     updateDeadlineBanner();
   });
 });
-
 ['finalGoal','midGoal','karteInfo'].forEach(id => {
   document.getElementById(id).addEventListener('input', () => saveCfgField(id, document.getElementById(id).value));
 });
@@ -563,6 +778,85 @@ function saveCfgField(id, value) {
   saveClientData(currentClientId, data);
 }
 
+/* ═══════════════════════════════════════════
+   患者データ連動（ポーリング + 通知）
+═══════════════════════════════════════════ */
+function startPolling() {
+  stopPolling();
+  pollTimer = setInterval(() => {
+    checkPatientDataNotice();
+    renderClientGrid();
+  }, 3000); // 3秒ごとに確認
+}
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+function getUnimportedPatientRecords(id) {
+  const data = getClientData(id || currentClientId);
+  return (data.patientRecords || []).filter(r => !r.imported);
+}
+
+function checkPatientDataNotice() {
+  if (!currentClientId) return;
+  const unimported = getUnimportedPatientRecords();
+  const notice = document.getElementById('patientDataNotice');
+  if (!unimported.length) { notice.style.display = 'none'; return; }
+
+  // 最新の未取り込みレコード
+  const latest = unimported[unimported.length - 1];
+  const chips = document.getElementById('patientDataChips');
+  chips.innerHTML = [
+    `<span class="patient-data-chip">📅 ${latest.date}</span>`,
+    `<span class="patient-data-chip">⚖️ ${latest.weight}kg</span>`,
+    latest.pain != null ? `<span class="patient-data-chip">🩹 痛み ${latest.pain}/10</span>` : '',
+    latest.posture != null ? `<span class="patient-data-chip">🧍 姿勢 ${latest.posture}/5</span>` : '',
+    latest.moti != null ? `<span class="patient-data-chip">💪 モチベ ${latest.moti}/5</span>` : '',
+    latest.exercise != null ? `<span class="patient-data-chip">🏃 運動 ${latest.exercise}%</span>` : '',
+    latest.memo ? `<span class="patient-data-chip">💬 ${latest.memo.slice(0,20)}${latest.memo.length>20?'…':''}</span>` : '',
+  ].filter(Boolean).join('');
+  notice.style.display = 'block';
+}
+
+function importPatientRecord() {
+  if (!currentClientId) return;
+  const data = getClientData(currentClientId);
+  const unimported = (data.patientRecords || []).filter(r => !r.imported);
+  if (!unimported.length) return;
+
+  unimported.forEach(pr => {
+    // 同じ日付の記録があれば上書き、なければ追加
+    const idx = data.records.findIndex(r => r.date === pr.date);
+    const rec = {
+      date: pr.date,
+      weight: pr.weight,
+      pain: pr.pain || 5,
+      posture: pr.posture || 3,
+      moti: pr.moti || 3,
+      exercise: pr.exercise || 50,
+      memo: pr.memo || ''
+    };
+    if (idx >= 0) data.records[idx] = rec;
+    else data.records.push(rec);
+    // インポート済みフラグ
+    const pi = data.patientRecords.findIndex(r => r.date === pr.date);
+    if (pi >= 0) data.patientRecords[pi].imported = true;
+  });
+  data.records.sort((a,b) => a.date.localeCompare(b.date));
+  saveClientData(currentClientId, data);
+  document.getElementById('patientDataNotice').style.display = 'none';
+  updateMetrics();
+  renderLog();
+  showToast('患者の記録を取り込みました ✅');
+}
+
+function dismissPatientNotice() {
+  document.getElementById('patientDataNotice').style.display = 'none';
+}
+
+/* ═══════════════════════════════════════════
+   デッドラインバナー
+═══════════════════════════════════════════ */
 function updateDeadlineBanner() {
   const deadlineVal = document.getElementById('weeks').value;
   const startVal = document.getElementById('startDate').value;
@@ -570,56 +864,46 @@ function updateDeadlineBanner() {
   if (!deadlineVal) { banner.style.display = 'none'; return; }
   const today = new Date(); today.setHours(0,0,0,0);
   const deadline = new Date(deadlineVal); deadline.setHours(0,0,0,0);
-  const diffMs = deadline - today;
-  const diffDays = Math.round(diffMs / (1000*60*60*24));
+  const diffDays = Math.round((deadline - today) / 86400000);
   let totalDays = 0;
   if (startVal) {
     const start = new Date(startVal); start.setHours(0,0,0,0);
-    totalDays = Math.round((deadline - start) / (1000*60*60*24));
+    totalDays = Math.round((deadline - start) / 86400000);
   }
   const progressPct = totalDays > 0 ? Math.min(100, Math.max(0, Math.round((totalDays - diffDays) / totalDays * 100))) : 0;
-  banner.style.display = 'flex';
-  const deadlineDays = document.getElementById('deadlineDays');
-  const deadlineEmoji = document.getElementById('deadlineEmoji');
-  const deadlineDateEl = document.getElementById('deadlineDate');
-  const deadlineProg = document.getElementById('deadlineProgress');
+
+  let bg, borderColor, textColor, emoji, daysText;
   if (diffDays < 0) {
-    banner.style.background = 'rgba(139,154,184,0.08)';
-    banner.style.borderColor = 'rgba(139,154,184,0.2)';
-    deadlineEmoji.textContent = '✅';
-    deadlineDays.style.color = 'var(--text2)';
-    deadlineDays.textContent = `期日を${Math.abs(diffDays)}日過ぎました`;
+    bg='rgba(160,174,192,0.08)'; borderColor='rgba(160,174,192,0.2)'; textColor='var(--text2)';
+    emoji='✅'; daysText=`期日を${Math.abs(diffDays)}日過ぎました`;
   } else if (diffDays === 0) {
-    banner.style.background = 'rgba(255,184,77,0.1)';
-    banner.style.borderColor = 'rgba(255,184,77,0.25)';
-    deadlineEmoji.textContent = '🔥';
-    deadlineDays.style.color = 'var(--warn)';
-    deadlineDays.textContent = '今日が期日です！';
+    bg='var(--warn-light)'; borderColor='rgba(245,158,11,0.3)'; textColor='var(--warn)';
+    emoji='🔥'; daysText='今日が期日です！';
   } else if (diffDays <= 7) {
-    banner.style.background = 'rgba(255,107,107,0.1)';
-    banner.style.borderColor = 'rgba(255,107,107,0.25)';
-    deadlineEmoji.textContent = '⚡';
-    deadlineDays.style.color = 'var(--danger)';
-    deadlineDays.textContent = `残り ${diffDays} 日`;
+    bg='var(--danger-light)'; borderColor='rgba(232,85,85,0.3)'; textColor='var(--danger)';
+    emoji='⚡'; daysText=`残り ${diffDays} 日`;
   } else if (diffDays <= 30) {
-    banner.style.background = 'rgba(255,184,77,0.08)';
-    banner.style.borderColor = 'rgba(255,184,77,0.2)';
-    deadlineEmoji.textContent = '📅';
-    deadlineDays.style.color = 'var(--warn)';
-    deadlineDays.textContent = `残り ${diffDays} 日`;
+    bg='var(--warn-light)'; borderColor='rgba(245,158,11,0.25)'; textColor='var(--warn)';
+    emoji='📅'; daysText=`残り ${diffDays} 日`;
   } else {
-    banner.style.background = 'rgba(107,159,255,0.08)';
-    banner.style.borderColor = 'rgba(107,159,255,0.2)';
-    deadlineEmoji.textContent = '🎯';
-    deadlineDays.style.color = 'var(--accent)';
-    deadlineDays.textContent = `残り ${diffDays} 日`;
+    bg='var(--accent-light)'; borderColor='rgba(79,125,240,0.2)'; textColor='var(--accent)';
+    emoji='🎯'; daysText=`残り ${diffDays} 日`;
   }
-  deadlineDateEl.textContent = `期日：${deadlineVal}　経過：${progressPct}%`;
-  deadlineDateEl.style.color = 'var(--text2)';
-  deadlineProg.style.width = progressPct + '%';
-  deadlineProg.style.background = diffDays <= 7 ? 'var(--danger)' : diffDays <= 30 ? 'var(--warn)' : 'var(--accent)';
+  banner.style.display = 'block';
+  banner.style.background = bg;
+  banner.style.borderColor = borderColor;
+  document.getElementById('deadlineEmoji').textContent = emoji;
+  document.getElementById('deadlineDays').textContent = daysText;
+  document.getElementById('deadlineDays').style.color = textColor;
+  document.getElementById('deadlineDate').textContent = `期日：${deadlineVal}　経過：${progressPct}%`;
+  document.getElementById('deadlineProgress').style.width = progressPct + '%';
+  document.getElementById('deadlineProgress').style.background =
+    diffDays <= 7 ? 'var(--danger)' : diffDays <= 30 ? 'var(--warn)' : 'var(--accent)';
 }
 
+/* ═══════════════════════════════════════════
+   スター・スライダー
+═══════════════════════════════════════════ */
 function setPosture(v) {
   posture = v;
   document.querySelectorAll('#postureStars .star').forEach((s,i) => s.classList.toggle('on', i < v));
@@ -630,6 +914,9 @@ function setMoti(v) {
 }
 setPosture(3); setMoti(3);
 
+/* ═══════════════════════════════════════════
+   タブ切り替え
+═══════════════════════════════════════════ */
 function switchTab(name) {
   ['record','log','chart'].forEach((t,i) => {
     document.getElementById('tab-'+t).style.display = t === name ? '' : 'none';
@@ -639,6 +926,9 @@ function switchTab(name) {
   if (name === 'log') renderLog();
 }
 
+/* ═══════════════════════════════════════════
+   記録追加・削除
+═══════════════════════════════════════════ */
 function addRecord() {
   const w = parseFloat(document.getElementById('recWeight').value);
   if (!w) { alert('体重を入力してください'); return; }
@@ -656,21 +946,8 @@ function addRecord() {
   document.getElementById('recWeight').value = '';
   document.getElementById('memo').value = '';
   updateMetrics();
-  showToast('記録を保存しました');
+  showToast('記録を保存しました ✅');
   renderLog();
-}
-
-function showToast(msg) {
-  let t = document.getElementById('toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'toast';
-    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(107,159,255,0.95);color:#fff;padding:10px 22px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity 0.3s;backdrop-filter:blur(8px);box-shadow:0 4px 20px rgba(107,159,255,0.4)';
-    document.body.appendChild(t);
-  }
-  t.textContent = msg;
-  t.style.opacity = '1';
-  setTimeout(() => t.style.opacity = '0', 2000);
 }
 
 function deleteRecord(i) {
@@ -681,6 +958,25 @@ function deleteRecord(i) {
   updateMetrics(); renderLog();
 }
 
+/* ═══════════════════════════════════════════
+   トースト
+═══════════════════════════════════════════ */
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--accent),#6b8ff5);color:#fff;padding:11px 24px;border-radius:22px;font-size:13px;font-weight:700;z-index:999;opacity:0;transition:opacity 0.3s;box-shadow:0 4px 18px rgba(79,125,240,0.35);white-space:nowrap';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  setTimeout(() => t.style.opacity = '0', 2500);
+}
+
+/* ═══════════════════════════════════════════
+   メトリクス更新
+═══════════════════════════════════════════ */
 function updateMetrics() {
   const data = getClientData(currentClientId);
   const records = data.records;
@@ -693,15 +989,13 @@ function updateMetrics() {
   const progress = (sw && tw && sw !== tw) ? Math.min(100, Math.max(0, Math.round((sw-latest.weight)/(sw-tw)*100))) : null;
   document.getElementById('metricsWrap').style.display = '';
   document.getElementById('metrics').innerHTML = `
-    <div class="metric"><div class="metric-label">最新体重</div><div class="metric-value">${latest.weight.toFixed(1)}<span class="metric-unit">kg</span></div>${diff!==null?`<div class="metric-sub">${diff>0?'+':''}${diff}kg</div>`:''}</div>
+    <div class="metric"><div class="metric-label">最新体重</div><div class="metric-value">${latest.weight.toFixed(1)}<span class="metric-unit">kg</span></div>${diff!==null?`<div class="metric-sub" style="color:${diff<=0?'var(--accent2)':'var(--danger)'}">${diff>0?'+':''}${diff}kg</div>`:''}</div>
     ${tw?`<div class="metric"><div class="metric-label">目標まで</div><div class="metric-value">${remaining!==null?remaining.toFixed(1):'-'}<span class="metric-unit">kg</span></div>${progress!==null?`<div class="progress-wrap"><div class="progress-fill" style="width:${progress}%"></div></div>`:''}</div>`:''}
-    <div class="metric"><div class="metric-label">痛みレベル</div><div class="metric-value">${latest.pain}<span class="metric-unit">/10</span></div></div>
+    <div class="metric"><div class="metric-label">痛みレベル</div><div class="metric-value" style="color:${latest.pain>=7?'var(--danger)':latest.pain>=4?'var(--warn)':'var(--accent2)'}">${latest.pain}<span class="metric-unit">/10</span></div></div>
     <div class="metric"><div class="metric-label">姿勢スコア</div><div class="metric-value">${latest.posture}<span class="metric-unit">/5</span></div></div>
     <div class="metric"><div class="metric-label">モチベ</div><div class="metric-value">${latest.moti}<span class="metric-unit">/5</span></div></div>
     <div class="metric"><div class="metric-label">運動達成率</div><div class="metric-value">${latest.exercise}<span class="metric-unit">%</span></div></div>
   `;
-
-  // 残り日数バナー
   updateDeadlineBanner();
   updateStreak();
 
@@ -710,7 +1004,7 @@ function updateMetrics() {
   if (!compareCard) {
     compareCard = document.createElement('div');
     compareCard.id = 'compareCard';
-    compareCard.style.cssText = 'background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 18px;margin-top:8px';
+    compareCard.className = 'compare-card';
     document.getElementById('metricsWrap').appendChild(compareCard);
   }
   if (records.length >= 2) {
@@ -720,27 +1014,27 @@ function updateMetrics() {
     const posDiff = latest.posture - prev.posture;
     const mDiff = latest.moti - prev.moti;
     const arrow = (v, reverse) => {
-      if (v === 0) return '<span style="color:var(--text2)">→ 変化なし</span>';
+      if (v === 0) return `<span style="color:var(--text2)">→ 変化なし</span>`;
       const good = reverse ? v < 0 : v > 0;
-      return `<span style="color:${good?'var(--accent2)':'var(--danger)'}">${v>0?'↑':'↓'} ${Math.abs(v)}</span>`;
+      return `<span style="color:${good?'var(--accent2)':'var(--danger)'};font-weight:700">${v>0?'↑':'↓'} ${Math.abs(v)}</span>`;
     };
     compareCard.style.display = '';
     compareCard.innerHTML = `
-      <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.07em;margin-bottom:10px">前回との比較（${prev.date}→${latest.date}）</div>
+      <div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">前回との比較（${prev.date} → ${latest.date}）</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;font-size:12px">
-        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 12px">
           <div style="color:var(--text2);font-size:10px;font-weight:700;margin-bottom:4px">体重</div>
           <div style="font-weight:700;color:var(--text)">${prev.weight.toFixed(1)}→${latest.weight.toFixed(1)}kg ${arrow(wDiff,true)}</div>
         </div>
-        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 12px">
           <div style="color:var(--text2);font-size:10px;font-weight:700;margin-bottom:4px">痛みレベル</div>
           <div style="font-weight:700;color:var(--text)">${prev.pain}→${latest.pain} ${arrow(pDiff,true)}</div>
         </div>
-        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 12px">
           <div style="color:var(--text2);font-size:10px;font-weight:700;margin-bottom:4px">姿勢スコア</div>
           <div style="font-weight:700;color:var(--text)">${prev.posture}→${latest.posture} ${arrow(posDiff,false)}</div>
         </div>
-        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 12px">
           <div style="color:var(--text2);font-size:10px;font-weight:700;margin-bottom:4px">モチベ</div>
           <div style="font-weight:700;color:var(--text)">${prev.moti}→${latest.moti} ${arrow(mDiff,false)}</div>
         </div>
@@ -750,6 +1044,9 @@ function updateMetrics() {
   }
 }
 
+/* ═══════════════════════════════════════════
+   履歴レンダリング
+═══════════════════════════════════════════ */
 function renderLog() {
   const data = getClientData(currentClientId);
   const records = data.records;
@@ -759,12 +1056,12 @@ function renderLog() {
     const prev = i > 0 ? records[i-1] : null;
     const diff = prev ? +(r.weight - prev.weight).toFixed(1) : null;
     const badge = diff===null?'':diff<0?`<span class="badge badge-down">${diff}</span>`:diff>0?`<span class="badge badge-up">+${diff}</span>`:`<span class="badge badge-same">±0</span>`;
-    const stars = n => '<span style="color:#f5a623">'+'★'.repeat(n)+'</span>'+'☆'.repeat(5-n);
+    const stars = n => `<span style="color:var(--warn)">${'★'.repeat(n)}</span><span style="color:var(--surface3)">${'★'.repeat(5-n)}</span>`;
     return `<tr>
       <td>${r.date}</td><td><strong>${r.weight.toFixed(1)}</strong> ${badge}</td>
       <td>${r.pain}/10</td><td>${stars(r.posture)}</td><td>${stars(r.moti)}</td>
       <td>${r.exercise}%</td>
-      <td style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888">${r.memo||'-'}</td>
+      <td style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">${r.memo||'-'}</td>
       <td><button class="del-btn" onclick="deleteRecord(${i})">✕</button></td>
     </tr>`;
   }).join('');
@@ -773,6 +1070,9 @@ function renderLog() {
     <tbody>${rows}</tbody></table></div>`;
 }
 
+/* ═══════════════════════════════════════════
+   グラフ
+═══════════════════════════════════════════ */
 function renderCharts() {
   const data = getClientData(currentClientId);
   const records = data.records;
@@ -783,41 +1083,92 @@ function renderCharts() {
   weightChart = new Chart(document.getElementById('weightChart').getContext('2d'), {
     type: 'line',
     data: { labels, datasets: [
-      { label:'体重', data:records.map(r=>r.weight), borderColor:'#4f7df0', backgroundColor:'rgba(91,138,245,0.06)', fill:true, tension:0.3, pointRadius:4, pointBackgroundColor:'#4f7df0' },
-      ...(tw?[{ label:'目標', data:records.map(()=>tw), borderColor:'#f5a623', borderDash:[5,4], pointRadius:0, fill:false }]:[])
+      { label:'体重', data:records.map(r=>r.weight), borderColor:'#4f7df0', backgroundColor:'rgba(79,125,240,0.08)', fill:true, tension:0.35, pointRadius:4, pointBackgroundColor:'#4f7df0', pointBorderColor:'#fff', pointBorderWidth:2 },
+      ...(tw?[{ label:'目標', data:records.map(()=>tw), borderColor:'#f59e0b', borderDash:[5,4], pointRadius:0, fill:false }]:[])
     ]},
     options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{ y:{ticks:{callback:v=>v+'kg',font:{size:11},color:'#6b7694'},grid:{color:'rgba(255,255,255,0.04)'}}, x:{ticks:{font:{size:11},color:'#6b7694',maxTicksLimit:8},grid:{display:false}} } }
+      scales:{
+        y:{ticks:{callback:v=>v+'kg',font:{size:11},color:'#5a6a8a'},grid:{color:'rgba(79,125,240,0.06)'}},
+        x:{ticks:{font:{size:11},color:'#5a6a8a',maxTicksLimit:8},grid:{display:false}}
+      }
+    }
   });
   if (subChart) subChart.destroy();
   subChart = new Chart(document.getElementById('subChart').getContext('2d'), {
     type: 'line',
     data: { labels, datasets: [
-      { label:'痛み', data:records.map(r=>r.pain), borderColor:'#e05252', pointRadius:3, tension:0.3, fill:false },
-      { label:'姿勢', data:records.map(r=>r.posture), borderColor:'#4f7df0', borderDash:[4,3], pointRadius:3, tension:0.3, fill:false },
-      { label:'モチベ', data:records.map(r=>r.moti), borderColor:'#f5a623', borderDash:[2,3], pointRadius:3, tension:0.3, fill:false }
+      { label:'痛み', data:records.map(r=>r.pain), borderColor:'#e85555', pointRadius:3, tension:0.35, fill:false },
+      { label:'姿勢', data:records.map(r=>r.posture), borderColor:'#4f7df0', borderDash:[4,3], pointRadius:3, tension:0.35, fill:false },
+      { label:'モチベ', data:records.map(r=>r.moti), borderColor:'#f59e0b', borderDash:[2,3], pointRadius:3, tension:0.35, fill:false }
     ]},
     options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{ y:{min:0,max:10,ticks:{stepSize:2,font:{size:11},color:'#6b7694'},grid:{color:'rgba(255,255,255,0.04)'}}, x:{ticks:{font:{size:11},color:'#6b7694',maxTicksLimit:8},grid:{display:false}} } }
+      scales:{
+        y:{min:0,max:10,ticks:{stepSize:2,font:{size:11},color:'#5a6a8a'},grid:{color:'rgba(79,125,240,0.06)'}},
+        x:{ticks:{font:{size:11},color:'#5a6a8a',maxTicksLimit:8},grid:{display:false}}
+      }
+    }
   });
 }
 
-document.getElementById('addModal').addEventListener('click', function(e) {
-  if (e.target === this) closeAddModal();
-});
-// qrModal は HTML が後に来るため DOMContentLoaded 後に登録
-document.addEventListener('DOMContentLoaded', function() {
-  const qrModalEl = document.getElementById('qrModal');
-  if (qrModalEl) qrModalEl.addEventListener('click', function(e) {
-    if (e.target === this) closeQrModal();
-  });
-});
+/* ═══════════════════════════════════════════
+   ストリーク
+═══════════════════════════════════════════ */
+function calcStreak(records) {
+  if (!records.length) return 0;
+  const sorted = [...records].sort((a,b) => b.date.localeCompare(a.date));
+  let streak = 0;
+  let cur = new Date(); cur.setHours(0,0,0,0);
+  for (const r of sorted) {
+    const d = new Date(r.date); d.setHours(0,0,0,0);
+    if (Math.round((cur - d) / 86400000) <= streak) { streak++; cur.setDate(cur.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
 
-// ── 患者モード ──────────────────────────────────────
+function updateStreak() {
+  if (!currentClientId) return;
+  const data = getClientData(currentClientId);
+  const allRecs = [...(data.records||[]), ...(data.patientRecords||[])];
+  const dates = [...new Set(allRecs.map(r=>r.date))].sort();
+  const streak = calcStreak(dates.map(d=>({date:d})));
+  const wrap = document.getElementById('streakWrap');
+  if (streak > 0) {
+    wrap.style.display = 'flex';
+    document.getElementById('streakText').textContent = streak + '日連続記録中';
+    document.getElementById('streakSub').textContent = streak >= 7 ? '素晴らしい継続力です！🏆' : streak >= 3 ? '調子が出てきました！' : '記録を続けましょう';
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   QRコード
+═══════════════════════════════════════════ */
+function showQrModal() {
+  if (!currentClientId) return;
+  const client = getClients().find(c => c.id === currentClientId);
+  document.getElementById('qrModalTitle').textContent = client.name + 'さん用QR';
+  const baseUrl = location.href.split('?')[0];
+  const url = baseUrl + '?patient=' + currentClientId;
+  document.getElementById('qrUrl').textContent = url;
+  const canvas = document.getElementById('qrCanvas');
+  canvas.innerHTML = '';
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(canvas, { text: url, width: 200, height: 200, colorDark:'#1a2340', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  }
+  document.getElementById('qrModal').classList.add('open');
+}
+function closeQrModal() {
+  document.getElementById('qrModal').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════
+   患者モード
+═══════════════════════════════════════════ */
 let patientMotiVal = 3;
-let currentPatientId = null;
-
 let patientPostureVal = 3;
+let currentPatientId = null;
 
 function setPatientMoti(v) {
   patientMotiVal = v;
@@ -827,28 +1178,23 @@ function setPatientPosture(v) {
   patientPostureVal = v;
   document.querySelectorAll('#patientPostureStars .moti-big-star').forEach((s,i) => s.classList.toggle('on', i < v));
 }
-setPatientMoti(3);
-setPatientPosture(3);
+setPatientMoti(3); setPatientPosture(3);
 
 function openPatientMode(clientId) {
   currentPatientId = clientId;
   const clients = getClients();
   const client = clients.find(c => c.id === clientId);
-  if (!client) return;
+  if (!client) { document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#888">患者情報が見つかりません</div>'; return; }
   const h = new Date().getHours();
   const greet = h < 12 ? 'おはようございます' : h < 18 ? 'こんにちは' : 'こんばんは';
   document.getElementById('patientGreeting').textContent = greet + '、' + client.name + 'さん';
   const data = getClientData(clientId);
-  const streak = calcStreak(data.patientRecords || []);
+  const streak = calcStreak([...(data.records||[]),...(data.patientRecords||[])].map(r=>({date:r.date})));
   const streakEl = document.getElementById('patientStreak');
-  if (streak > 0) {
-    streakEl.style.display = 'inline-flex';
-    document.getElementById('patientStreakDays').textContent = streak;
-  } else {
-    streakEl.style.display = 'none';
-  }
+  if (streak > 0) { streakEl.style.display='inline-flex'; document.getElementById('patientStreakDays').textContent=streak; }
+  else streakEl.style.display='none';
   const today = new Date().toISOString().slice(0,10);
-  const alreadyDone = (data.patientRecords || []).some(r => r.date === today);
+  const alreadyDone = (data.patientRecords||[]).some(r => r.date === today && !r.imported);
   document.getElementById('patientDone').style.display = alreadyDone ? '' : 'none';
   document.getElementById('patientForm').style.display = alreadyDone ? 'none' : '';
   document.getElementById('patientWeight').value = '';
@@ -857,8 +1203,7 @@ function openPatientMode(clientId) {
   document.getElementById('patientPainVal').textContent = 3;
   document.getElementById('patientExercise').value = 50;
   document.getElementById('patientExVal').textContent = '50%';
-  setPatientMoti(3);
-  setPatientPosture(3);
+  setPatientMoti(3); setPatientPosture(3);
   document.getElementById('clientScreen').style.display = 'none';
   document.getElementById('trackerScreen').style.display = 'none';
   document.getElementById('patientScreen').style.display = 'block';
@@ -870,8 +1215,15 @@ function submitPatientRecord() {
   const today = new Date().toISOString().slice(0,10);
   const data = getClientData(currentPatientId);
   if (!data.patientRecords) data.patientRecords = [];
+  const rec = {
+    date: today, weight: w,
+    moti: patientMotiVal, posture: patientPostureVal,
+    pain: parseInt(document.getElementById('patientPain').value),
+    exercise: parseInt(document.getElementById('patientExercise').value),
+    memo: document.getElementById('patientMemo').value,
+    imported: false
+  };
   const idx = data.patientRecords.findIndex(r => r.date === today);
-  const rec = { date: today, weight: w, moti: patientMotiVal, posture: patientPostureVal, pain: parseInt(document.getElementById('patientPain').value), exercise: parseInt(document.getElementById('patientExercise').value), memo: document.getElementById('patientMemo').value };
   if (idx >= 0) data.patientRecords[idx] = rec;
   else data.patientRecords.push(rec);
   data.patientRecords.sort((a,b) => a.date.localeCompare(b.date));
@@ -880,161 +1232,38 @@ function submitPatientRecord() {
   document.getElementById('patientForm').style.display = 'none';
 }
 
-function calcStreak(records) {
-  if (!records.length) return 0;
-  const sorted = [...records].sort((a,b) => b.date.localeCompare(a.date));
-  let streak = 0;
-  let cur = new Date(); cur.setHours(0,0,0,0);
-  for (const r of sorted) {
-    const d = new Date(r.date); d.setHours(0,0,0,0);
-    const diff = Math.round((cur - d) / 86400000);
-    if (diff <= streak) { streak++; cur.setDate(cur.getDate() - 1); }
-    else break;
-  }
-  return streak;
-}
+/* ═══════════════════════════════════════════
+   モーダルクローズ / URL判定 / 起動
+═══════════════════════════════════════════ */
+document.getElementById('addModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddModal();
+});
 
-// ── QRコード ──────────────────────────────────────
-function showQrModal() {
-  if (!currentClientId) return;
-  const clients = getClients();
-  const client = clients.find(c => c.id === currentClientId);
-  document.getElementById('qrModalTitle').textContent = client.name + 'さん用QR';
-  const baseUrl = location.href.split('?')[0];
-  const url = baseUrl + '?patient=' + currentClientId;
-  document.getElementById('qrUrl').textContent = url;
-  const canvas = document.getElementById('qrCanvas');
-  canvas.innerHTML = '';
-  if (typeof QRCode !== 'undefined') {
-    new QRCode(canvas, { text: url, width: 200, height: 200, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M });
-  }
-  document.getElementById('qrModal').classList.add('open');
-}
-
-function closeQrModal() {
-  document.getElementById('qrModal').classList.remove('open');
-}
-
-// ── 継続カウンター ──────────────────────────────────
-function updateStreak() {
-  if (!currentClientId) return;
-  const data = getClientData(currentClientId);
-  const allRecs = [...(data.records || []), ...(data.patientRecords || [])];
-  const dates = [...new Set(allRecs.map(r => r.date))].sort();
-  const uniqueRecs = dates.map(d => ({ date: d }));
-  const streak = calcStreak(uniqueRecs);
-  const wrap = document.getElementById('streakWrap');
-  if (streak > 0) {
-    wrap.style.display = 'flex';
-    document.getElementById('streakText').textContent = streak + '日連続記録中';
-    document.getElementById('streakSub').textContent = streak >= 7 ? '素晴らしい継続力です！' : streak >= 3 ? '調子が出てきました！' : '記録を続けましょう';
-  } else {
-    wrap.style.display = 'none';
-  }
-}
-
-// ── URL判定（患者モード自動起動）────────────────────
 function checkPatientMode() {
   const params = new URLSearchParams(location.search);
   const pid = params.get('patient');
   if (pid) openPatientMode(pid);
 }
 
-
 checkPatientMode();
 renderClientGrid();
 </script>
 
-<!-- ── 患者モード画面 ── -->
-<div id="patientScreen">
-  <div id="patientDone" style="display:none" class="patient-done">
-    <div class="patient-done-icon">✅</div>
-    <div class="patient-done-title">今日の記録完了！</div>
-    <div class="patient-done-sub">お疲れ様でした。<br>毎日の記録が目標達成への近道です。</div>
-  </div>
-  <div id="patientForm">
-    <div class="patient-header">
-      <div class="patient-name-label">BodyLog</div>
-      <div class="patient-greeting" id="patientGreeting">こんにちは</div>
-      <div class="patient-streak" id="patientStreak" style="display:none">
-        🔥 <span id="patientStreakDays">0</span>日連続記録中
-      </div>
-    </div>
-    <div class="patient-body">
-      <div class="patient-field">
-        <div class="patient-field-label">今日の体重</div>
-        <div class="weight-input-wrap">
-          <input type="number" class="weight-input-big" id="patientWeight" placeholder="68.0" step="0.1" inputmode="decimal" />
-          <span class="weight-unit">kg</span>
-        </div>
-      </div>
-      <div class="patient-field">
-        <div class="patient-field-label">痛みレベル（1=なし　10=非常につらい）</div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
-          <span style="font-size:11px;color:var(--text2)">1</span>
-          <input type="range" min="1" max="10" step="1" value="3" id="patientPain"
-            oninput="document.getElementById('patientPainVal').textContent=this.value"
-            style="-webkit-appearance:none;appearance:none;flex:1;height:3px;border-radius:4px;background:var(--surface2);border:none;padding:0;cursor:pointer" />
-          <span style="font-size:11px;color:var(--text2)">10</span>
-          <span id="patientPainVal" style="font-size:18px;font-weight:700;color:var(--accent);min-width:28px;text-align:right">3</span>
-        </div>
-      </div>
-      <div class="patient-field">
-        <div class="patient-field-label">姿勢スコア（1=悪い　5=良い）</div>
-        <div class="moti-big-row" id="patientPostureStars">
-          <span class="moti-big-star" onclick="setPatientPosture(1)">★</span>
-          <span class="moti-big-star" onclick="setPatientPosture(2)">★</span>
-          <span class="moti-big-star" onclick="setPatientPosture(3)">★</span>
-          <span class="moti-big-star" onclick="setPatientPosture(4)">★</span>
-          <span class="moti-big-star" onclick="setPatientPosture(5)">★</span>
-        </div>
-      </div>
-      <div class="patient-field">
-        <div class="patient-field-label">モチベーション（1=低い　5=高い）</div>
-        <div class="moti-big-row" id="patientMotiStars">
-          <span class="moti-big-star" onclick="setPatientMoti(1)">★</span>
-          <span class="moti-big-star" onclick="setPatientMoti(2)">★</span>
-          <span class="moti-big-star" onclick="setPatientMoti(3)">★</span>
-          <span class="moti-big-star" onclick="setPatientMoti(4)">★</span>
-          <span class="moti-big-star" onclick="setPatientMoti(5)">★</span>
-        </div>
-      </div>
-      <div class="patient-field">
-        <div class="patient-field-label">今週の運動達成率</div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
-          <span style="font-size:11px;color:var(--text2)">0%</span>
-          <input type="range" min="0" max="100" step="10" value="50" id="patientExercise"
-            oninput="document.getElementById('patientExVal').textContent=this.value+'%'"
-            style="-webkit-appearance:none;appearance:none;flex:1;height:3px;border-radius:4px;background:var(--surface2);border:none;padding:0;cursor:pointer" />
-          <span style="font-size:11px;color:var(--text2)">100%</span>
-          <span id="patientExVal" style="font-size:18px;font-weight:700;color:var(--accent);min-width:44px;text-align:right">50%</span>
-        </div>
-      </div>
-      <div class="patient-field">
-        <div class="patient-field-label">今日のメモ（任意）</div>
-        <textarea class="patient-memo" id="patientMemo" rows="3" placeholder="体調・気になること・頑張ったことなど"></textarea>
-      </div>
-      <button class="patient-submit" onclick="submitPatientRecord()">記録する</button>
-    </div>
-  </div>
-</div>
-
-<!-- QRモーダル -->
-<div id="qrModal">
-  <div class="qr-modal-box">
-    <div class="qr-modal-title" id="qrModalTitle">患者用QRコード</div>
-    <div class="qr-modal-sub">スキャンして毎日の記録をしてもらいましょう</div>
-    <div id="qrCanvas"></div>
-    <div class="qr-url" id="qrUrl"></div>
-    <button class="qr-close" onclick="closeQrModal()">閉じる</button>
-  </div>
-</div>
+<script>
+// QRモーダルのクローズ（DOM構築完了後）
+document.addEventListener('DOMContentLoaded', function() {
+  const qrModalEl = document.getElementById('qrModal');
+  if (qrModalEl) qrModalEl.addEventListener('click', function(e) {
+    if (e.target === this) closeQrModal();
+  });
+});
+</script>
 
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('SW registered'))
+      .then(() => console.log('SW registered'))
       .catch(err => console.log('SW error:', err));
   });
 }
