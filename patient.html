@@ -4,346 +4,735 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>BodyLog - 今日の記録</title>
-<meta name="theme-color" content="#4f7df0">
+<meta name="theme-color" content="#4a72f5">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/manifest.json">
 <style>
 :root{
-  --bg:#f2f5fc;--surface:#fff;--surface2:#eef2fb;--border:#dce3f2;
-  --text:#1a2340;--text2:#5a6a8a;--text3:#a0aec0;
-  --accent:#4f7df0;--accent2:#00b896;--danger:#e85555;--warn:#f59e0b;
-  --grad:linear-gradient(135deg,#4f7df0,#6b8ff5);
+  --bg:#f0f4fb;--surface:#fff;--surface2:#eef2fb;--border:#dde3f0;
+  --text:#18243d;--text2:#556080;--text3:#9ba8c0;
+  --accent:#4a72f5;--accent2:#10b981;--danger:#ef4444;--warn:#f59e0b;
+  --grad:linear-gradient(135deg,#4a72f5,#7c9ff7);
+  --grad2:linear-gradient(135deg,#10b981,#34d399);
+  --shadow:0 2px 12px rgba(74,114,245,.1);
+  --shadow-lg:0 8px 32px rgba(74,114,245,.15);
+  --radius:16px;--radius-sm:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;
+  min-height:100vh;padding-bottom:env(safe-area-inset-bottom,0)
+}
 
-/* ─ ヘッダー ─ */
+/* ─ SCREENS ─ */
+.screen{display:none;min-height:100vh}.screen.active{display:block}
+
+/* ─ HEADER ─ */
 .header{
   background:linear-gradient(160deg,#fff 0%,var(--bg) 100%);
   border-bottom:1px solid var(--border);
-  padding:env(safe-area-inset-top,0) 0 0;
+  padding:env(safe-area-inset-top,12px) 0 0;
+  position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)
 }
-.header-inner{padding:28px 24px 20px;text-align:center}
-.logo{font-size:13px;font-weight:700;color:var(--text2);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
-.greeting{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.4px}
+.header-inner{padding:20px 24px 18px;text-align:center}
+.logo{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px}
+.greeting{font-size:24px;font-weight:900;color:var(--text);letter-spacing:-.5px;line-height:1.3}
+.greeting-sub{font-size:14px;color:var(--text2);margin-top:4px}
+.streak-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;flex-wrap:wrap}
 .streak-badge{
   display:inline-flex;align-items:center;gap:6px;
   background:rgba(245,158,11,.1);border:1.5px solid rgba(245,158,11,.22);
-  border-radius:20px;padding:5px 14px;margin-top:10px;
-  font-size:13px;font-weight:700;color:var(--warn)
+  border-radius:22px;padding:6px 16px;font-size:13px;font-weight:700;color:var(--warn)
+}
+.date-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(74,114,245,.08);border:1.5px solid rgba(74,114,245,.15);
+  border-radius:22px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--accent)
 }
 
-/* ─ コンテンツ ─ */
-.body{padding:24px 20px;max-width:480px;margin:0 auto}
-.field{margin-bottom:24px}
-.field-label{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+/* ─ BODY ─ */
+.body{padding:20px 20px 40px;max-width:520px;margin:0 auto}
 
-/* ─ 体重入力 ─ */
-.weight-wrap{position:relative}
+/* ─ SECTION ─ */
+.section{margin-bottom:22px}
+.section-title{
+  font-size:12px;font-weight:800;color:var(--text2);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;
+  display:flex;align-items:center;gap:6px
+}
+
+/* ─ WEIGHT ─ */
+.weight-card{
+  background:var(--surface);border:2px solid var(--border);
+  border-radius:var(--radius);padding:24px 20px;
+  box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s;
+  position:relative
+}
+.weight-card:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px rgba(74,114,245,.1)}
+.weight-row{display:flex;align-items:flex-end;justify-content:center;gap:8px}
 .weight-input{
-  width:100%;background:var(--surface);border:2px solid var(--border);
-  border-radius:20px;padding:22px 56px 22px 22px;
-  font-size:44px;font-weight:800;color:var(--text);text-align:center;
-  outline:none;font-family:inherit;transition:border-color .15s,box-shadow .15s;
-  box-shadow:0 2px 12px rgba(79,125,240,.08)
+  background:none;border:none;outline:none;
+  font-size:64px;font-weight:900;color:var(--text);
+  width:180px;text-align:center;font-family:inherit;
+  letter-spacing:-2px;line-height:1
 }
-.weight-input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(79,125,240,.12)}
-.weight-unit{position:absolute;right:22px;bottom:26px;font-size:18px;color:var(--text2);font-weight:600}
+.weight-input::placeholder{color:var(--text3)}
+.weight-unit{font-size:22px;font-weight:700;color:var(--text2);padding-bottom:8px}
+.bmi-preview{
+  margin-top:14px;padding:10px 16px;
+  background:var(--surface2);border-radius:var(--radius-sm);
+  display:none;align-items:center;gap:12px
+}
+.bmi-preview.visible{display:flex}
+.bmi-preview-num{font-size:22px;font-weight:900;letter-spacing:-.5px}
+.bmi-preview-label{font-size:12px;font-weight:700;padding:2px 10px;border-radius:12px}
+.bmi-preview-tip{font-size:11px;color:var(--text3);margin-left:auto}
 
-/* ─ スライダー ─ */
-.slider-row{display:flex;align-items:center;gap:10px;margin-top:8px}
-.slider-row input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;background:var(--surface2);border:none;padding:0;cursor:pointer}
-.slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 2px 8px rgba(79,125,240,.35);cursor:pointer}
-.slider-val{font-size:18px;font-weight:800;color:var(--accent);min-width:36px;text-align:right}
-.slider-label{font-size:11px;color:var(--text3)}
+/* ─ SLIDER ─ */
+.slider-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.slider-row{display:flex;align-items:center;gap:12px;margin-top:6px}
+.slider-row input[type=range]{
+  flex:1;-webkit-appearance:none;appearance:none;height:6px;
+  border-radius:6px;background:var(--surface2);border:none;padding:0;cursor:pointer
+}
+.slider-row input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+  background:var(--accent);border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(74,114,245,.38);cursor:pointer
+}
+.slider-lbl{font-size:12px;color:var(--text3);min-width:26px;text-align:center}
+.slider-val{font-size:20px;font-weight:900;color:var(--accent);min-width:42px;text-align:right}
+.pain-indicators{display:flex;justify-content:space-between;margin-top:6px;padding:0 2px}
+.pain-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 
-/* ─ スター ─ */
+/* ─ STARS ─ */
+.star-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
 .star-row{display:flex;justify-content:center;gap:14px;margin-top:10px}
-.star{font-size:38px;cursor:pointer;color:var(--surface2);transition:all .15s;line-height:1}
-.star:hover{transform:scale(1.15)}
-.star.on{color:var(--warn);filter:drop-shadow(0 2px 6px rgba(245,158,11,.4))}
+.star{font-size:42px;cursor:pointer;color:var(--surface2);transition:all .14s;line-height:1;user-select:none}
+.star:hover{transform:scale(1.18)}
+.star.on{color:var(--warn);filter:drop-shadow(0 2px 8px rgba(245,158,11,.45))}
+.star-desc{text-align:center;font-size:12px;color:var(--text3);margin-top:8px;min-height:18px}
 
-/* ─ テキスト入力 ─ */
+/* ─ EXERCISE SLIDER ─ */
+.exercise-track{position:relative;height:10px;background:var(--surface2);border-radius:10px;overflow:hidden;margin:12px 0 4px}
+.exercise-fill{height:100%;border-radius:10px;background:var(--grad2);transition:width .2s}
+.exercise-val-row{display:flex;align-items:center;justify-content:space-between}
+
+/* ─ MEMO ─ */
 .memo-input{
-  width:100%;background:var(--surface);border:2px solid var(--border);
-  border-radius:16px;padding:14px 18px;font-size:15px;color:var(--text);
-  outline:none;font-family:inherit;resize:none;line-height:1.6;
-  transition:border-color .15s,box-shadow .15s
+  width:100%;background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;font-size:15px;color:var(--text);
+  outline:none;font-family:inherit;resize:none;line-height:1.65;
+  transition:border-color .15s,box-shadow .15s;display:block
 }
-.memo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,125,240,.12)}
+.memo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,114,245,.1)}
 
-/* ─ ボタン ─ */
+/* ─ SUBMIT ─ */
+.submit-area{margin-top:10px}
 .submit-btn{
   width:100%;background:var(--grad);color:#fff;border:none;
-  border-radius:18px;padding:18px;font-size:17px;font-weight:800;
+  border-radius:var(--radius);padding:20px;font-size:18px;font-weight:900;
   cursor:pointer;letter-spacing:-.3px;
-  box-shadow:0 4px 18px rgba(79,125,240,.38);transition:all .2s;
-  margin-top:8px
+  box-shadow:0 4px 20px rgba(74,114,245,.38);transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px
 }
-.submit-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(79,125,240,.48)}
+.submit-btn:hover{filter:brightness(1.06);transform:translateY(-2px);box-shadow:0 8px 28px rgba(74,114,245,.45)}
+.submit-btn:active{transform:translateY(0)}
 .submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
 
-/* ─ 完了画面 ─ */
-.done{text-align:center;padding:80px 24px}
-.done-icon{font-size:64px;margin-bottom:20px;animation:popIn .4s ease}
-@keyframes popIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
-.done-title{font-size:26px;font-weight:800;color:var(--text);margin-bottom:10px;letter-spacing:-.5px}
-.done-sub{font-size:15px;color:var(--text2);line-height:1.8}
-.done-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:24px 0;max-width:300px;margin-left:auto;margin-right:auto}
-.done-metric{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
-.dm-label{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
-.dm-value{font-size:20px;font-weight:800;color:var(--text)}
+/* ─ ALREADY DONE ─ */
+.already-box{
+  background:rgba(16,185,129,.08);border:2px solid rgba(16,185,129,.25);
+  border-radius:var(--radius);padding:20px;text-align:center;margin-top:4px
+}
+.already-icon{font-size:36px;margin-bottom:10px}
+.already-title{font-size:17px;font-weight:800;color:var(--accent2);margin-bottom:4px}
+.already-sub{font-size:13px;color:var(--text2);line-height:1.6}
 
-/* ─ エラー ─ */
-.error{text-align:center;padding:80px 24px}
-.error-icon{font-size:48px;margin-bottom:16px}
-.error-text{font-size:16px;color:var(--text2)}
+/* ─ COMPLETION SCREEN ─ */
+.completion{padding:40px 24px 60px;max-width:480px;margin:0 auto;text-align:center}
+.completion-icon{font-size:64px;margin-bottom:14px;animation:pop .5s cubic-bezier(.25,.46,.45,.94)}
+@keyframes pop{0%{transform:scale(.5);opacity:0}80%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.completion-title{font-size:26px;font-weight:900;color:var(--text);letter-spacing:-.5px;margin-bottom:6px}
+.completion-sub{font-size:15px;color:var(--text2);margin-bottom:28px;line-height:1.6}
+.result-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.result-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow)
+}
+.rc-label{font-size:9px;font-weight:800;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.rc-val{font-size:24px;font-weight:900;color:var(--text);letter-spacing:-.5px}
+.rc-unit{font-size:12px;color:var(--text2);font-weight:500}
+.rc-sub{font-size:11px;color:var(--text2);margin-top:4px}
+.progress-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:24px;text-align:left;box-shadow:var(--shadow)}
+.prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.prog-title{font-size:13px;font-weight:700;color:var(--text)}
+.prog-pct{font-size:20px;font-weight:900;color:var(--accent2)}
+.prog-bar{background:var(--surface2);border-radius:20px;height:8px;overflow:hidden}
+.prog-fill{height:100%;border-radius:20px;background:var(--grad2);transition:width 1s ease}
+.prog-sub{font-size:11px;color:var(--text2);margin-top:6px;text-align:right}
+.homework-box{
+  background:rgba(245,158,11,.08);border:1.5px solid rgba(245,158,11,.22);
+  border-radius:var(--radius);padding:18px;margin-bottom:24px;text-align:left
+}
+.hw-title{font-size:13px;font-weight:800;color:var(--warn);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.hw-text{font-size:14px;color:var(--text);line-height:1.7}
+.next-plan-box{
+  background:rgba(74,114,245,.07);border:1.5px solid rgba(74,114,245,.18);
+  border-radius:var(--radius);padding:18px;margin-bottom:24px;text-align:left
+}
+.np-title{font-size:13px;font-weight:800;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.np-text{font-size:14px;color:var(--text);line-height:1.7}
+.done-btn{
+  width:100%;background:var(--surface);border:2px solid var(--border);
+  border-radius:var(--radius);padding:16px;font-size:16px;font-weight:700;
+  color:var(--text2);cursor:pointer;font-family:inherit;transition:all .2s
+}
+.done-btn:hover{border-color:var(--accent);color:var(--accent)}
 
-/* ─ ローディング ─ */
-.loading{text-align:center;padding:80px 24px;color:var(--text2);font-size:15px}
+/* ─ ERROR SCREEN ─ */
+.error-screen{padding:80px 24px;text-align:center;max-width:400px;margin:0 auto}
+.error-icon{font-size:56px;margin-bottom:18px;opacity:.6}
+.error-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px}
+.error-sub{font-size:14px;color:var(--text2);line-height:1.7}
+
+/* ─ LOADING ─ */
+.loading{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:14px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─ RESPONSIVE ─ */
+@media(max-width:380px){
+  .weight-input{font-size:52px}
+  .star{font-size:36px}
+  .body{padding:16px 16px 40px}
+}
 </style>
 </head>
 <body>
-<div id="app">
-  <div class="loading">読み込み中...</div>
+
+<!-- LOADING -->
+<div class="loading" id="screenLoading">
+  <div class="spinner"></div>
+  <div style="font-size:14px;color:var(--text3)">読み込み中...</div>
 </div>
 
+<!-- ERROR SCREEN -->
+<div class="screen" id="screenError">
+  <div class="error-screen">
+    <div class="error-icon">⚠️</div>
+    <div class="error-title">ページが見つかりません</div>
+    <div class="error-sub" id="errorMsg">URLが正しくないか、患者情報が存在しません。<br>担当スタッフにお問い合わせください。</div>
+  </div>
+</div>
+
+<!-- MAIN RECORD SCREEN -->
+<div class="screen" id="screenMain">
+  <div class="header">
+    <div class="header-inner">
+      <div class="logo">BodyLog</div>
+      <div class="greeting" id="greeting">こんにちは！</div>
+      <div class="greeting-sub" id="greetingSub">今日の状態を記録しましょう</div>
+      <div class="streak-row">
+        <div class="streak-badge" id="streakBadge">🔥 0日連続</div>
+        <div class="date-badge" id="dateBadge">📅 —</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- 目標表示 -->
+    <div id="goalSection" style="display:none;margin-bottom:20px">
+      <div style="background:rgba(16,185,129,.08);border:1.5px solid rgba(16,185,129,.2);border-radius:var(--radius);padding:14px 18px">
+        <div style="font-size:11px;font-weight:800;color:var(--accent2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">🎯 あなたの目標</div>
+        <div id="goalText" style="font-size:14px;color:var(--text);line-height:1.65"></div>
+      </div>
+    </div>
+
+    <!-- 今日すでに記録済み -->
+    <div id="alreadySection" style="display:none">
+      <div class="already-box">
+        <div class="already-icon">✅</div>
+        <div class="already-title">今日の記録は完了しています</div>
+        <div class="already-sub">お疲れ様でした！<br>また明日も記録を続けましょう 💪</div>
+      </div>
+      <button class="submit-btn" style="margin-top:14px;background:var(--surface);color:var(--accent);border:2px solid var(--accent);box-shadow:none" onclick="showRecordForm()">もう一度記録する</button>
+    </div>
+
+    <!-- 記録フォーム -->
+    <div id="recordForm">
+
+      <!-- 体重 -->
+      <div class="section">
+        <div class="section-title">⚖️ 体重</div>
+        <div class="weight-card">
+          <div class="weight-row">
+            <input
+              type="number" class="weight-input" id="weightInput"
+              placeholder="—" step="0.1" min="20" max="300"
+              inputmode="decimal" oninput="onWeightInput(this.value)"
+            >
+            <span class="weight-unit">kg</span>
+          </div>
+          <div class="bmi-preview" id="bmiPreview">
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">BMI</div>
+              <div class="bmi-preview-num" id="bmiPreviewNum">—</div>
+            </div>
+            <div>
+              <div class="bmi-preview-label" id="bmiPreviewLabel">—</div>
+            </div>
+            <div class="bmi-preview-tip" id="bmiPreviewTip"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 痛みレベル -->
+      <div class="section">
+        <div class="section-title">🩹 痛み・不快感レベル</div>
+        <div class="slider-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:12px;color:var(--accent2)">痛みなし</span>
+            <span id="painLabel" style="font-size:12px;color:var(--text2);font-weight:600">普通</span>
+            <span style="font-size:12px;color:var(--danger)">激しい痛み</span>
+          </div>
+          <div class="slider-row">
+            <span class="slider-lbl">1</span>
+            <input type="range" min="1" max="10" step="1" value="5" id="painSlider" oninput="onPainInput(this.value)">
+            <span class="slider-lbl">10</span>
+            <span class="slider-val" id="painVal">5</span>
+          </div>
+          <div class="pain-indicators">
+            <div class="pain-dot" style="background:#10b981"></div>
+            <div class="pain-dot" style="background:#34d399"></div>
+            <div class="pain-dot" style="background:#6ee7b7"></div>
+            <div class="pain-dot" style="background:#a3e635"></div>
+            <div class="pain-dot" style="background:#fbbf24"></div>
+            <div class="pain-dot" style="background:#f59e0b"></div>
+            <div class="pain-dot" style="background:#fb923c"></div>
+            <div class="pain-dot" style="background:#f97316"></div>
+            <div class="pain-dot" style="background:#ef4444"></div>
+            <div class="pain-dot" style="background:#dc2626"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 姿勢 -->
+      <div class="section">
+        <div class="section-title">🧍 今日の姿勢スコア</div>
+        <div class="star-card">
+          <div class="star-row" id="postureStars">
+            <span class="star" onclick="setPosture(1)">★</span>
+            <span class="star" onclick="setPosture(2)">★</span>
+            <span class="star" onclick="setPosture(3)">★</span>
+            <span class="star" onclick="setPosture(4)">★</span>
+            <span class="star" onclick="setPosture(5)">★</span>
+          </div>
+          <div class="star-desc" id="postureDesc">タップして評価してください</div>
+        </div>
+      </div>
+
+      <!-- モチベーション -->
+      <div class="section">
+        <div class="section-title">💪 モチベーション</div>
+        <div class="star-card">
+          <div class="star-row" id="motiStars">
+            <span class="star" onclick="setMoti(1)">★</span>
+            <span class="star" onclick="setMoti(2)">★</span>
+            <span class="star" onclick="setMoti(3)">★</span>
+            <span class="star" onclick="setMoti(4)">★</span>
+            <span class="star" onclick="setMoti(5)">★</span>
+          </div>
+          <div class="star-desc" id="motiDesc">タップして評価してください</div>
+        </div>
+      </div>
+
+      <!-- 運動達成率 -->
+      <div class="section">
+        <div class="section-title">🏃 今週の運動達成率</div>
+        <div class="slider-card">
+          <div class="exercise-val-row">
+            <span style="font-size:13px;color:var(--text2)">目標に対して</span>
+            <span id="exerciseValText" style="font-size:24px;font-weight:900;color:var(--accent2)">50%</span>
+          </div>
+          <div style="position:relative;margin:12px 0 4px">
+            <input type="range" min="0" max="100" step="5" value="50" id="exerciseSlider"
+              oninput="onExerciseInput(this.value)"
+              style="-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:8px;background:var(--surface2);border:none;padding:0;cursor:pointer">
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3)">
+            <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- メモ -->
+      <div class="section">
+        <div class="section-title">📝 今日のメモ（任意）</div>
+        <textarea class="memo-input" id="memoInput" rows="3" placeholder="体調、食事、気になること、ひとことなど..."></textarea>
+      </div>
+
+      <!-- 送信ボタン -->
+      <div class="submit-area">
+        <button class="submit-btn" id="submitBtn" onclick="submitRecord()">
+          <span>📤</span>
+          <span>今日の記録を送信する</span>
+        </button>
+      </div>
+
+    </div><!-- /recordForm -->
+  </div><!-- /body -->
+</div><!-- /screenMain -->
+
+<!-- COMPLETION SCREEN -->
+<div class="screen" id="screenComplete">
+  <div style="background:linear-gradient(160deg,#fff,var(--bg));min-height:100vh;padding-top:env(safe-area-inset-top,0)">
+    <div class="completion">
+      <div class="completion-icon">🎉</div>
+      <div class="completion-title">記録完了！</div>
+      <div class="completion-sub" id="completeMsg">お疲れ様でした。<br>継続は力なり、明日もまた記録しましょう！</div>
+
+      <!-- 結果カード -->
+      <div class="result-cards" id="resultCards"></div>
+
+      <!-- 進捗バー -->
+      <div class="progress-section" id="progressSection" style="display:none">
+        <div class="prog-header">
+          <div class="prog-title">🎯 目標達成率</div>
+          <div class="prog-pct" id="progPct">0%</div>
+        </div>
+        <div class="prog-bar">
+          <div class="prog-fill" id="progFill" style="width:0%"></div>
+        </div>
+        <div class="prog-sub" id="progSub">目標体重まで —kg</div>
+      </div>
+
+      <!-- ホームワーク -->
+      <div class="homework-box" id="homeworkBox" style="display:none">
+        <div class="hw-title">📌 今日の課題・ホームワーク</div>
+        <div class="hw-text" id="homeworkText"></div>
+      </div>
+
+      <!-- 次回プラン -->
+      <div class="next-plan-box" id="nextPlanBox" style="display:none">
+        <div class="np-title">🗓️ 次回の予定</div>
+        <div class="np-text" id="nextPlanText"></div>
+      </div>
+
+      <!-- ストリーク -->
+      <div style="background:rgba(245,158,11,.08);border:1.5px solid rgba(245,158,11,.2);border-radius:var(--radius);padding:16px;margin-bottom:22px;display:flex;align-items:center;gap:14px">
+        <div style="font-size:36px">🔥</div>
+        <div>
+          <div style="font-size:18px;font-weight:900;color:var(--warn)" id="completionStreak">— 日連続</div>
+          <div style="font-size:12px;color:var(--text2)">継続記録達成中！</div>
+        </div>
+      </div>
+
+      <button class="done-btn" onclick="location.reload()">✨ 閉じる</button>
+    </div>
+  </div>
+</div><!-- /screenComplete -->
+
 <script>
-const API = '';
-let patientId = null;
-let patientData = null;
-let motiVal = 3, postureVal = 3;
+/* ═══════════════════════════════
+   STATE
+═══════════════════════════════ */
+let patient = null;
+let postureVal = 0;
+let motiVal = 0;
 let submitted = false;
 
-async function apiFetch(method, path, body) {
-  const res = await fetch(API + path, {
-    method, headers:{'Content-Type':'application/json'},
-    body: body ? JSON.stringify(body) : undefined
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+/* ═══════════════════════════════
+   INIT
+═══════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+
+  if (!id) {
+    showScreen('screenError');
+    document.getElementById('errorMsg').textContent = 'URLに患者IDが含まれていません。\n担当スタッフにお問い合わせください。';
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/patients/${id}`);
+    if (!res.ok) throw new Error('Not found');
+    patient = await res.json();
+  } catch {
+    showScreen('screenError');
+    return;
+  }
+
+  initScreen();
+});
+
+function showScreen(id) {
+  document.getElementById('screenLoading').style.display = 'none';
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
 }
 
-function setStar(key, v) {
-  if (key === 'moti') motiVal = v;
-  if (key === 'posture') postureVal = v;
-  document.querySelectorAll(`#${key}Stars .star`).forEach((s,i) => s.classList.toggle('on', i < v));
+function initScreen() {
+  const today = new Date().toISOString().slice(0, 10);
+  const todayRec = (patient.patientRecords || []).find(r => r.date === today);
+
+  // ヘッダー
+  const hour = new Date().getHours();
+  const timeGreet = hour < 11 ? 'おはようございます' : hour < 18 ? 'こんにちは' : 'こんばんは';
+  document.getElementById('greeting').textContent = `${timeGreet}、${patient.name.split(' ')[0]}さん！`;
+  document.getElementById('greetingSub').textContent = todayRec ? '今日の記録を確認してください' : '今日の状態を記録しましょう 📋';
+
+  // ストリーク
+  const streak = calcStreak();
+  document.getElementById('streakBadge').textContent = `🔥 ${streak}日連続`;
+
+  // 日付
+  const dateStr = new Date().toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
+  document.getElementById('dateBadge').textContent = `📅 ${dateStr}`;
+
+  // 目標表示
+  if (patient.finalGoal) {
+    document.getElementById('goalSection').style.display = '';
+    document.getElementById('goalText').textContent = patient.finalGoal;
+  }
+
+  // 今日すでに記録済みの場合
+  if (todayRec) {
+    document.getElementById('alreadySection').style.display = '';
+    document.getElementById('recordForm').style.display = 'none';
+  } else {
+    document.getElementById('alreadySection').style.display = 'none';
+    document.getElementById('recordForm').style.display = '';
+  }
+
+  showScreen('screenMain');
 }
 
-function calcAge(birthdate) {
-  if (!birthdate) return null;
-  const b = new Date(birthdate), n = new Date();
-  let a = n.getFullYear() - b.getFullYear();
-  if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--;
-  return a;
+function showRecordForm() {
+  document.getElementById('alreadySection').style.display = 'none';
+  document.getElementById('recordForm').style.display = '';
 }
 
-function calcBMI(weight, height) {
-  if (!weight || !height) return null;
-  return +(weight / (height/100)**2).toFixed(1);
-}
-
-function calcBMR(weight, height, age, gender) {
-  if (!weight || !height || !age) return null;
-  return Math.round(gender === '女性'
-    ? 10*weight + 6.25*height - 5*age - 161
-    : 10*weight + 6.25*height - 5*age + 5);
-}
-
-function bmiLabel(bmi) {
-  if (bmi < 18.5) return '低体重';
-  if (bmi < 25) return '標準';
-  if (bmi < 30) return '肥満(1度)';
-  return '肥満(2度以上)';
-}
-
-function calcStreak(records) {
-  if (!records.length) return 0;
-  const sorted = [...records].sort((a,b) => b.date.localeCompare(a.date));
-  let streak = 0, cur = new Date(); cur.setHours(0,0,0,0);
-  for (const r of sorted) {
-    const d = new Date(r.date); d.setHours(0,0,0,0);
-    if (Math.round((cur-d)/86400000) <= streak) { streak++; cur.setDate(cur.getDate()-1); } else break;
+function calcStreak() {
+  const recs = [...(patient.records || []), ...(patient.patientRecords || [])]
+    .map(r => r.date).filter(Boolean);
+  const unique = [...new Set(recs)].sort().reverse();
+  if (!unique.length) return 0;
+  let streak = 0;
+  let d = new Date();
+  for (let i = 0; i < 365; i++) {
+    const ds = d.toISOString().slice(0, 10);
+    if (unique.includes(ds)) { streak++; }
+    else if (i > 0) { break; }
+    d.setDate(d.getDate() - 1);
   }
   return streak;
 }
 
-async function init() {
-  const params = new URLSearchParams(location.search);
-  patientId = params.get('id');
-  if (!patientId) { showError('URLが正しくありません'); return; }
-  try {
-    patientData = await apiFetch('GET', '/api/patients/' + patientId);
-    render();
-  } catch {
-    showError('患者情報が見つかりません');
+/* ═══════════════════════════════
+   BMI PREVIEW
+═══════════════════════════════ */
+function calcBMI(w, h) {
+  if (!w || !h) return null;
+  return +(w / (h / 100) ** 2).toFixed(1);
+}
+function bmiInfo(bmi) {
+  if (bmi < 18.5) return { label:'低体重', color:'#4a72f5', bg:'rgba(74,114,245,.12)' };
+  if (bmi < 25)   return { label:'標準体重 ✓', color:'#10b981', bg:'rgba(16,185,129,.12)' };
+  if (bmi < 30)   return { label:'肥満(1度)', color:'#f59e0b', bg:'rgba(245,158,11,.12)' };
+  return { label:'肥満(2度以上)', color:'#ef4444', bg:'rgba(239,68,68,.12)' };
+}
+
+function onWeightInput(v) {
+  const w = parseFloat(v);
+  const h = patient?.height;
+  const preview = document.getElementById('bmiPreview');
+  if (w && h) {
+    const bmi = calcBMI(w, h);
+    const info = bmiInfo(bmi);
+    document.getElementById('bmiPreviewNum').textContent = bmi;
+    document.getElementById('bmiPreviewNum').style.color = info.color;
+    const lbl = document.getElementById('bmiPreviewLabel');
+    lbl.textContent = info.label;
+    lbl.style.background = info.bg;
+    lbl.style.color = info.color;
+    // 目標体重とのギャップ
+    if (patient.targetWeight) {
+      const diff = (w - patient.targetWeight).toFixed(1);
+      document.getElementById('bmiPreviewTip').textContent = diff <= 0 ? '🎉 目標達成！' : `目標まで -${diff}kg`;
+    } else {
+      document.getElementById('bmiPreviewTip').textContent = '';
+    }
+    preview.classList.add('visible');
+  } else {
+    preview.classList.remove('visible');
   }
 }
 
-function render() {
-  const p = patientData;
-  const today = new Date().toISOString().slice(0,10);
-  const allRecs = [...(p.records||[]), ...(p.patientRecords||[])];
-  const streak = calcStreak(allRecs);
-  const alreadyDone = (p.patientRecords||[]).some(r => r.date === today && !r.imported);
-  const h = new Date().getHours();
-  const greet = h < 12 ? 'おはようございます' : h < 18 ? 'こんにちは' : 'こんばんは';
+/* ═══════════════════════════════
+   PAIN SLIDER
+═══════════════════════════════ */
+const painLabels = ['', '全然問題なし', 'ほぼなし', '少しある', '気になる', '普通', 'やや辛い', '辛い', 'かなり辛い', '激しい痛み', '最高に痛い'];
+const painColors = ['', '#10b981','#34d399','#6ee7b7','#a3e635','#fbbf24','#f59e0b','#fb923c','#f97316','#ef4444','#dc2626'];
 
-  if (alreadyDone) { showDone(p); return; }
-
-  document.getElementById('app').innerHTML = `
-    <div class="header">
-      <div class="header-inner">
-        <div class="logo">BodyLog</div>
-        <div class="greeting">${greet}、${p.name}さん</div>
-        ${streak > 0 ? `<div class="streak-badge">🔥 ${streak}日連続記録中</div>` : ''}
-      </div>
-    </div>
-    <div class="body">
-
-      <div class="field">
-        <div class="field-label">今日の体重</div>
-        <div class="weight-wrap">
-          <input type="number" class="weight-input" id="inp-weight" placeholder="68.0" step="0.1" inputmode="decimal" />
-          <span class="weight-unit">kg</span>
-        </div>
-        <div id="bmiPreview" style="margin-top:8px;font-size:12px;color:var(--text2);text-align:center;min-height:18px"></div>
-      </div>
-
-      <div class="field">
-        <div class="field-label">痛みレベル（1=なし　10=非常につらい）</div>
-        <div class="slider-row">
-          <span class="slider-label">1</span>
-          <input type="range" min="1" max="10" step="1" value="3" id="inp-pain"
-            oninput="document.getElementById('pain-val').textContent=this.value" />
-          <span class="slider-label">10</span>
-          <span class="slider-val" id="pain-val">3</span>
-        </div>
-      </div>
-
-      <div class="field">
-        <div class="field-label">姿勢スコア（1=悪い　5=良い）</div>
-        <div class="star-row" id="postureStars">
-          <span class="star" onclick="setStar('posture',1)">★</span>
-          <span class="star" onclick="setStar('posture',2)">★</span>
-          <span class="star" onclick="setStar('posture',3)">★</span>
-          <span class="star" onclick="setStar('posture',4)">★</span>
-          <span class="star" onclick="setStar('posture',5)">★</span>
-        </div>
-      </div>
-
-      <div class="field">
-        <div class="field-label">モチベーション（1=低い　5=高い）</div>
-        <div class="star-row" id="motiStars">
-          <span class="star" onclick="setStar('moti',1)">★</span>
-          <span class="star" onclick="setStar('moti',2)">★</span>
-          <span class="star" onclick="setStar('moti',3)">★</span>
-          <span class="star" onclick="setStar('moti',4)">★</span>
-          <span class="star" onclick="setStar('moti',5)">★</span>
-        </div>
-      </div>
-
-      <div class="field">
-        <div class="field-label">今週の運動達成率</div>
-        <div class="slider-row">
-          <span class="slider-label">0%</span>
-          <input type="range" min="0" max="100" step="10" value="50" id="inp-exercise"
-            oninput="document.getElementById('ex-val').textContent=this.value+'%'" />
-          <span class="slider-label">100%</span>
-          <span class="slider-val" id="ex-val">50%</span>
-        </div>
-      </div>
-
-      <div class="field">
-        <div class="field-label">今日のメモ（任意）</div>
-        <textarea class="memo-input" id="inp-memo" rows="3" placeholder="体調・気になること・頑張ったことなど"></textarea>
-      </div>
-
-      <button class="submit-btn" onclick="submit()">記録する</button>
-    </div>`;
-
-  // 初期スター
-  setStar('posture', 3); setStar('moti', 3);
-
-  // BMIプレビュー
-  if (p.height) {
-    document.getElementById('inp-weight').addEventListener('input', function() {
-      const w = parseFloat(this.value);
-      const bmi = calcBMI(w, p.height);
-      const el = document.getElementById('bmiPreview');
-      if (bmi) el.textContent = `BMI: ${bmi}（${bmiLabel(bmi)}）`;
-      else el.textContent = '';
-    });
-  }
+function onPainInput(v) {
+  const n = parseInt(v);
+  document.getElementById('painVal').textContent = n;
+  document.getElementById('painVal').style.color = painColors[n] || 'var(--accent)';
+  document.getElementById('painLabel').textContent = painLabels[n] || '';
+  document.getElementById('painLabel').style.color = painColors[n] || 'var(--text2)';
 }
 
-async function submit() {
+/* ═══════════════════════════════
+   POSTURE & MOTI STARS
+═══════════════════════════════ */
+const postureDescs = ['', 'かなり悪い 😟', '少し悪い 😕', '普通 😐', '良い 🙂', 'とても良い 😊'];
+const motiDescs = ['', '全くやる気なし 😞', '少し低め 😐', '普通 🙂', 'やる気あり 💪', '最高に燃えてる 🔥'];
+
+function setPosture(v) {
+  postureVal = v;
+  document.querySelectorAll('#postureStars .star').forEach((s, i) => s.classList.toggle('on', i < v));
+  document.getElementById('postureDesc').textContent = postureDescs[v] || '';
+}
+function setMoti(v) {
+  motiVal = v;
+  document.querySelectorAll('#motiStars .star').forEach((s, i) => s.classList.toggle('on', i < v));
+  document.getElementById('motiDesc').textContent = motiDescs[v] || '';
+}
+
+/* ═══════════════════════════════
+   EXERCISE SLIDER
+═══════════════════════════════ */
+function onExerciseInput(v) {
+  const n = parseInt(v);
+  document.getElementById('exerciseValText').textContent = n + '%';
+  const color = n >= 80 ? 'var(--accent2)' : n >= 50 ? 'var(--accent)' : n >= 30 ? 'var(--warn)' : 'var(--danger)';
+  document.getElementById('exerciseValText').style.color = color;
+}
+
+/* ═══════════════════════════════
+   SUBMIT
+═══════════════════════════════ */
+async function submitRecord() {
   if (submitted) return;
-  const w = parseFloat(document.getElementById('inp-weight').value);
-  if (!w) { alert('体重を入力してください'); return; }
-  const btn = document.querySelector('.submit-btn');
-  btn.disabled = true; btn.textContent = '送信中...';
-  submitted = true;
+  const weight = parseFloat(document.getElementById('weightInput').value) || null;
+  const pain = parseInt(document.getElementById('painSlider').value);
+  const exercise = parseInt(document.getElementById('exerciseSlider').value);
+  const memo = document.getElementById('memoInput').value.trim();
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span><span>送信中...</span>';
+
   try {
-    await apiFetch('POST', `/api/patients/${patientId}/self-record`, {
-      weight: w,
-      pain: parseInt(document.getElementById('inp-pain').value),
-      posture: postureVal,
-      moti: motiVal,
-      exercise: parseInt(document.getElementById('inp-exercise').value),
-      memo: document.getElementById('inp-memo').value,
+    const res = await fetch(`/api/patients/${patient.id}/self-record`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weight, pain, posture: postureVal || null, moti: motiVal || null, exercise, memo })
     });
-    // 最新データで完了画面
-    patientData = await apiFetch('GET', '/api/patients/' + patientId);
-    showDone(patientData, w);
-  } catch {
-    btn.disabled = false; btn.textContent = '記録する';
-    submitted = false;
-    alert('送信に失敗しました。もう一度お試しください。');
+    if (!res.ok) throw new Error('submit failed');
+    submitted = true;
+    showCompletionScreen({ weight, pain, posture: postureVal, moti: motiVal, exercise, memo });
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = '<span>📤</span><span>今日の記録を送信する</span>';
+    alert('送信に失敗しました。ネットワーク接続を確認してください。');
   }
 }
 
-function showDone(p, justRecordedWeight) {
-  const a = calcAge(p.birthdate);
-  const latestW = justRecordedWeight || p.patientRecords?.slice(-1)[0]?.weight || p.records?.slice(-1)[0]?.weight;
-  const bmi = calcBMI(latestW, p.height);
-  const bmr = calcBMR(latestW, p.height, a, p.gender);
-  const allRecs = [...(p.records||[]), ...(p.patientRecords||[])];
-  const streak = calcStreak(allRecs);
+/* ═══════════════════════════════
+   COMPLETION SCREEN
+═══════════════════════════════ */
+function showCompletionScreen(rec) {
+  const h = patient.height;
+  const bmi = (rec.weight && h) ? calcBMI(rec.weight, h) : null;
+  const a = patient.birthdate ? (() => {
+    const b = new Date(patient.birthdate), n = new Date();
+    let age = n.getFullYear() - b.getFullYear();
+    if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) age--;
+    return age;
+  })() : null;
+  const bmr = (rec.weight && h && a) ? (() => {
+    const base = 10 * rec.weight + 6.25 * h - 5 * a;
+    return Math.round(patient.gender === '女性' ? base - 161 : base + 5);
+  })() : null;
 
-  document.getElementById('app').innerHTML = `
-    <div class="header">
-      <div class="header-inner">
-        <div class="logo">BodyLog</div>
-        <div class="greeting">${p.name}さん</div>
-        ${streak > 0 ? `<div class="streak-badge">🔥 ${streak}日連続記録中</div>` : ''}
-      </div>
-    </div>
-    <div class="body">
-      <div class="done">
-        <div class="done-icon">🎉</div>
-        <div class="done-title">今日の記録完了！</div>
-        <div class="done-sub">お疲れ様でした。<br>毎日の記録が目標達成への近道です。</div>
-        ${latestW || bmi || bmr ? `
-        <div class="done-metrics">
-          ${latestW ? `<div class="done-metric"><div class="dm-label">今日の体重</div><div class="dm-value">${(+latestW).toFixed(1)} <span style="font-size:13px;color:var(--text2)">kg</span></div></div>` : ''}
-          ${bmi ? `<div class="done-metric"><div class="dm-label">BMI</div><div class="dm-value">${bmi}</div></div>` : ''}
-          ${bmr ? `<div class="done-metric" style="grid-column:1/-1"><div class="dm-label">基礎代謝</div><div class="dm-value">${bmr} <span style="font-size:13px;color:var(--text2)">kcal/日</span></div></div>` : ''}
-          ${p.targetWeight && latestW ? `<div class="done-metric" style="grid-column:1/-1"><div class="dm-label">目標まで</div><div class="dm-value">${(+(+latestW - +p.targetWeight).toFixed(1))} <span style="font-size:13px;color:var(--text2)">kg</span></div></div>` : ''}
-        </div>` : ''}
-        <div style="font-size:13px;color:var(--text3);margin-top:8px">次回の記録もお待ちしています 😊</div>
-      </div>
-    </div>`;
+  // メッセージ
+  const msgs = [
+    'お疲れ様でした！継続は力なり 💪',
+    '素晴らしい！記録を続けましょう 🌟',
+    '頑張っています！明日も一緒に 🎯',
+    'Keep it up！着実に前進しています ✨'
+  ];
+  document.getElementById('completeMsg').innerHTML = msgs[Math.floor(Math.random() * msgs.length)];
+
+  // 結果カード
+  const cards = [
+    rec.weight ? `<div class="result-card"><div class="rc-label">今日の体重</div><div class="rc-val">${rec.weight}<span class="rc-unit">kg</span></div></div>` : '',
+    bmi ? (() => {
+      const info = bmiInfo(bmi);
+      return `<div class="result-card"><div class="rc-label">BMI</div><div class="rc-val" style="color:${info.color}">${bmi}</div><div class="rc-sub" style="color:${info.color}">${info.label}</div></div>`;
+    })() : '',
+    bmr ? `<div class="result-card"><div class="rc-label">基礎代謝</div><div class="rc-val">${bmr}<span class="rc-unit">kcal</span></div><div class="rc-sub">消費の基準値</div></div>` : '',
+    rec.pain != null ? `<div class="result-card"><div class="rc-label">痛みレベル</div><div class="rc-val">${rec.pain}<span class="rc-unit">/10</span></div></div>` : '',
+  ].filter(Boolean);
+  // 2個ずつ配置
+  document.getElementById('resultCards').innerHTML = cards.join('');
+
+  // 進捗
+  if (rec.weight && patient.targetWeight && patient.startWeight) {
+    const prog = Math.min(100, Math.max(0, Math.round((patient.startWeight - rec.weight) / (patient.startWeight - patient.targetWeight) * 100)));
+    const remaining = +(rec.weight - patient.targetWeight).toFixed(1);
+    document.getElementById('progressSection').style.display = '';
+    document.getElementById('progPct').textContent = prog + '%';
+    document.getElementById('progSub').textContent = remaining <= 0 ? '🎉 目標体重達成！' : `目標まであと ${remaining}kg`;
+    setTimeout(() => document.getElementById('progFill').style.width = prog + '%', 300);
+  }
+
+  // ホームワーク（最新セッションから）
+  const lastSession = (patient.sessions || []).slice(-1)[0];
+  if (lastSession?.homework) {
+    document.getElementById('homeworkBox').style.display = '';
+    document.getElementById('homeworkText').textContent = lastSession.homework;
+  }
+  if (lastSession?.nextPlan) {
+    document.getElementById('nextPlanBox').style.display = '';
+    document.getElementById('nextPlanText').textContent = lastSession.nextPlan;
+  }
+
+  // ストリーク
+  const streak = calcStreak() + 1;
+  document.getElementById('completionStreak').textContent = `${streak} 日連続`;
+
+  showScreen('screenComplete');
+
+  // アニメーション
+  setTimeout(() => {
+    document.querySelector('.prog-fill')?.style && (document.getElementById('progFill').style.width = '');
+  }, 100);
 }
 
-function showError(msg) {
-  document.getElementById('app').innerHTML = `
-    <div class="error">
-      <div class="error-icon">😔</div>
-      <div class="error-text">${msg}</div>
-    </div>`;
-}
+/* ═══════════════════════════════
+   EXERCISE SLIDER STYLING
+═══════════════════════════════ */
+document.getElementById('exerciseSlider')?.addEventListener('input', function() {
+  const pct = (this.value - this.min) / (this.max - this.min) * 100;
+  this.style.background = `linear-gradient(90deg, #10b981 ${pct}%, var(--surface2) ${pct}%)`;
+});
 
-init();
+/* ═══════════════════════════════
+   PAIN SLIDER INIT
+═══════════════════════════════ */
+onPainInput(5);
+setPosture(3);
+setMoti(3);
+onExerciseInput(50);
 </script>
 </body>
 </html>

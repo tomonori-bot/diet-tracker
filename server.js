@@ -19,21 +19,37 @@ function readDB() {
   catch { return { patients: [] }; }
 }
 function writeDB(db) {
+  const dir = path.dirname(DATA_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2));
 }
 
 /* ─── 患者一覧取得 ─── */
 app.get('/api/patients', (req, res) => {
   const db = readDB();
-  res.json(db.patients.map(p => ({
-    id: p.id, name: p.name, kana: p.kana, memo: p.memo,
-    gender: p.gender, birthdate: p.birthdate,
-    height: p.height, targetWeight: p.targetWeight,
-    createdAt: p.createdAt,
-    latestRecord: p.records?.slice(-1)[0] || null,
-    recordCount: p.records?.length || 0,
-    sessionCount: p.sessions?.length || 0
-  })));
+  const { q } = req.query;
+  let list = db.patients;
+  if (q) {
+    const qLower = q.toLowerCase();
+    list = list.filter(p =>
+      p.name?.includes(q) || p.kana?.toLowerCase().includes(qLower) ||
+      p.purpose?.includes(q) || p.memo?.includes(q)
+    );
+  }
+  res.json(list.map(p => {
+    const unimported = (p.patientRecords || []).filter(r => !r.imported).length;
+    return {
+      id: p.id, name: p.name, kana: p.kana, memo: p.memo,
+      gender: p.gender, birthdate: p.birthdate,
+      height: p.height, targetWeight: p.targetWeight,
+      startWeight: p.startWeight, purpose: p.purpose,
+      createdAt: p.createdAt,
+      latestRecord: p.records?.slice(-1)[0] || null,
+      recordCount: p.records?.length || 0,
+      sessionCount: p.sessions?.length || 0,
+      unimportedCount: unimported
+    };
+  }));
 });
 
 /* ─── 患者作成 ─── */
@@ -55,6 +71,7 @@ app.post('/api/patients', (req, res) => {
     finalGoal: req.body.finalGoal || '',
     midGoal: req.body.midGoal || '',
     karteInfo: req.body.karteInfo || '',
+    tags: req.body.tags || [],
     createdAt: new Date().toISOString(),
     records: [],
     sessions: [],
@@ -99,22 +116,35 @@ app.post('/api/patients/:id/records', (req, res) => {
   const rec = {
     id: uuidv4(),
     date: req.body.date || new Date().toISOString().slice(0,10),
-    weight: req.body.weight,
-    pain: req.body.pain,
-    posture: req.body.posture,
-    moti: req.body.moti,
-    exercise: req.body.exercise,
+    weight: req.body.weight != null ? parseFloat(req.body.weight) : null,
+    pain: req.body.pain != null ? parseInt(req.body.pain) : null,
+    posture: req.body.posture != null ? parseInt(req.body.posture) : null,
+    moti: req.body.moti != null ? parseInt(req.body.moti) : null,
+    exercise: req.body.exercise != null ? parseInt(req.body.exercise) : null,
     memo: req.body.memo || '',
-    source: req.body.source || 'staff', // 'staff' or 'patient'
+    source: req.body.source || 'staff',
     createdAt: new Date().toISOString()
   };
   if (!p.records) p.records = [];
-  // 同日分は上書き
   const ei = p.records.findIndex(r => r.date === rec.date);
-  if (ei >= 0) p.records[ei] = rec; else p.records.push(rec);
+  if (ei >= 0) p.records[ei] = { ...p.records[ei], ...rec };
+  else p.records.push(rec);
   p.records.sort((a,b) => a.date.localeCompare(b.date));
   writeDB(db);
   res.json(rec);
+});
+
+/* ─── レコード更新 ─── */
+app.put('/api/patients/:id/records/:rid', (req, res) => {
+  const db = readDB();
+  const p = db.patients.find(p => p.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  const idx = (p.records || []).findIndex(r => r.id === req.params.rid);
+  if (idx < 0) return res.status(404).json({ error: 'Record not found' });
+  p.records[idx] = { ...p.records[idx], ...req.body, id: req.params.rid };
+  p.records.sort((a,b) => a.date.localeCompare(b.date));
+  writeDB(db);
+  res.json(p.records[idx]);
 });
 
 /* ─── レコード削除 ─── */
@@ -135,22 +165,35 @@ app.post('/api/patients/:id/sessions', (req, res) => {
   const session = {
     id: uuidv4(),
     date: req.body.date || new Date().toISOString().slice(0,10),
-    weight: req.body.weight || null,
-    pain: req.body.pain || null,
-    posture: req.body.posture || null,
+    weight: req.body.weight != null ? parseFloat(req.body.weight) : null,
+    pain: req.body.pain != null ? parseInt(req.body.pain) : null,
+    posture: req.body.posture != null ? parseInt(req.body.posture) : null,
     treatment: req.body.treatment || '',
     response: req.body.response || '',
     homework: req.body.homework || '',
     nextPlan: req.body.nextPlan || '',
     staffNote: req.body.staffNote || '',
-    duration: req.body.duration || null,
+    duration: req.body.duration != null ? parseInt(req.body.duration) : null,
     createdAt: new Date().toISOString()
   };
   if (!p.sessions) p.sessions = [];
   p.sessions.push(session);
-  p.sessions.sort((a,b) => a.date.localeCompare(b.date));
+  p.sessions.sort((a,b) => b.date.localeCompare(a.date));
   writeDB(db);
   res.json(session);
+});
+
+/* ─── セッション更新 ─── */
+app.put('/api/patients/:id/sessions/:sid', (req, res) => {
+  const db = readDB();
+  const p = db.patients.find(p => p.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  const idx = (p.sessions || []).findIndex(s => s.id === req.params.sid);
+  if (idx < 0) return res.status(404).json({ error: 'Session not found' });
+  p.sessions[idx] = { ...p.sessions[idx], ...req.body, id: req.params.sid };
+  p.sessions.sort((a,b) => b.date.localeCompare(a.date));
+  writeDB(db);
+  res.json(p.sessions[idx]);
 });
 
 /* ─── セッション削除 ─── */
@@ -171,11 +214,11 @@ app.post('/api/patients/:id/self-record', (req, res) => {
   const rec = {
     id: uuidv4(),
     date: new Date().toISOString().slice(0,10),
-    weight: req.body.weight,
-    pain: req.body.pain,
-    posture: req.body.posture,
-    moti: req.body.moti,
-    exercise: req.body.exercise,
+    weight: req.body.weight != null ? parseFloat(req.body.weight) : null,
+    pain: req.body.pain != null ? parseInt(req.body.pain) : null,
+    posture: req.body.posture != null ? parseInt(req.body.posture) : null,
+    moti: req.body.moti != null ? parseInt(req.body.moti) : null,
+    exercise: req.body.exercise != null ? parseInt(req.body.exercise) : null,
     memo: req.body.memo || '',
     imported: false,
     createdAt: new Date().toISOString()
@@ -220,4 +263,29 @@ app.post('/api/patients/:id/import-self', (req, res) => {
   res.json({ imported: unimported.length });
 });
 
-app.listen(PORT, () => console.log(`BodyLog server running on http://0.0.0.0:${PORT}`));
+/* ─── ダッシュボード統計API ─── */
+app.get('/api/stats', (req, res) => {
+  const db = readDB();
+  const patients = db.patients;
+  const totalRecords = patients.reduce((s,p) => s + (p.records?.length||0), 0);
+  const totalSessions = patients.reduce((s,p) => s + (p.sessions?.length||0), 0);
+  const totalUnimported = patients.reduce((s,p) => s + (p.patientRecords||[]).filter(r=>!r.imported).length, 0);
+
+  // 最近の活動（全患者の最新記録を収集してソート）
+  const recentActivity = [];
+  patients.forEach(p => {
+    (p.sessions || []).slice(-3).forEach(s => recentActivity.push({ type:'session', patientId:p.id, patientName:p.name, date:s.date, data:s }));
+    (p.records || []).slice(-3).forEach(r => recentActivity.push({ type:'record', patientId:p.id, patientName:p.name, date:r.date, data:r }));
+  });
+  recentActivity.sort((a,b) => b.date.localeCompare(a.date));
+
+  res.json({
+    totalPatients: patients.length,
+    totalRecords,
+    totalSessions,
+    totalUnimported,
+    recentActivity: recentActivity.slice(0, 15)
+  });
+});
+
+app.listen(PORT, '0.0.0.0', () => console.log(`BodyLog server running on http://0.0.0.0:${PORT}`));
