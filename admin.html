@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BodyLog 管理</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#f2f5fc;--surface:#fff;--surface2:#f7f9fe;--surface3:#eef1f9;
+  --border:#dce3f2;--text:#1a2340;--text2:#5a6a8a;--text3:#a0aec0;
+  --accent:#4f7df0;--accent2:#00b896;--danger:#e85555;--warn:#f59e0b;
+  --grad:linear-gradient(135deg,#4f7df0,#6b8ff5);
+  --shadow:0 2px 12px rgba(79,125,240,.10);
+  --shadow-lg:0 8px 32px rgba(79,125,240,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+a{color:inherit;text-decoration:none}
+
+/* ─ レイアウト ─ */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:20px 12px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main{flex:1;padding:24px 20px;min-width:0;overflow-x:hidden}
+
+.logo{font-size:20px;font-weight:800;color:var(--text);margin-bottom:24px;padding:0 8px}
+.logo span{color:var(--accent)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s;margin-bottom:2px}
+.nav-item:hover{background:var(--surface3);color:var(--text)}
+.nav-item.active{background:rgba(79,125,240,.1);color:var(--accent);font-weight:700}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.nav-section{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;padding:12px 12px 4px}
+
+/* ─ カード・共通 ─ */
+.card{background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:20px;box-shadow:var(--shadow)}
+.page{display:none}.page.active{display:block}
+h1{font-size:20px;font-weight:800;color:var(--text);margin-bottom:6px}
+.subtitle{font-size:13px;color:var(--text2);margin-bottom:20px}
+h2{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px}
+h3{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.09em;text-transform:uppercase;margin-bottom:8px}
+
+/* ─ ボタン ─ */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .18s}
+.btn-primary{background:var(--grad);color:#fff;box-shadow:0 3px 12px rgba(79,125,240,.3)}
+.btn-primary:hover{opacity:.88;transform:translateY(-1px)}
+.btn-outline{background:var(--surface);border:1.5px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(232,85,85,.1);color:var(--danger);border:1px solid rgba(232,85,85,.2)}
+.btn-danger:hover{background:rgba(232,85,85,.18)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-green{background:rgba(0,184,150,.12);color:var(--accent2);border:1px solid rgba(0,184,150,.25)}
+.btn-green:hover{background:rgba(0,184,150,.2)}
+
+/* ─ フォーム ─ */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+label.fl{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.08em;text-transform:uppercase}
+input,select,textarea{padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--surface2);outline:none;font-family:inherit;width:100%;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(79,125,240,.1)}
+textarea{resize:vertical}
+
+/* ─ テーブル ─ */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-size:9px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;padding:8px 10px;border-bottom:1.5px solid var(--border);text-align:left;white-space:nowrap}
+td{padding:10px 10px;border-bottom:1px solid var(--surface3);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(79,125,240,.04)}
+
+/* ─ バッジ ─ */
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.badge-blue{background:rgba(79,125,240,.1);color:var(--accent)}
+.badge-green{background:rgba(0,184,150,.1);color:var(--accent2)}
+.badge-red{background:rgba(232,85,85,.1);color:var(--danger)}
+.badge-yellow{background:rgba(245,158,11,.1);color:var(--warn)}
+.badge-new{background:var(--danger);color:#fff;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* ─ メトリクスカード ─ */
+.metric-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.mc-label{font-size:9px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.mc-value{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.5px;line-height:1}
+.mc-unit{font-size:11px;font-weight:500;color:var(--text2)}
+.mc-sub{font-size:11px;color:var(--text2);margin-top:4px}
+
+/* ─ タブ ─ */
+.tab-row{display:flex;gap:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:4px;margin-bottom:16px;box-shadow:var(--shadow)}
+.tab{flex:1;text-align:center;padding:8px;border-radius:9px;border:none;background:transparent;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(79,125,240,.3)}
+
+/* ─ モーダル ─ */
+.overlay{display:none;position:fixed;inset:0;background:rgba(26,35,64,.3);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal-box{background:var(--surface);border-radius:20px;border:1px solid var(--border);padding:28px;width:90%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:modalIn .2s ease}
+.modal-box.wide{max-width:740px}
+@keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+.modal-title{font-size:16px;font-weight:800;margin-bottom:18px;color:var(--text)}
+.modal-actions{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
+
+/* ─ プログレスバー ─ */
+.progress-wrap{background:var(--surface3);border-radius:20px;height:6px;overflow:hidden}
+.progress-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s}
+
+/* ─ 患者カード ─ */
+.patient-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.patient-card{background:var(--surface);border:1.5px solid var(--border);border-radius:18px;padding:18px;cursor:pointer;transition:all .2s;position:relative;box-shadow:var(--shadow)}
+.patient-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.p-avatar{width:44px;height:44px;border-radius:50%;background:var(--grad);color:#fff;font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:12px;box-shadow:0 3px 10px rgba(79,125,240,.3)}
+.p-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
+.p-meta{font-size:11px;color:var(--text2);line-height:1.5}
+.p-del{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;transition:color .15s}
+.p-del:hover{color:var(--danger)}
+
+/* ─ 詳細ヘッダー ─ */
+.detail-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+.dh-avatar{width:56px;height:56px;border-radius:50%;background:var(--grad);color:#fff;font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(79,125,240,.3)}
+.dh-info{flex:1;min-width:0}
+.dh-name{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.4px}
+.dh-sub{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.6}
+.dh-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+
+/* ─ 情報グリッド ─ */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px}
+.info-item{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.info-label{font-size:9px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.info-value{font-size:14px;font-weight:700;color:var(--text)}
+
+/* ─ BMIゲージ ─ */
+.bmi-display{display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:14px;border:1.5px solid;margin-bottom:12px}
+
+/* ─ ダッシュボード統計 ─ */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.sc-label{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.sc-value{font-size:28px;font-weight:800;color:var(--text);letter-spacing:-.8px}
+.sc-sub{font-size:11px;color:var(--text2);margin-top:4px}
+
+/* ─ トースト ─ */
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--grad);color:#fff;padding:11px 24px;border-radius:22px;font-size:13px;font-weight:700;z-index:999;opacity:0;transition:opacity .3s;box-shadow:0 4px 18px rgba(79,125,240,.35);white-space:nowrap;pointer-events:none}
+
+/* ─ スター ─ */
+.star{font-size:20px;cursor:pointer;color:var(--surface3);transition:all .1s}
+.star:hover{transform:scale(1.15)}
+.star.on{color:var(--warn)}
+.star-row{display:flex;gap:3px}
+
+/* ─ スライダー ─ */
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;background:var(--surface3);cursor:pointer;border:none;padding:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 2px 6px rgba(79,125,240,.35);cursor:pointer}
+
+/* ─ divider ─ */
+.divider{height:1px;background:var(--border);margin:14px 0}
+
+/* ─ NEW通知 ─ */
+.new-notice{background:rgba(79,125,240,.08);border:1.5px solid rgba(79,125,240,.2);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.new-notice-label{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.new-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.new-chip{background:#fff;border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--text)}
+
+@media(max-width:640px){
+  .sidebar{display:none}
+  .main{padding:16px 12px}
+  .mobile-menu-btn{display:flex}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- サイドバー -->
+<nav class="sidebar">
+  <div class="logo">Body<span>Log</span></div>
+  <div class="nav-section">メイン</div>
+  <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+    <span class="nav-icon">📊</span> ダッシュボード
+  </div>
+  <div class="nav-item" onclick="showPage('patients')" id="nav-patients">
+    <span class="nav-icon">👥</span> 患者一覧
+  </div>
+  <div class="nav-section">管理</div>
+  <div class="nav-item" onclick="showPage('detail')" id="nav-detail" style="display:none">
+    <span class="nav-icon">👤</span> <span id="navDetailName">患者詳細</span>
+  </div>
+</nav>
+
+<!-- メインエリア -->
+<main class="main">
+
+<!-- ── ダッシュボード ── -->
+<div id="page-dashboard" class="page active">
+  <h1>ダッシュボード</h1>
+  <p class="subtitle">全患者のサマリーを確認できます</p>
+  <div class="stat-grid" id="dashStats"></div>
+  <div class="card">
+    <h2>最近の活動</h2>
+    <div id="dashActivity"><div style="color:var(--text3);font-size:13px;padding:12px 0">読み込み中...</div></div>
+  </div>
+</div>
+
+<!-- ── 患者一覧 ── -->
+<div id="page-patients" class="page">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <h1>患者一覧</h1>
+    <button class="btn btn-primary" onclick="openAddPatientModal()">＋ 新規患者</button>
+  </div>
+  <p class="subtitle">患者カードをクリックして詳細を表示</p>
+  <div class="patient-grid" id="patientGrid"></div>
+</div>
+
+<!-- ── 患者詳細 ── -->
+<div id="page-detail" class="page">
+  <div style="margin-bottom:16px">
+    <button class="btn btn-outline btn-sm" onclick="showPage('patients')">← 一覧に戻る</button>
+  </div>
+
+  <!-- 患者ヘッダー -->
+  <div class="detail-header" id="detailHeader"></div>
+
+  <!-- NEW通知 -->
+  <div id="newDataNotice" style="display:none" class="new-notice">
+    <div class="new-notice-label">📥 患者から新しい記録が届いています <span class="badge badge-new">NEW</span></div>
+    <div class="new-chips" id="newDataChips"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-green btn-sm" onclick="importSelfRecords()">✅ 記録に取り込む</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('newDataNotice').style.display='none'">あとで</button>
+    </div>
+  </div>
+
+  <!-- メトリクス -->
+  <div id="patientMetrics" class="metric-row"></div>
+
+  <!-- BMI / 基礎代謝 -->
+  <div id="bmiSection" class="card" style="margin-bottom:16px;display:none">
+    <h2>📐 BMI・基礎代謝</h2>
+    <div id="bmiContent"></div>
+  </div>
+
+  <!-- タブ -->
+  <div class="tab-row">
+    <button class="tab active" onclick="switchDetailTab('overview')">概要</button>
+    <button class="tab" onclick="switchDetailTab('sessions')">セッション</button>
+    <button class="tab" onclick="switchDetailTab('records')">体重記録</button>
+    <button class="tab" onclick="switchDetailTab('chart')">グラフ</button>
+  </div>
+
+  <!-- 概要タブ -->
+  <div id="dtab-overview">
+    <div class="card" style="margin-bottom:14px">
+      <h2>📋 基本情報・目標</h2>
+      <div class="info-grid" id="overviewInfo"></div>
+      <div id="overviewGoals"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="openEditPatientModal()">✏️ 編集</button>
+    </div>
+    <div class="card">
+      <h2>🗒️ カルテ・備考</h2>
+      <div id="overviewKarte" style="font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.7"></div>
+    </div>
+  </div>
+
+  <!-- セッションタブ -->
+  <div id="dtab-sessions" style="display:none">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button class="btn btn-primary" onclick="openSessionModal()">＋ セッション記録</button>
+    </div>
+    <div class="card">
+      <div id="sessionList"><div class="empty" style="text-align:center;padding:24px;color:var(--text3)">セッション記録がありません</div></div>
+    </div>
+  </div>
+
+  <!-- 体重記録タブ -->
+  <div id="dtab-records" style="display:none">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button class="btn btn-primary" onclick="openRecordModal()">＋ 記録を追加</button>
+    </div>
+    <div class="card">
+      <div id="recordList"><div class="empty" style="text-align:center;padding:24px;color:var(--text3)">記録がありません</div></div>
+    </div>
+  </div>
+
+  <!-- グラフタブ -->
+  <div id="dtab-chart" style="display:none">
+    <div class="card" style="margin-bottom:12px">
+      <h3>体重推移</h3>
+      <div style="position:relative;height:220px"><canvas id="wChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>痛み・姿勢・モチベーション</h3>
+      <div style="position:relative;height:180px"><canvas id="sChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ─ モーダル:新規患者 ─ -->
+<div class="overlay" id="addPatientModal">
+  <div class="modal-box wide">
+    <div class="modal-title">新規患者登録</div>
+    <div class="form-grid" id="addPatientForm">
+      <div class="form-group"><label class="fl">氏名 *</label><input id="ap-name" placeholder="田中 美咲" /></div>
+      <div class="form-group"><label class="fl">フリガナ</label><input id="ap-kana" placeholder="タナカ ミサキ" /></div>
+      <div class="form-group"><label class="fl">性別</label>
+        <select id="ap-gender"><option value="">選択</option><option>女性</option><option>男性</option><option>その他</option></select>
+      </div>
+      <div class="form-group"><label class="fl">生年月日</label><input type="date" id="ap-birthdate" /></div>
+      <div class="form-group"><label class="fl">身長 (cm)</label><input type="number" id="ap-height" placeholder="162" step="0.1" /></div>
+      <div class="form-group"><label class="fl">開始体重 (kg)</label><input type="number" id="ap-startWeight" placeholder="65" step="0.1" /></div>
+      <div class="form-group"><label class="fl">目標体重 (kg)</label><input type="number" id="ap-targetWeight" placeholder="58" step="0.1" /></div>
+      <div class="form-group"><label class="fl">開始日</label><input type="date" id="ap-startDate" /></div>
+      <div class="form-group"><label class="fl">目標期日</label><input type="date" id="ap-targetDate" /></div>
+      <div class="form-group"><label class="fl">来院目的</label><input id="ap-purpose" placeholder="ダイエット / 整体 / 姿勢改善..." /></div>
+      <div class="form-group full"><label class="fl">最終目標</label><textarea id="ap-finalGoal" rows="2" placeholder="例：夏までに-5kg、お腹周りをスッキリさせる"></textarea></div>
+      <div class="form-group full"><label class="fl">中間目標</label><textarea id="ap-midGoal" rows="2" placeholder="例：1ヶ月で-1kg、姿勢改善"></textarea></div>
+      <div class="form-group full"><label class="fl">カルテ情報・備考</label><textarea id="ap-karte" rows="3" placeholder="既往歴・生活スタイル・注意事項など"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('addPatientModal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitAddPatient()">登録する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─ モーダル:患者編集 ─ -->
+<div class="overlay" id="editPatientModal">
+  <div class="modal-box wide">
+    <div class="modal-title">患者情報を編集</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="fl">氏名</label><input id="ep-name" /></div>
+      <div class="form-group"><label class="fl">フリガナ</label><input id="ep-kana" /></div>
+      <div class="form-group"><label class="fl">性別</label><select id="ep-gender"><option value="">選択</option><option>女性</option><option>男性</option><option>その他</option></select></div>
+      <div class="form-group"><label class="fl">生年月日</label><input type="date" id="ep-birthdate" /></div>
+      <div class="form-group"><label class="fl">身長 (cm)</label><input type="number" id="ep-height" step="0.1" /></div>
+      <div class="form-group"><label class="fl">開始体重 (kg)</label><input type="number" id="ep-startWeight" step="0.1" /></div>
+      <div class="form-group"><label class="fl">目標体重 (kg)</label><input type="number" id="ep-targetWeight" step="0.1" /></div>
+      <div class="form-group"><label class="fl">開始日</label><input type="date" id="ep-startDate" /></div>
+      <div class="form-group"><label class="fl">目標期日</label><input type="date" id="ep-targetDate" /></div>
+      <div class="form-group"><label class="fl">来院目的</label><input id="ep-purpose" /></div>
+      <div class="form-group full"><label class="fl">最終目標</label><textarea id="ep-finalGoal" rows="2"></textarea></div>
+      <div class="form-group full"><label class="fl">中間目標</label><textarea id="ep-midGoal" rows="2"></textarea></div>
+      <div class="form-group full"><label class="fl">カルテ情報・備考</label><textarea id="ep-karte" rows="3"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('editPatientModal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitEditPatient()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─ モーダル:セッション記録 ─ -->
+<div class="overlay" id="sessionModal">
+  <div class="modal-box wide">
+    <div class="modal-title">📋 セッション記録</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="fl">施術日</label><input type="date" id="s-date" /></div>
+      <div class="form-group"><label class="fl">施術時間(分)</label><input type="number" id="s-duration" placeholder="60" /></div>
+      <div class="form-group"><label class="fl">体重 (kg)</label><input type="number" id="s-weight" step="0.1" placeholder="65.2" /></div>
+      <div class="form-group">
+        <label class="fl">来院時の痛みレベル(1-10)</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <span style="font-size:11px;color:var(--text3)">1</span>
+          <input type="range" min="1" max="10" step="1" value="5" id="s-pain" oninput="document.getElementById('s-painVal').textContent=this.value" style="flex:1" />
+          <span style="font-size:11px;color:var(--text3)">10</span>
+          <span id="s-painVal" style="font-size:15px;font-weight:800;color:var(--accent);min-width:20px">5</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="fl">姿勢スコア(1-5)</label>
+        <div class="star-row" id="s-postureStars" style="margin-top:6px">
+          <span class="star" onclick="setStar('s-posture',1)">★</span>
+          <span class="star" onclick="setStar('s-posture',2)">★</span>
+          <span class="star" onclick="setStar('s-posture',3)">★</span>
+          <span class="star" onclick="setStar('s-posture',4)">★</span>
+          <span class="star" onclick="setStar('s-posture',5)">★</span>
+        </div>
+      </div>
+      <div class="form-group full"><label class="fl">施術内容</label><textarea id="s-treatment" rows="2" placeholder="例：腰部・骨盤アジャスト、肩甲骨モビライゼーション"></textarea></div>
+      <div class="form-group full"><label class="fl">患者の反応・状態変化</label><textarea id="s-response" rows="2" placeholder="例：腰の可動域が改善、施術後に痛みが3→1に軽減"></textarea></div>
+      <div class="form-group full"><label class="fl">ホームワーク・指示事項</label><textarea id="s-homework" rows="2" placeholder="例：毎日10分ストレッチ、歩数8000歩目標"></textarea></div>
+      <div class="form-group full"><label class="fl">次回プラン</label><textarea id="s-nextPlan" rows="2" placeholder="例：2週間後、体重変化を確認して負荷調整"></textarea></div>
+      <div class="form-group full"><label class="fl">スタッフメモ（内部用）</label><textarea id="s-note" rows="2" placeholder="気になること、引き継ぎ事項など"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('sessionModal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitSession()">記録する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─ モーダル:体重記録 ─ -->
+<div class="overlay" id="recordModal">
+  <div class="modal-box">
+    <div class="modal-title">⚖️ 体重・状態を記録</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="fl">記録日</label><input type="date" id="r-date" /></div>
+      <div class="form-group"><label class="fl">体重 (kg)</label><input type="number" id="r-weight" step="0.1" placeholder="65.2" /></div>
+      <div class="form-group full">
+        <label class="fl">痛みレベル(1-10)</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <span style="font-size:11px;color:var(--text3)">1</span>
+          <input type="range" min="1" max="10" step="1" value="5" id="r-pain" oninput="document.getElementById('r-painVal').textContent=this.value" style="flex:1" />
+          <span style="font-size:11px;color:var(--text3)">10</span>
+          <span id="r-painVal" style="font-size:15px;font-weight:800;color:var(--accent);min-width:20px">5</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="fl">姿勢スコア</label>
+        <div class="star-row" id="r-postureStars" style="margin-top:6px">
+          <span class="star" onclick="setStar('r-posture',1)">★</span>
+          <span class="star" onclick="setStar('r-posture',2)">★</span>
+          <span class="star" onclick="setStar('r-posture',3)">★</span>
+          <span class="star" onclick="setStar('r-posture',4)">★</span>
+          <span class="star" onclick="setStar('r-posture',5)">★</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="fl">モチベーション</label>
+        <div class="star-row" id="r-motiStars" style="margin-top:6px">
+          <span class="star" onclick="setStar('r-moti',1)">★</span>
+          <span class="star" onclick="setStar('r-moti',2)">★</span>
+          <span class="star" onclick="setStar('r-moti',3)">★</span>
+          <span class="star" onclick="setStar('r-moti',4)">★</span>
+          <span class="star" onclick="setStar('r-moti',5)">★</span>
+        </div>
+      </div>
+      <div class="form-group full">
+        <label class="fl">今週の運動達成率</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <span style="font-size:11px;color:var(--text3)">0%</span>
+          <input type="range" min="0" max="100" step="10" value="50" id="r-exercise" oninput="document.getElementById('r-exVal').textContent=this.value+'%'" style="flex:1" />
+          <span style="font-size:11px;color:var(--text3)">100%</span>
+          <span id="r-exVal" style="font-size:15px;font-weight:800;color:var(--accent);min-width:36px">50%</span>
+        </div>
+      </div>
+      <div class="form-group full"><label class="fl">メモ</label><textarea id="r-memo" rows="2" placeholder="気になること、体調など"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('recordModal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitRecord()">記録する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─ QRモーダル ─ -->
+<div class="overlay" id="qrModal">
+  <div class="modal-box" style="max-width:320px;text-align:center">
+    <div class="modal-title" id="qrTitle">患者用QRコード</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:18px">このQRを患者にスキャンしてもらうと毎日記録できます</div>
+    <div id="qrCanvas" style="display:inline-block;background:#fff;padding:12px;border-radius:12px;box-shadow:var(--shadow)"></div>
+    <div style="font-size:10px;color:var(--text3);margin-top:10px;word-break:break-all" id="qrUrlText"></div>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn btn-outline" onclick="closeModal('qrModal')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = '';  // same origin
+let currentPatientId = null;
+let currentPatient = null;
+let wChart = null, sChart = null;
+let starVals = {};
+let pollTimer = null;
+
+/* ══ ユーティリティ ══ */
+async function api(method, path, body) {
+  const res = await fetch(API + path, {
+    method, headers: {'Content-Type':'application/json'},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.opacity = '1';
+  setTimeout(() => t.style.opacity = '0', 2500);
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function age(birthdate) {
+  if (!birthdate) return null;
+  const b = new Date(birthdate), n = new Date();
+  let a = n.getFullYear() - b.getFullYear();
+  if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--;
+  return a;
+}
+function calcBMI(weight, height) {
+  if (!weight || !height) return null;
+  return +(weight / (height/100) ** 2).toFixed(1);
+}
+function bmiLabel(bmi) {
+  if (bmi < 18.5) return ['低体重', 'badge-blue'];
+  if (bmi < 25)   return ['標準', 'badge-green'];
+  if (bmi < 30)   return ['肥満(1度)', 'badge-yellow'];
+  return ['肥満(2度以上)', 'badge-red'];
+}
+function calcBMR(weight, height, age, gender) {
+  if (!weight || !height || !age) return null;
+  // Mifflin-St Jeor
+  const b = gender === '女性'
+    ? 10*weight + 6.25*height - 5*age - 161
+    : 10*weight + 6.25*height - 5*age + 5;
+  return Math.round(b);
+}
+function setStar(key, v) {
+  starVals[key] = v;
+  const prefix = key.split('-')[0];
+  const type = key.split('-')[1];
+  document.querySelectorAll(`#${prefix}-${type}Stars .star`).forEach((s,i) => s.classList.toggle('on', i < v));
+}
+function initStars(key, v) { setStar(key, v); }
+
+/* ══ ページナビ ══ */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name)?.classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'patients') loadPatients();
+}
+
+/* ══ ダッシュボード ══ */
+async function loadDashboard() {
+  const patients = await api('GET', '/api/patients');
+  const totalRecords = patients.reduce((s,p) => s + (p.recordCount||0), 0);
+  const totalSessions = patients.reduce((s,p) => s + (p.sessionCount||0), 0);
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card"><div class="sc-label">総患者数</div><div class="sc-value">${patients.length}</div><div class="sc-sub">登録済み</div></div>
+    <div class="stat-card"><div class="sc-label">総記録数</div><div class="sc-value">${totalRecords}</div><div class="sc-sub">体重・状態</div></div>
+    <div class="stat-card"><div class="sc-label">総セッション</div><div class="sc-value">${totalSessions}</div><div class="sc-sub">施術記録</div></div>
+  `;
+  const activity = patients
+    .filter(p => p.latestRecord)
+    .sort((a,b) => (b.latestRecord?.date||'').localeCompare(a.latestRecord?.date||''))
+    .slice(0, 8);
+  if (!activity.length) {
+    document.getElementById('dashActivity').innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px 0">まだ記録がありません</div>';
+    return;
+  }
+  document.getElementById('dashActivity').innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>患者名</th><th>最新記録日</th><th>体重</th><th>痛み</th><th>目的</th><th></th></tr></thead>
+    <tbody>${activity.map(p => `<tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.latestRecord.date}</td>
+      <td>${p.latestRecord.weight ? p.latestRecord.weight+'kg' : '-'}</td>
+      <td>${p.latestRecord.pain ? p.latestRecord.pain+'/10' : '-'}</td>
+      <td><span class="badge badge-blue">${p.purpose||'未設定'}</span></td>
+      <td><button class="btn btn-outline btn-sm" onclick="openPatient('${p.id}')">詳細</button></td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+/* ══ 患者一覧 ══ */
+async function loadPatients() {
+  const patients = await api('GET', '/api/patients');
+  const grid = document.getElementById('patientGrid');
+  if (!patients.length) {
+    grid.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px 0">患者が登録されていません</div>';
+    return;
+  }
+  grid.innerHTML = patients.map(p => `
+    <div class="patient-card" onclick="openPatient('${p.id}')">
+      <button class="p-del" onclick="event.stopPropagation();deletePatient('${p.id}')">✕</button>
+      <div class="p-avatar">${p.name[0]}</div>
+      <div class="p-name">${p.name}</div>
+      <div class="p-meta">${p.kana||''} ${p.gender?'・'+p.gender:''}</div>
+      <div class="p-meta" style="margin-top:4px">
+        ${p.latestRecord ? '最新：'+p.latestRecord.weight+'kg' : '記録なし'}<br>
+        ${p.recordCount}件記録・${p.sessionCount}回施術
+      </div>
+    </div>`).join('');
+}
+
+/* ══ 患者追加 ══ */
+function openAddPatientModal() {
+  document.getElementById('ap-startDate').value = new Date().toISOString().slice(0,10);
+  openModal('addPatientModal');
+}
+async function submitAddPatient() {
+  const name = document.getElementById('ap-name').value.trim();
+  if (!name) { alert('氏名を入力してください'); return; }
+  await api('POST', '/api/patients', {
+    name, kana: document.getElementById('ap-kana').value,
+    gender: document.getElementById('ap-gender').value,
+    birthdate: document.getElementById('ap-birthdate').value,
+    height: parseFloat(document.getElementById('ap-height').value)||null,
+    startWeight: parseFloat(document.getElementById('ap-startWeight').value)||null,
+    targetWeight: parseFloat(document.getElementById('ap-targetWeight').value)||null,
+    startDate: document.getElementById('ap-startDate').value,
+    targetDate: document.getElementById('ap-targetDate').value,
+    purpose: document.getElementById('ap-purpose').value,
+    finalGoal: document.getElementById('ap-finalGoal').value,
+    midGoal: document.getElementById('ap-midGoal').value,
+    karteInfo: document.getElementById('ap-karte').value,
+  });
+  closeModal('addPatientModal');
+  toast('患者を登録しました ✅');
+  loadPatients();
+}
+
+/* ══ 患者削除 ══ */
+async function deletePatient(id) {
+  if (!confirm('この患者のデータをすべて削除しますか？')) return;
+  await api('DELETE', '/api/patients/' + id);
+  toast('削除しました');
+  loadPatients();
+}
+
+/* ══ 患者詳細を開く ══ */
+async function openPatient(id) {
+  currentPatientId = id;
+  currentPatient = await api('GET', '/api/patients/' + id);
+  document.getElementById('nav-detail').style.display = 'flex';
+  document.getElementById('navDetailName').textContent = currentPatient.name;
+  showPage('detail');
+  renderDetail();
+  switchDetailTab('overview');
+  startPolling();
+}
+
+function renderDetail() {
+  const p = currentPatient;
+  if (!p) return;
+  const a = age(p.birthdate);
+  const latestRec = p.records?.slice(-1)[0];
+  const latestW = latestRec?.weight || p.startWeight;
+  const bmi = calcBMI(latestW, p.height);
+  const bmr = calcBMR(latestW, p.height, a, p.gender);
+
+  // ヘッダー
+  document.getElementById('detailHeader').innerHTML = `
+    <div class="dh-avatar">${p.name[0]}</div>
+    <div class="dh-info">
+      <div class="dh-name">${p.name} <span style="font-size:13px;font-weight:500;color:var(--text2)">${p.kana||''}</span></div>
+      <div class="dh-sub">
+        ${p.gender||''}${a ? ' ・ '+a+'歳' : ''}${p.birthdate ? ' ('+p.birthdate+')' : ''}
+        ${p.height ? ' ・ 身長'+p.height+'cm' : ''}
+        ${p.purpose ? ' ・ <span style="color:var(--accent);font-weight:700">'+p.purpose+'</span>' : ''}
+      </div>
+      <div class="dh-actions">
+        <button class="btn btn-outline btn-sm" onclick="showQR()">📱 患者用QR</button>
+        <button class="btn btn-outline btn-sm" onclick="openEditPatientModal()">✏️ 編集</button>
+      </div>
+    </div>`;
+
+  // メトリクス
+  const recs = p.records || [];
+  const sw = p.startWeight;
+  const tw = p.targetWeight;
+  const diff = (sw && latestW) ? +(latestW - sw).toFixed(1) : null;
+  const remaining = (tw && latestW) ? +(latestW - tw).toFixed(1) : null;
+  const prog = (sw && tw && sw !== tw) ? Math.min(100, Math.max(0, Math.round((sw-latestW)/(sw-tw)*100))) : null;
+  document.getElementById('patientMetrics').innerHTML = [
+    latestW ? `<div class="metric-card"><div class="mc-label">最新体重</div><div class="mc-value">${(+latestW).toFixed(1)}<span class="mc-unit">kg</span></div>${diff!==null?`<div class="mc-sub" style="color:${diff<=0?'var(--accent2)':'var(--danger)'}">${diff>0?'+':''}${diff}kg</div>`:''}</div>` : '',
+    tw ? `<div class="metric-card"><div class="mc-label">目標まで</div><div class="mc-value">${remaining!==null?(+remaining).toFixed(1):'-'}<span class="mc-unit">kg</span></div>${prog!==null?`<div class="progress-wrap" style="margin-top:8px"><div class="progress-fill" style="width:${prog}%"></div></div>`:''}</div>` : '',
+    bmi ? `<div class="metric-card"><div class="mc-label">BMI</div><div class="mc-value">${bmi}</div><div class="mc-sub"><span class="badge ${bmiLabel(bmi)[1]}">${bmiLabel(bmi)[0]}</span></div></div>` : '',
+    bmr ? `<div class="metric-card"><div class="mc-label">基礎代謝</div><div class="mc-value">${bmr}<span class="mc-unit">kcal</span></div></div>` : '',
+    latestRec ? `<div class="metric-card"><div class="mc-label">痛みレベル</div><div class="mc-value" style="color:${latestRec.pain>=7?'var(--danger)':latestRec.pain>=4?'var(--warn)':'var(--accent2)'}">${latestRec.pain}<span class="mc-unit">/10</span></div></div>` : '',
+    `<div class="metric-card"><div class="mc-label">記録数</div><div class="mc-value">${recs.length}</div><div class="mc-sub">セッション${(p.sessions||[]).length}回</div></div>`,
+  ].join('');
+
+  // BMI詳細
+  if (bmi) {
+    const [label, badgeClass] = bmiLabel(bmi);
+    const idealMin = p.height ? +((18.5*(p.height/100)**2).toFixed(1)) : null;
+    const idealMax = p.height ? +((24.9*(p.height/100)**2).toFixed(1)) : null;
+    document.getElementById('bmiSection').style.display = '';
+    document.getElementById('bmiContent').innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="font-size:36px;font-weight:800;color:var(--accent)">${bmi}</div>
+        <div>
+          <span class="badge ${badgeClass}" style="font-size:13px;padding:4px 12px">${label}</span>
+          ${idealMin ? `<div style="font-size:12px;color:var(--text2);margin-top:6px">標準体重目安：${idealMin}〜${idealMax}kg</div>` : ''}
+        </div>
+        ${bmr ? `<div style="margin-left:auto;background:var(--surface2);border-radius:12px;padding:12px 18px;text-align:center">
+          <div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase">基礎代謝</div>
+          <div style="font-size:24px;font-weight:800;color:var(--text)">${bmr} <span style="font-size:13px;color:var(--text2)">kcal/日</span></div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">活動量×1.5〜2.0で消費目安</div>
+        </div>` : ''}
+      </div>`;
+  } else {
+    document.getElementById('bmiSection').style.display = 'none';
+  }
+
+  // NEW通知
+  checkNewData();
+}
+
+/* ══ タブ切り替え ══ */
+function switchDetailTab(name) {
+  ['overview','sessions','records','chart'].forEach((t,i) => {
+    document.getElementById('dtab-'+t).style.display = t===name ? '' : 'none';
+    document.querySelectorAll('.tab')[i].classList.toggle('active', t===name);
+  });
+  if (name==='records') renderRecords();
+  if (name==='sessions') renderSessions();
+  if (name==='chart') setTimeout(renderCharts, 60);
+  if (name==='overview') renderOverview();
+}
+
+/* ══ 概要 ══ */
+function renderOverview() {
+  const p = currentPatient;
+  if (!p) return;
+  const a = age(p.birthdate);
+  document.getElementById('overviewInfo').innerHTML = [
+    p.gender ? `<div class="info-item"><div class="info-label">性別</div><div class="info-value">${p.gender}</div></div>` : '',
+    a !== null ? `<div class="info-item"><div class="info-label">年齢</div><div class="info-value">${a}歳 (${p.birthdate})</div></div>` : '',
+    p.height ? `<div class="info-item"><div class="info-label">身長</div><div class="info-value">${p.height}cm</div></div>` : '',
+    p.startWeight ? `<div class="info-item"><div class="info-label">開始体重</div><div class="info-value">${p.startWeight}kg</div></div>` : '',
+    p.targetWeight ? `<div class="info-item"><div class="info-label">目標体重</div><div class="info-value">${p.targetWeight}kg</div></div>` : '',
+    p.startDate ? `<div class="info-item"><div class="info-label">開始日</div><div class="info-value">${p.startDate}</div></div>` : '',
+    p.targetDate ? `<div class="info-item"><div class="info-label">目標期日</div><div class="info-value">${p.targetDate}</div></div>` : '',
+    p.purpose ? `<div class="info-item"><div class="info-label">来院目的</div><div class="info-value">${p.purpose}</div></div>` : '',
+  ].filter(Boolean).join('');
+  document.getElementById('overviewGoals').innerHTML = [
+    p.finalGoal ? `<div style="margin-top:10px"><div class="info-label fl" style="margin-bottom:4px">最終目標</div><div style="font-size:13px;color:var(--text);line-height:1.6">${p.finalGoal}</div></div>` : '',
+    p.midGoal ? `<div style="margin-top:10px"><div class="info-label fl" style="margin-bottom:4px">中間目標</div><div style="font-size:13px;color:var(--text);line-height:1.6">${p.midGoal}</div></div>` : '',
+  ].join('');
+  document.getElementById('overviewKarte').textContent = p.karteInfo || '記録なし';
+}
+
+/* ══ セッション ══ */
+function openSessionModal() {
+  document.getElementById('s-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('s-pain').value = 5;
+  document.getElementById('s-painVal').textContent = 5;
+  document.getElementById('s-treatment').value = '';
+  document.getElementById('s-response').value = '';
+  document.getElementById('s-homework').value = '';
+  document.getElementById('s-nextPlan').value = '';
+  document.getElementById('s-note').value = '';
+  document.getElementById('s-weight').value = '';
+  document.getElementById('s-duration').value = '';
+  initStars('s-posture', 3);
+  openModal('sessionModal');
+}
+async function submitSession() {
+  await api('POST', `/api/patients/${currentPatientId}/sessions`, {
+    date: document.getElementById('s-date').value,
+    duration: parseInt(document.getElementById('s-duration').value)||null,
+    weight: parseFloat(document.getElementById('s-weight').value)||null,
+    pain: parseInt(document.getElementById('s-pain').value),
+    posture: starVals['s-posture'] || 3,
+    treatment: document.getElementById('s-treatment').value,
+    response: document.getElementById('s-response').value,
+    homework: document.getElementById('s-homework').value,
+    nextPlan: document.getElementById('s-nextPlan').value,
+    staffNote: document.getElementById('s-note').value,
+  });
+  closeModal('sessionModal');
+  toast('セッションを記録しました ✅');
+  currentPatient = await api('GET', '/api/patients/' + currentPatientId);
+  renderDetail();
+  renderSessions();
+}
+function renderSessions() {
+  const sessions = (currentPatient.sessions || []).slice().reverse();
+  if (!sessions.length) {
+    document.getElementById('sessionList').innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3)">セッション記録がありません</div>';
+    return;
+  }
+  document.getElementById('sessionList').innerHTML = sessions.map((s,i) => `
+    <div style="border-bottom:1px solid var(--surface3);padding:16px 0;${i===0?'padding-top:0':''}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-weight:700;font-size:14px">📅 ${s.date} ${s.duration?s.duration+'分':''}</div>
+        <button class="btn btn-danger btn-sm" onclick="deleteSession('${s.id}')">削除</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        ${s.weight ? `<span class="badge badge-blue">⚖️ ${s.weight}kg</span>` : ''}
+        ${s.pain != null ? `<span class="badge ${s.pain>=7?'badge-red':s.pain>=4?'badge-yellow':'badge-green'}">🩹 痛み ${s.pain}/10</span>` : ''}
+        ${s.posture ? `<span class="badge badge-blue">🧍 姿勢 ${s.posture}/5</span>` : ''}
+      </div>
+      ${s.treatment ? `<div style="margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.08em">施術内容</span><div style="font-size:13px;color:var(--text);margin-top:2px">${s.treatment}</div></div>` : ''}
+      ${s.response ? `<div style="margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.08em">患者の反応</span><div style="font-size:13px;color:var(--text);margin-top:2px">${s.response}</div></div>` : ''}
+      ${s.homework ? `<div style="margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:var(--accent2);letter-spacing:.08em">ホームワーク</span><div style="font-size:13px;color:var(--text);margin-top:2px">${s.homework}</div></div>` : ''}
+      ${s.nextPlan ? `<div style="margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:var(--warn);letter-spacing:.08em">次回プラン</span><div style="font-size:13px;color:var(--text);margin-top:2px">${s.nextPlan}</div></div>` : ''}
+      ${s.staffNote ? `<div style="background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text2)">🔒 ${s.staffNote}</div>` : ''}
+    </div>`).join('');
+}
+async function deleteSession(sid) {
+  if (!confirm('このセッション記録を削除しますか？')) return;
+  await api('DELETE', `/api/patients/${currentPatientId}/sessions/${sid}`);
+  toast('削除しました');
+  currentPatient = await api('GET', '/api/patients/' + currentPatientId);
+  renderSessions();
+  renderDetail();
+}
+
+/* ══ 体重記録 ══ */
+function openRecordModal() {
+  document.getElementById('r-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('r-weight').value = '';
+  document.getElementById('r-pain').value = 5; document.getElementById('r-painVal').textContent = 5;
+  document.getElementById('r-exercise').value = 50; document.getElementById('r-exVal').textContent = '50%';
+  document.getElementById('r-memo').value = '';
+  initStars('r-posture', 3); initStars('r-moti', 3);
+  openModal('recordModal');
+}
+async function submitRecord() {
+  const w = parseFloat(document.getElementById('r-weight').value);
+  if (!w) { alert('体重を入力してください'); return; }
+  await api('POST', `/api/patients/${currentPatientId}/records`, {
+    date: document.getElementById('r-date').value,
+    weight: w,
+    pain: parseInt(document.getElementById('r-pain').value),
+    posture: starVals['r-posture'] || 3,
+    moti: starVals['r-moti'] || 3,
+    exercise: parseInt(document.getElementById('r-exercise').value),
+    memo: document.getElementById('r-memo').value,
+    source: 'staff'
+  });
+  closeModal('recordModal');
+  toast('記録しました ✅');
+  currentPatient = await api('GET', '/api/patients/' + currentPatientId);
+  renderDetail();
+  renderRecords();
+}
+function renderRecords() {
+  const recs = (currentPatient.records || []).slice().reverse();
+  if (!recs.length) {
+    document.getElementById('recordList').innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3)">記録がありません</div>';
+    return;
+  }
+  const all = currentPatient.records || [];
+  const rows = recs.map(r => {
+    const i = all.findIndex(x => x.id === r.id);
+    const prev = i > 0 ? all[i-1] : null;
+    const diff = prev ? +(r.weight - prev.weight).toFixed(1) : null;
+    const badge = diff===null?'':diff<0?`<span class="badge badge-green">${diff}</span>`:diff>0?`<span class="badge badge-red">+${diff}</span>`:`<span class="badge">±0</span>`;
+    const src = r.source==='patient' ? '<span class="badge badge-blue" style="font-size:9px">患者</span>' : '';
+    const stars = n => `${'★'.repeat(n)}<span style="color:var(--surface3)">${'★'.repeat(5-n)}</span>`;
+    return `<tr>
+      <td>${r.date} ${src}</td>
+      <td><strong>${(+r.weight).toFixed(1)}</strong> ${badge}</td>
+      <td><span style="color:${r.pain>=7?'var(--danger)':r.pain>=4?'var(--warn)':'var(--accent2)'}">${r.pain}/10</span></td>
+      <td style="color:var(--warn)">${stars(r.posture||0)}</td>
+      <td style="color:var(--warn)">${stars(r.moti||0)}</td>
+      <td>${r.exercise||'-'}%</td>
+      <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">${r.memo||'-'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteRecord('${r.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('recordList').innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>日付</th><th>体重</th><th>痛み</th><th>姿勢</th><th>モチベ</th><th>運動</th><th>メモ</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+async function deleteRecord(rid) {
+  if (!confirm('この記録を削除しますか？')) return;
+  await api('DELETE', `/api/patients/${currentPatientId}/records/${rid}`);
+  toast('削除しました');
+  currentPatient = await api('GET', '/api/patients/' + currentPatientId);
+  renderDetail();
+  renderRecords();
+}
+
+/* ══ グラフ ══ */
+function renderCharts() {
+  const recs = currentPatient.records || [];
+  if (!recs.length) return;
+  const labels = recs.map(r => r.date.slice(5));
+  const tw = currentPatient.targetWeight;
+  if (wChart) wChart.destroy();
+  wChart = new Chart(document.getElementById('wChart').getContext('2d'), {
+    type:'line',
+    data:{labels,datasets:[
+      {label:'体重',data:recs.map(r=>r.weight),borderColor:'#4f7df0',backgroundColor:'rgba(79,125,240,.08)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#4f7df0',pointBorderColor:'#fff',pointBorderWidth:2},
+      ...(tw?[{label:'目標',data:recs.map(()=>tw),borderColor:'#f59e0b',borderDash:[5,4],pointRadius:0,fill:false}]:[])
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{ticks:{callback:v=>v+'kg',font:{size:11},color:'#5a6a8a'},grid:{color:'rgba(79,125,240,.06)'}},
+        x:{ticks:{font:{size:11},color:'#5a6a8a',maxTicksLimit:8},grid:{display:false}}}}
+  });
+  if (sChart) sChart.destroy();
+  sChart = new Chart(document.getElementById('sChart').getContext('2d'), {
+    type:'line',
+    data:{labels,datasets:[
+      {label:'痛み',data:recs.map(r=>r.pain),borderColor:'#e85555',pointRadius:3,tension:.35,fill:false},
+      {label:'姿勢',data:recs.map(r=>r.posture),borderColor:'#4f7df0',borderDash:[4,3],pointRadius:3,tension:.35,fill:false},
+      {label:'モチベ',data:recs.map(r=>r.moti),borderColor:'#f59e0b',borderDash:[2,3],pointRadius:3,tension:.35,fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:0,max:10,ticks:{stepSize:2,font:{size:11},color:'#5a6a8a'},grid:{color:'rgba(79,125,240,.06)'}},
+        x:{ticks:{font:{size:11},color:'#5a6a8a',maxTicksLimit:8},grid:{display:false}}}}
+  });
+}
+
+/* ══ 患者編集 ══ */
+function openEditPatientModal() {
+  const p = currentPatient;
+  document.getElementById('ep-name').value = p.name||'';
+  document.getElementById('ep-kana').value = p.kana||'';
+  document.getElementById('ep-gender').value = p.gender||'';
+  document.getElementById('ep-birthdate').value = p.birthdate||'';
+  document.getElementById('ep-height').value = p.height||'';
+  document.getElementById('ep-startWeight').value = p.startWeight||'';
+  document.getElementById('ep-targetWeight').value = p.targetWeight||'';
+  document.getElementById('ep-startDate').value = p.startDate||'';
+  document.getElementById('ep-targetDate').value = p.targetDate||'';
+  document.getElementById('ep-purpose').value = p.purpose||'';
+  document.getElementById('ep-finalGoal').value = p.finalGoal||'';
+  document.getElementById('ep-midGoal').value = p.midGoal||'';
+  document.getElementById('ep-karte').value = p.karteInfo||'';
+  openModal('editPatientModal');
+}
+async function submitEditPatient() {
+  await api('PUT', '/api/patients/' + currentPatientId, {
+    name: document.getElementById('ep-name').value,
+    kana: document.getElementById('ep-kana').value,
+    gender: document.getElementById('ep-gender').value,
+    birthdate: document.getElementById('ep-birthdate').value,
+    height: parseFloat(document.getElementById('ep-height').value)||null,
+    startWeight: parseFloat(document.getElementById('ep-startWeight').value)||null,
+    targetWeight: parseFloat(document.getElementById('ep-targetWeight').value)||null,
+    startDate: document.getElementById('ep-startDate').value,
+    targetDate: document.getElementById('ep-targetDate').value,
+    purpose: document.getElementById('ep-purpose').value,
+    finalGoal: document.getElementById('ep-finalGoal').value,
+    midGoal: document.getElementById('ep-midGoal').value,
+    karteInfo: document.getElementById('ep-karte').value,
+  });
+  closeModal('editPatientModal');
+  toast('保存しました ✅');
+  currentPatient = await api('GET', '/api/patients/' + currentPatientId);
+  renderDetail();
+  renderOverview();
+}
+
+/* ══ QR ══ */
+function showQR() {
+  const url = location.origin + '/patient.html?id=' + currentPatientId;
+  document.getElementById('qrTitle').textContent = currentPatient.name + 'さん用QR';
+  document.getElementById('qrUrlText').textContent = url;
+  document.getElementById('qrCanvas').innerHTML = '';
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(document.getElementById('qrCanvas'), { text:url, width:200, height:200, colorDark:'#1a2340', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
+  }
+  openModal('qrModal');
+}
+
+/* ══ 患者セルフ記録通知 ══ */
+function startPolling() {
+  stopPolling();
+  pollTimer = setInterval(async () => {
+    if (!currentPatientId) return;
+    try {
+      const selfRecs = await api('GET', `/api/patients/${currentPatientId}/self-records`);
+      const unimported = selfRecs.filter(r => !r.imported);
+      if (unimported.length) {
+        const latest = unimported[unimported.length-1];
+        document.getElementById('newDataChips').innerHTML = [
+          `<span class="new-chip">📅 ${latest.date}</span>`,
+          latest.weight ? `<span class="new-chip">⚖️ ${latest.weight}kg</span>` : '',
+          latest.pain != null ? `<span class="new-chip">🩹 痛み${latest.pain}/10</span>` : '',
+          latest.posture ? `<span class="new-chip">🧍 姿勢${latest.posture}/5</span>` : '',
+          latest.moti ? `<span class="new-chip">💪 モチベ${latest.moti}/5</span>` : '',
+          latest.memo ? `<span class="new-chip">💬 ${latest.memo.slice(0,20)}</span>` : '',
+        ].filter(Boolean).join('');
+        document.getElementById('newDataNotice').style.display = 'block';
+      } else {
+        document.getElementById('newDataNotice').style.display = 'none';
+      }
+    } catch {}
+  }, 4000);
+}
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+function checkNewData() { /* 初回チェック */ startPolling(); }
+async function importSelfRecords() {
+  const result = await api('POST', `/api/patients/${currentPatientId}/import-self`);
+  toast(`${result.imported}件の記録を取り込みました ✅`);
+  document.getElementById('newDataNotice').style.display = 'none';
+  currentPatient = await api('GET', '/api/patients/' + currentPatientId);
+  renderDetail();
+  renderRecords();
+}
+
+/* ══ モーダル外クリック ══ */
+document.querySelectorAll('.overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+/* 起動 */
+loadDashboard();
+</script>
+</body>
+</html>
