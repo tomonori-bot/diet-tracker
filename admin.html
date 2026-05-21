@@ -1121,6 +1121,14 @@ function renderDetail() {
     const bi = bmiInfo(bmi);
     const idealMin = p.height ? +(18.5 * (p.height / 100) ** 2).toFixed(1) : null;
     const idealMax = p.height ? +(24.9 * (p.height / 100) ** 2).toFixed(1) : null;
+    const hm = p.height ? (p.height / 100).toFixed(2) : null;
+    const a2 = age(p.birthdate);
+    const genderLabel = p.gender === '女性' ? '女性' : p.gender === '男性' ? '男性' : '—';
+    const bmrFormula = (latestW && p.height && a2)
+      ? (p.gender === '女性'
+          ? `10×${latestW} + 6.25×${p.height} − 5×${a2} − 161 = ${bmr}`
+          : `10×${latestW} + 6.25×${p.height} − 5×${a2} + 5 = ${bmr}`)
+      : null;
     document.getElementById('bmiBlock').style.display = '';
     document.getElementById('bmiBlock').innerHTML = `
       <div class="bmi-block" style="background:${bi.bg};border-color:${bi.border};color:${bi.color}">
@@ -1130,13 +1138,21 @@ function renderDetail() {
         </div>
         <div style="flex:1;padding-left:8px">
           ${idealMin ? `<div style="font-size:13px;color:var(--text2)">標準体重目安：<strong>${idealMin}〜${idealMax}kg</strong></div>` : ''}
-          ${tw ? `<div style="font-size:13px;color:var(--text2);margin-top:4px">目標体重：<strong>${tw}kg</strong> (目標BMI: ${calcBMI(tw, p.height)})</div>` : ''}
+          ${tw ? `<div style="font-size:13px;color:var(--text2);margin-top:4px">目標体重：<strong>${tw}kg</strong>（目標BMI: ${calcBMI(tw, p.height)}）</div>` : ''}
+          <div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.6);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.8">
+            <div><b>📐 BMI計算式</b>：体重(kg) ÷ 身長(m)²</div>
+            ${hm ? `<div style="color:var(--text3)">${latestW}kg ÷ ${hm}m² = <b style="color:${bi.color}">${bmi}</b></div>` : ''}
+          </div>
         </div>
         ${bmr ? `<div class="bmr-box">
-          <div class="bmr-lbl">基礎代謝</div>
+          <div class="bmr-lbl">基礎代謝 (BMR)</div>
           <div class="bmr-val">${bmr} <span class="bmr-unit">kcal/日</span></div>
-          <div class="bmr-tip">活動×1.5〜2.0 = 消費カロリー目安</div>
-          <div class="bmr-tip" style="margin-top:2px">Mifflin-St Jeor式</div>
+          <div class="bmr-tip" style="margin-top:6px;font-size:10px;background:rgba(255,255,255,.7);border-radius:6px;padding:6px 8px;line-height:1.7;color:var(--text2)">
+            <b>Mifflin-St Jeor式 (${genderLabel})</b><br>
+            ${p.gender === '女性' ? '10W + 6.25H − 5A − 161' : '10W + 6.25H − 5A + 5'}<br>
+            ${bmrFormula ? `<span style="color:var(--text3)">${bmrFormula}</span>` : ''}<br>
+            <span style="color:var(--accent)">活動量 × 1.5〜2.0 = 1日消費カロリー目安</span>
+          </div>
         </div>` : ''}
       </div>`;
   } else {
