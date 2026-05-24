@@ -93,7 +93,6 @@ body{
 
 /* ─ SLIDER ─ */
 .slider-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
-.slider-card.required-unanswered{border-color:var(--danger);box-shadow:0 0 0 3px rgba(239,68,68,.1)}
 .required-mark{color:var(--danger);font-weight:900;margin-left:4px}
 .unanswered-hint{font-size:11px;color:var(--danger);margin-top:6px;display:none;font-weight:600}
 .slider-card.required-unanswered .unanswered-hint{display:block}
@@ -109,12 +108,8 @@ body{
 }
 .slider-lbl{font-size:12px;color:var(--text3);min-width:26px;text-align:center}
 .slider-val{font-size:20px;font-weight:900;color:var(--accent);min-width:42px;text-align:right}
-.pain-indicators{display:flex;justify-content:space-between;margin-top:6px;padding:0 2px}
-.pain-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-
 /* ─ STARS ─ */
 .star-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
-.star-card.required-unanswered{border-color:var(--danger);box-shadow:0 0 0 3px rgba(239,68,68,.1)}
 .star-row{display:flex;justify-content:center;gap:14px;margin-top:10px}
 .star{font-size:42px;cursor:pointer;color:var(--surface2);transition:all .14s;line-height:1;user-select:none}
 .star:hover{transform:scale(1.18)}
@@ -209,22 +204,11 @@ body{
 .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ─ PAIN BUTTONS ─ */
-.pain-btn{
-  width:52px;height:52px;border-radius:12px;cursor:pointer;
-  font-size:16px;font-weight:900;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:1px;font-family:inherit;
-  transition:all .15s;line-height:1
-}
-.pain-btn:hover{transform:scale(1.1);filter:brightness(1.08)}
-.pain-btn.selected{transform:scale(1.15);box-shadow:0 4px 12px rgba(0,0,0,.15)!important}
-
 /* ─ RESPONSIVE ─ */
 @media(max-width:380px){
   .weight-input{font-size:52px}
   .star{font-size:36px}
   .body{padding:16px 16px 40px}
-  .pain-btn{width:44px;height:44px;font-size:14px}
 }
 </style>
 </head>
@@ -311,72 +295,6 @@ body{
             📊 <b style="color:var(--text2)">BMI計算式</b>: 体重(kg) ÷ 身長(m)²
             &nbsp;&nbsp;—&nbsp;&nbsp;例: <span id="bmiFormulaExample"></span>
           </div>
-        </div>
-      </div>
-
-      <!-- 痛みレベル -->
-      <div class="section">
-        <div class="section-title">🩹 痛み・不快感レベル<span class="required-mark">*</span></div>
-        <div class="slider-card" id="painCard">
-          <!-- 未選択状態 -->
-          <div id="painUnselected" style="text-align:center;padding:14px 0">
-            <div style="font-size:13px;color:var(--text3);margin-bottom:14px">今の痛み・不快感のレベルを選んでください</div>
-            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-              <button class="pain-btn" onclick="selectPain(1)" style="background:rgba(16,185,129,.1);border:1.5px solid rgba(16,185,129,.3);color:#10b981">1<br><span style="font-size:9px">ない</span></button>
-              <button class="pain-btn" onclick="selectPain(2)" style="background:rgba(52,211,153,.1);border:1.5px solid rgba(52,211,153,.3);color:#34d399">2<br><span style="font-size:9px">ほぼなし</span></button>
-              <button class="pain-btn" onclick="selectPain(3)" style="background:rgba(110,231,183,.1);border:1.5px solid rgba(110,231,183,.3);color:#6ee7b7">3<br><span style="font-size:9px">少し</span></button>
-              <button class="pain-btn" onclick="selectPain(4)" style="background:rgba(163,230,53,.1);border:1.5px solid rgba(163,230,53,.3);color:#65a30d">4<br><span style="font-size:9px">気になる</span></button>
-              <button class="pain-btn" onclick="selectPain(5)" style="background:rgba(251,191,36,.1);border:1.5px solid rgba(251,191,36,.3);color:#d97706">5<br><span style="font-size:9px">普通</span></button>
-              <button class="pain-btn" onclick="selectPain(6)" style="background:rgba(245,158,11,.1);border:1.5px solid rgba(245,158,11,.3);color:#b45309">6<br><span style="font-size:9px">やや辛い</span></button>
-              <button class="pain-btn" onclick="selectPain(7)" style="background:rgba(251,146,60,.1);border:1.5px solid rgba(251,146,60,.3);color:#ea580c">7<br><span style="font-size:9px">辛い</span></button>
-              <button class="pain-btn" onclick="selectPain(8)" style="background:rgba(249,115,22,.1);border:1.5px solid rgba(249,115,22,.3);color:#c2410c">8<br><span style="font-size:9px">かなり</span></button>
-              <button class="pain-btn" onclick="selectPain(9)" style="background:rgba(239,68,68,.1);border:1.5px solid rgba(239,68,68,.3);color:#dc2626">9<br><span style="font-size:9px">激しい</span></button>
-              <button class="pain-btn" onclick="selectPain(10)" style="background:rgba(220,38,38,.15);border:1.5px solid rgba(220,38,38,.4);color:#991b1b">10<br><span style="font-size:9px">最大</span></button>
-            </div>
-            <div class="unanswered-hint">痛みレベルを選択してください</div>
-          </div>
-          <!-- 選択済み状態 -->
-          <div id="painSelected" style="display:none">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-              <span style="font-size:12px;color:var(--text2)">選択済み</span>
-              <button onclick="resetPain()" style="background:none;border:none;font-size:11px;color:var(--text3);cursor:pointer;text-decoration:underline">変更する</button>
-            </div>
-            <div style="display:flex;align-items:center;gap:14px">
-              <div id="painSelectedNum" style="font-size:52px;font-weight:900;line-height:1">—</div>
-              <div>
-                <div style="font-size:11px;color:var(--text3);margin-bottom:3px">/ 10</div>
-                <div id="painSelectedLabel" style="font-size:14px;font-weight:700"></div>
-              </div>
-              <div class="pain-indicators" style="flex:1;margin:0">
-                <div class="pain-dot" style="background:#10b981"></div>
-                <div class="pain-dot" style="background:#34d399"></div>
-                <div class="pain-dot" style="background:#6ee7b7"></div>
-                <div class="pain-dot" style="background:#a3e635"></div>
-                <div class="pain-dot" style="background:#fbbf24"></div>
-                <div class="pain-dot" style="background:#f59e0b"></div>
-                <div class="pain-dot" style="background:#fb923c"></div>
-                <div class="pain-dot" style="background:#f97316"></div>
-                <div class="pain-dot" style="background:#ef4444"></div>
-                <div class="pain-dot" style="background:#dc2626"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 姿勢 -->
-      <div class="section">
-        <div class="section-title">🧍 今日の姿勢スコア<span class="required-mark">*</span></div>
-        <div class="star-card" id="postureCard">
-          <div class="star-row" id="postureStars">
-            <span class="star" onclick="setPosture(1)">★</span>
-            <span class="star" onclick="setPosture(2)">★</span>
-            <span class="star" onclick="setPosture(3)">★</span>
-            <span class="star" onclick="setPosture(4)">★</span>
-            <span class="star" onclick="setPosture(5)">★</span>
-          </div>
-          <div class="star-desc" id="postureDesc">★をタップして評価してください（必須）</div>
-          <div class="unanswered-hint">姿勢スコアを選択してください</div>
         </div>
       </div>
 
@@ -487,9 +405,7 @@ body{
    STATE
 ═══════════════════════════════ */
 let patient = null;
-let postureVal = 0;   // 0 = 未選択
 let motiVal = 0;      // 0 = 未選択
-let painVal = 0;      // 0 = 未選択
 let submitted = false;
 
 /* ═══════════════════════════════
@@ -632,46 +548,10 @@ function onWeightInput(v) {
 }
 
 /* ═══════════════════════════════
-   PAIN BUTTONS
+   MOTI STARS
 ═══════════════════════════════ */
-const painLabels = ['', '全然ない', 'ほぼなし', '少しある', '気になる', '普通', 'やや辛い', '辛い', 'かなり辛い', '激しい', '最大の痛み'];
-const painColors = ['', '#10b981','#34d399','#6ee7b7','#65a30d','#d97706','#b45309','#ea580c','#c2410c','#dc2626','#991b1b'];
-
-function selectPain(v) {
-  painVal = v;
-  // ボタンの選択状態更新
-  document.querySelectorAll('.pain-btn').forEach((btn, i) => {
-    btn.classList.toggle('selected', i + 1 === v);
-  });
-  // 選択済み表示に切り替え
-  document.getElementById('painUnselected').style.display = 'none';
-  document.getElementById('painSelected').style.display = '';
-  document.getElementById('painSelectedNum').textContent = v;
-  document.getElementById('painSelectedNum').style.color = painColors[v];
-  document.getElementById('painSelectedLabel').textContent = painLabels[v];
-  document.getElementById('painSelectedLabel').style.color = painColors[v];
-  document.getElementById('painCard').classList.remove('required-unanswered');
-}
-
-function resetPain() {
-  painVal = 0;
-  document.getElementById('painUnselected').style.display = '';
-  document.getElementById('painSelected').style.display = 'none';
-  document.querySelectorAll('.pain-btn').forEach(btn => btn.classList.remove('selected'));
-}
-
-/* ═══════════════════════════════
-   POSTURE & MOTI STARS
-═══════════════════════════════ */
-const postureDescs = ['', 'かなり悪い 😟', '少し悪い 😕', '普通 😐', '良い 🙂', 'とても良い 😊'];
 const motiDescs = ['', '全くやる気なし 😞', '少し低め 😐', '普通 🙂', 'やる気あり 💪', '最高に燃えてる 🔥'];
 
-function setPosture(v) {
-  postureVal = v;
-  document.querySelectorAll('#postureStars .star').forEach((s, i) => s.classList.toggle('on', i < v));
-  document.getElementById('postureDesc').textContent = postureDescs[v];
-  document.getElementById('postureCard').classList.remove('required-unanswered');
-}
 function setMoti(v) {
   motiVal = v;
   document.querySelectorAll('#motiStars .star').forEach((s, i) => s.classList.toggle('on', i < v));
@@ -697,19 +577,9 @@ async function submitRecord() {
 
   // 必須項目のバリデーション
   let hasError = false;
-  if (painVal === 0) {
-    document.getElementById('painCard').classList.add('required-unanswered');
-    document.getElementById('painCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    hasError = true;
-  }
-  if (postureVal === 0) {
-    document.getElementById('postureCard').classList.add('required-unanswered');
-    if (!hasError) document.getElementById('postureCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    hasError = true;
-  }
   if (motiVal === 0) {
     document.getElementById('motiCard').classList.add('required-unanswered');
-    if (!hasError) document.getElementById('motiCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('motiCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
     hasError = true;
   }
   if (hasError) return;
@@ -726,11 +596,11 @@ async function submitRecord() {
     const res = await fetch(`/api/patients/${patient.id}/self-record`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ weight, pain: painVal, posture: postureVal, moti: motiVal, exercise, memo })
+      body: JSON.stringify({ weight, moti: motiVal, exercise, memo })
     });
     if (!res.ok) throw new Error('submit failed');
     submitted = true;
-    showCompletionScreen({ weight, pain: painVal, posture: postureVal, moti: motiVal, exercise, memo });
+    showCompletionScreen({ weight, moti: motiVal, exercise, memo });
   } catch (e) {
     btn.disabled = false;
     btn.innerHTML = '<span>📤</span><span>今日の記録を送信する</span>';
@@ -772,7 +642,6 @@ function showCompletionScreen(rec) {
       return `<div class="result-card"><div class="rc-label">BMI</div><div class="rc-val" style="color:${info.color}">${bmi}</div><div class="rc-sub" style="color:${info.color}">${info.label}</div></div>`;
     })() : '',
     bmr ? `<div class="result-card"><div class="rc-label">基礎代謝</div><div class="rc-val">${bmr}<span class="rc-unit">kcal</span></div><div class="rc-sub">消費の基準値</div></div>` : '',
-    rec.pain != null ? `<div class="result-card"><div class="rc-label">痛みレベル</div><div class="rc-val">${rec.pain}<span class="rc-unit">/10</span></div></div>` : '',
   ].filter(Boolean);
   // 2個ずつ配置
   document.getElementById('resultCards').innerHTML = cards.join('');
@@ -818,7 +687,7 @@ document.getElementById('exerciseSlider')?.addEventListener('input', function() 
   this.style.background = `linear-gradient(90deg, #10b981 ${pct}%, var(--surface2) ${pct}%)`;
 });
 
-// 初期設定：運動達成率のみデフォルト値あり（痛み・姿勢・モチベは必タップ）
+// 初期設定：運動達成率のみデフォルト値あり（モチベは必タップ）
 onExerciseInput(50);
 </script>
 </body>
