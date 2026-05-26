@@ -1,11 +1,9 @@
-const CACHE_NAME = 'bodylog-v3';
+const CACHE_NAME = 'bodylog-v4';
 const STATIC_ASSETS = [
   '/patient.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
 ];
 
 // インストール：静的アセットをキャッシュ
@@ -30,11 +28,16 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// フェッチ戦略：APIはネットワーク優先、静的はキャッシュ優先
+// フェッチ戦略
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // API リクエストはネットワーク優先（失敗してもキャッシュなし）
+  // SSE（Server-Sent Events）はキャッシュしない
+  if (url.pathname.includes('/stream')) {
+    return;
+  }
+
+  // API リクエストはネットワーク優先
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() =>
@@ -51,17 +54,17 @@ self.addEventListener('fetch', event => {
     caches.match(event.request).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
-        if (response.ok) {
+        if (response.ok && response.status < 400) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => cached);
+      }).catch(() => cached || new Response('offline', { status: 503 }));
     })
   );
 });
 
-// バックグラウンド同期（オフライン時に記録を保留し、オンライン復帰後に送信）
+// バックグラウンド同期
 self.addEventListener('sync', event => {
   if (event.tag === 'sync-records') {
     event.waitUntil(syncPendingRecords());
@@ -69,7 +72,6 @@ self.addEventListener('sync', event => {
 });
 
 async function syncPendingRecords() {
-  // IndexedDB から保留中の記録を取得して送信（将来拡張用）
   const clients = await self.clients.matchAll();
   clients.forEach(client => client.postMessage({ type: 'SYNC_COMPLETE' }));
 }

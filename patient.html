@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="BodyLog">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root{
   --bg:#f0f4fb;--surface:#fff;--surface2:#eef2fb;--surface3:#e4eaf8;--border:#dde3f0;
@@ -29,6 +30,7 @@ body{
   min-height:100vh;
   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 80px);
   padding-top:env(safe-area-inset-top,0px);
+  overscroll-behavior:none;
 }
 
 /* ── SCREENS ── */
@@ -58,9 +60,9 @@ body{
 .install-banner{
   display:none;
   background:linear-gradient(135deg,#4a72f5,#7c9ff7);
-  color:#fff;padding:14px 20px;
+  color:#fff;padding:12px 16px;
   align-items:center;gap:12px;
-  position:sticky;top:0;z-index:100;
+  position:sticky;top:0;z-index:200;
   box-shadow:0 4px 16px rgba(74,114,245,.35)
 }
 .install-banner.show{display:flex}
@@ -81,45 +83,50 @@ body{
 
 /* ── HEADER ── */
 .header{
-  background:linear-gradient(160deg,#fff 0%,var(--bg) 100%);
+  background:rgba(255,255,255,.92);
   border-bottom:1px solid var(--border);
   position:sticky;top:0;z-index:10;
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)
 }
-.header-inner{padding:18px 22px 16px;text-align:center}
+.header-inner{padding:16px 20px 14px;text-align:center}
 .logo{
   font-size:11px;font-weight:800;color:var(--text3);
-  letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;
+  letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px;
   display:flex;align-items:center;justify-content:center;gap:6px
 }
-.greeting{font-size:22px;font-weight:900;color:var(--text);letter-spacing:-.5px;line-height:1.3}
-.greeting-sub{font-size:13px;color:var(--text2);margin-top:3px}
-.badge-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.greeting{font-size:21px;font-weight:900;color:var(--text);letter-spacing:-.5px;line-height:1.3}
+.greeting-sub{font-size:13px;color:var(--text2);margin-top:2px}
+.badge-row{
+  display:flex;align-items:center;justify-content:center;
+  gap:6px;margin-top:8px;flex-wrap:wrap
+}
 .streak-badge{
-  display:inline-flex;align-items:center;gap:5px;
+  display:inline-flex;align-items:center;gap:4px;
   background:rgba(245,158,11,.1);border:1.5px solid rgba(245,158,11,.25);
-  border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:var(--warn)
+  border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--warn)
 }
 .date-badge{
-  display:inline-flex;align-items:center;gap:5px;
+  display:inline-flex;align-items:center;gap:4px;
   background:rgba(74,114,245,.08);border:1.5px solid rgba(74,114,245,.16);
-  border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;color:var(--accent)
+  border-radius:20px;padding:4px 11px;font-size:12px;font-weight:600;color:var(--accent)
 }
 .online-dot{
   display:inline-flex;align-items:center;gap:5px;
-  font-size:11px;font-weight:600;color:var(--accent2)
+  font-size:11px;font-weight:600;color:var(--accent2);
+  cursor:pointer;
 }
 .online-dot::before{
   content:'';width:7px;height:7px;border-radius:50%;
-  background:var(--accent2);
-  box-shadow:0 0 0 0 rgba(16,185,129,.5);
+  background:currentColor;
   animation:pulse-dot 2s infinite
 }
+.online-dot.offline{color:var(--danger)}
 @keyframes pulse-dot{
   0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}
   70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}
   100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}
 }
+.online-dot.offline::before{animation:none}
 
 /* ── BOTTOM NAV ── */
 .bottom-nav{
@@ -131,27 +138,32 @@ body{
 }
 .bn-item{
   flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:3px;padding:10px 0;
+  justify-content:center;gap:2px;padding:9px 0;
   cursor:pointer;border:none;background:none;font-family:inherit;
   color:var(--text3);font-size:10px;font-weight:600;
-  transition:color .15s;-webkit-tap-highlight-color:transparent
+  transition:color .15s,background .15s;
+  -webkit-tap-highlight-color:transparent;
+  position:relative;
 }
 .bn-item.active{color:var(--accent)}
-.bn-icon{font-size:22px;line-height:1;transition:transform .15s}
+.bn-item.active::after{
+  content:'';position:absolute;bottom:0;left:20%;right:20%;
+  height:2px;background:var(--accent);border-radius:2px 2px 0 0
+}
+.bn-icon{font-size:20px;line-height:1;transition:transform .15s}
 .bn-item.active .bn-icon{transform:scale(1.12)}
 .bn-badge{
-  position:absolute;top:6px;right:calc(50% - 20px);
+  position:absolute;top:5px;right:calc(50% - 22px);
   background:var(--danger);color:#fff;
   font-size:9px;font-weight:800;padding:1px 5px;border-radius:8px;
   min-width:16px;text-align:center;display:none
 }
-.bn-item{position:relative}
 
 /* ── BODY ── */
-.body{padding:18px 18px 0;max-width:520px;margin:0 auto}
+.body{padding:16px 16px 0;max-width:520px;margin:0 auto}
 
 /* ── SECTION ── */
-.section{margin-bottom:20px}
+.section{margin-bottom:18px}
 .section-title{
   font-size:11px;font-weight:800;color:var(--text2);
   letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;
@@ -162,17 +174,28 @@ body{
 .goal-banner{
   background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(16,185,129,.04));
   border:1.5px solid rgba(16,185,129,.2);border-radius:var(--radius);
-  padding:14px 18px;margin-bottom:18px;
+  padding:14px 16px;margin-bottom:16px;
   display:flex;align-items:flex-start;gap:12px
 }
-.goal-icon{font-size:22px;flex-shrink:0;margin-top:1px}
-.goal-label{font-size:10px;font-weight:800;color:var(--accent2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.goal-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.goal-label{font-size:10px;font-weight:800;color:var(--accent2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
 .goal-text{font-size:14px;color:var(--text);line-height:1.6}
+
+/* ── HOMEWORK REMINDER ── */
+.hw-reminder{
+  background:linear-gradient(135deg,rgba(74,114,245,.06),rgba(74,114,245,.02));
+  border:1.5px solid rgba(74,114,245,.18);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:16px;
+  display:flex;align-items:flex-start;gap:12px
+}
+.hw-reminder-icon{font-size:20px;flex-shrink:0}
+.hw-reminder-label{font-size:10px;font-weight:800;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.hw-reminder-text{font-size:14px;color:var(--text);line-height:1.6}
 
 /* ── ALREADY DONE ── */
 .already-box{
   background:rgba(16,185,129,.07);border:2px solid rgba(16,185,129,.22);
-  border-radius:var(--radius);padding:22px;text-align:center
+  border-radius:var(--radius);padding:20px;text-align:center
 }
 .already-icon{font-size:40px;margin-bottom:10px}
 .already-title{font-size:17px;font-weight:800;color:var(--accent2);margin-bottom:5px}
@@ -186,10 +209,18 @@ body{
 .ar-val{font-size:20px;font-weight:900;color:var(--text);letter-spacing:-.5px}
 .ar-unit{font-size:11px;color:var(--text2);font-weight:500}
 
+/* ── OFFLINE QUEUE NOTICE ── */
+.offline-queue-notice{
+  background:rgba(245,158,11,.1);border:1.5px solid rgba(245,158,11,.25);
+  border-radius:var(--radius-sm);padding:10px 14px;
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;
+  font-size:13px;font-weight:600;color:var(--warn)
+}
+
 /* ── WEIGHT CARD ── */
 .weight-card{
   background:var(--surface);border:2px solid var(--border);
-  border-radius:var(--radius);padding:22px 20px;
+  border-radius:var(--radius);padding:20px 18px;
   box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s;
   position:relative
 }
@@ -197,7 +228,7 @@ body{
 .weight-row{display:flex;align-items:flex-end;justify-content:center;gap:8px}
 .weight-input{
   background:none;border:none;outline:none;
-  font-size:62px;font-weight:900;color:var(--text);
+  font-size:60px;font-weight:900;color:var(--text);
   width:180px;text-align:center;font-family:inherit;
   letter-spacing:-2px;line-height:1
 }
@@ -276,18 +307,32 @@ input[type=range]::-webkit-slider-thumb{
   border-radius:var(--radius);padding:20px;font-size:18px;font-weight:900;
   cursor:pointer;letter-spacing:-.3px;
   box-shadow:0 4px 20px rgba(74,114,245,.38);transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:10px
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  font-family:inherit;
 }
 .submit-btn:hover{filter:brightness(1.06);transform:translateY(-2px)}
 .submit-btn:active{transform:translateY(0);filter:brightness(.98)}
 .submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* ── SHARE ROW ── */
+.share-row{display:flex;gap:10px;margin-bottom:4px}
+.share-btn{
+  flex:1;background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 10px;
+  font-size:13px;font-weight:700;color:var(--text2);
+  cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:all .15s
+}
+.share-btn:hover{border-color:var(--accent);color:var(--accent)}
+.share-btn:active{transform:scale(.97)}
 
 /* ── HISTORY TAB ── */
 .hist-empty{text-align:center;padding:40px 20px;color:var(--text3)}
 .hist-empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
 .hist-card{
   background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:16px 18px;
+  border-radius:var(--radius);padding:16px 16px;
   margin-bottom:12px;box-shadow:var(--shadow)
 }
 .hc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -303,9 +348,38 @@ input[type=range]::-webkit-slider-thumb{
 .hc-memo{margin-top:10px;font-size:12px;color:var(--text2);line-height:1.6;
   background:var(--surface2);border-radius:8px;padding:8px 10px}
 
+/* ── GRAPH TAB ── */
+.graph-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px 16px;
+  margin-bottom:16px;box-shadow:var(--shadow)
+}
+.graph-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:14px;
+  display:flex;align-items:center;gap:6px}
+.graph-empty{text-align:center;padding:30px 20px;color:var(--text3);font-size:13px}
+.chart-wrap{position:relative;height:200px}
+
+/* ── GOAL TAB ── */
+.progress-section{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px;margin-bottom:16px;
+  text-align:left;box-shadow:var(--shadow)
+}
+.prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.prog-title{font-size:13px;font-weight:700;color:var(--text)}
+.prog-pct{font-size:22px;font-weight:900;color:var(--accent2)}
+.prog-bar{background:var(--surface2);border-radius:20px;height:10px;overflow:hidden}
+.prog-fill{height:100%;border-radius:20px;background:var(--grad2);transition:width 1.2s ease}
+.prog-sub{font-size:11px;color:var(--text2);margin-top:6px;text-align:right}
+.streak-complete{
+  background:rgba(245,158,11,.08);border:1.5px solid rgba(245,158,11,.2);
+  border-radius:var(--radius);padding:16px;margin-bottom:16px;
+  display:flex;align-items:center;gap:14px
+}
+
 /* ── COMPLETION SCREEN ── */
 .completion{
-  padding:40px 22px 60px;max-width:480px;margin:0 auto;text-align:center
+  padding:40px 20px 60px;max-width:480px;margin:0 auto;text-align:center
 }
 .completion-icon{
   font-size:70px;margin-bottom:14px;
@@ -323,17 +397,6 @@ input[type=range]::-webkit-slider-thumb{
 .rc-val{font-size:24px;font-weight:900;color:var(--text);letter-spacing:-.5px}
 .rc-unit{font-size:12px;color:var(--text2);font-weight:500}
 .rc-sub{font-size:11px;color:var(--text2);margin-top:4px}
-.progress-section{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:18px;margin-bottom:20px;
-  text-align:left;box-shadow:var(--shadow)
-}
-.prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.prog-title{font-size:13px;font-weight:700;color:var(--text)}
-.prog-pct{font-size:22px;font-weight:900;color:var(--accent2)}
-.prog-bar{background:var(--surface2);border-radius:20px;height:8px;overflow:hidden}
-.prog-fill{height:100%;border-radius:20px;background:var(--grad2);transition:width 1.2s ease}
-.prog-sub{font-size:11px;color:var(--text2);margin-top:6px;text-align:right}
 .info-box{
   border-radius:var(--radius);padding:16px 18px;margin-bottom:16px;text-align:left
 }
@@ -341,11 +404,6 @@ input[type=range]::-webkit-slider-thumb{
 .info-box.blue{background:rgba(74,114,245,.07);border:1.5px solid rgba(74,114,245,.18)}
 .ib-title{font-size:12px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .ib-text{font-size:14px;color:var(--text);line-height:1.7}
-.streak-complete{
-  background:rgba(245,158,11,.08);border:1.5px solid rgba(245,158,11,.2);
-  border-radius:var(--radius);padding:16px;margin-bottom:20px;
-  display:flex;align-items:center;gap:14px
-}
 .done-btn{
   width:100%;background:var(--surface);border:2px solid var(--border);
   border-radius:var(--radius);padding:16px;font-size:16px;font-weight:700;
@@ -362,12 +420,24 @@ input[type=range]::-webkit-slider-thumb{
   box-shadow:0 4px 16px rgba(239,68,68,.35);white-space:nowrap
 }
 #offlineToast.show{opacity:1}
+
+/* ── SYNC TOAST ── */
+#syncToast{
+  position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);
+  left:50%;transform:translateX(-50%);
+  background:var(--accent2);color:#fff;padding:10px 22px;border-radius:20px;
+  font-size:13px;font-weight:700;z-index:9999;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+  box-shadow:0 4px 16px rgba(16,185,129,.35);white-space:nowrap
+}
+#syncToast.show{opacity:1}
 </style>
 </head>
 <body>
 
 <!-- オフライントースト -->
-<div id="offlineToast">📵 オフライン中 — データは接続後に送信されます</div>
+<div id="offlineToast">📵 オフライン中 — 記録はオンライン復帰後に自動送信</div>
+<div id="syncToast">✅ オフライン中の記録を送信しました</div>
 
 <!-- PWAインストールバナー -->
 <div class="install-banner" id="installBanner">
@@ -413,21 +483,25 @@ input[type=range]::-webkit-slider-thumb{
       <div class="badge-row">
         <div class="streak-badge" id="streakBadge">🔥 0日連続</div>
         <div class="date-badge" id="dateBadge">📅 —</div>
-        <div class="online-dot" id="onlineDot">サーバー接続中</div>
+        <div class="online-dot" id="onlineDot" onclick="sharePageUrl()">サーバー接続中</div>
       </div>
     </div>
   </div>
 
-  <!-- ボトムナビ -->
+  <!-- ボトムナビ（4タブ） -->
   <div class="bottom-nav">
     <button class="bn-item active" id="bn-record" onclick="switchTab('record')">
       <div class="bn-icon">✏️</div>
-      <span>記録する</span>
+      <span>記録</span>
     </button>
     <button class="bn-item" id="bn-history" onclick="switchTab('history')">
-      <div class="bn-icon">📊</div>
-      <span>過去の記録</span>
+      <div class="bn-icon">📋</div>
+      <span>履歴</span>
       <div class="bn-badge" id="histBadge"></div>
+    </button>
+    <button class="bn-item" id="bn-graph" onclick="switchTab('graph')">
+      <div class="bn-icon">📈</div>
+      <span>グラフ</span>
     </button>
     <button class="bn-item" id="bn-goal" onclick="switchTab('goal')">
       <div class="bn-icon">🎯</div>
@@ -438,13 +512,29 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ── TAB: 記録 ── -->
   <div id="tab-record" class="body">
 
+    <!-- オフラインキューお知らせ -->
+    <div id="offlineQueueNotice" class="offline-queue-notice" style="display:none">
+      ⏳ <span id="offlineQueueText">送信待ちの記録があります</span>
+    </div>
+
     <!-- 目標バナー -->
-    <div id="goalBannerSmall" style="display:none;margin-bottom:18px">
+    <div id="goalBannerSmall" style="display:none;margin-bottom:16px">
       <div class="goal-banner">
         <div class="goal-icon">🎯</div>
         <div>
           <div class="goal-label">あなたの目標</div>
           <div class="goal-text" id="goalBannerText"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ホームワークリマインダー -->
+    <div id="hwReminder" style="display:none;margin-bottom:16px">
+      <div class="hw-reminder">
+        <div class="hw-reminder-icon">📌</div>
+        <div>
+          <div class="hw-reminder-label">今日の課題</div>
+          <div class="hw-reminder-text" id="hwReminderText"></div>
         </div>
       </div>
     </div>
@@ -457,8 +547,8 @@ input[type=range]::-webkit-slider-thumb{
         <div class="already-sub">お疲れ様でした！<br>明日もまた記録を続けましょう 💪</div>
         <div class="already-rec" id="todayRecSummary"></div>
       </div>
-      <button class="submit-btn" style="margin-top:14px;background:var(--surface);color:var(--accent);border:2px solid var(--accent);box-shadow:none" onclick="showForm()">
-        もう一度記録する
+      <button class="submit-btn" style="margin-top:12px;background:var(--surface);color:var(--accent);border:2px solid var(--accent);box-shadow:none;font-family:inherit;" onclick="showForm()">
+        ✏️ もう一度記録する
       </button>
     </div>
 
@@ -516,8 +606,7 @@ input[type=range]::-webkit-slider-thumb{
             <span class="ex-val" id="exValText">50%</span>
           </div>
           <input type="range" min="0" max="100" step="5" value="50" id="exerciseSlider"
-            oninput="onExercise(this.value)"
-            style="background:linear-gradient(90deg,var(--accent2) 50%,var(--surface2) 50%)">
+            oninput="onExercise(this.value)">
           <div class="ex-labels"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
         </div>
       </div>
@@ -537,13 +626,25 @@ input[type=range]::-webkit-slider-thumb{
         </button>
       </div>
 
+      <!-- シェアボタン -->
+      <div class="section">
+        <div class="share-row">
+          <button class="share-btn" onclick="sharePageUrl()">
+            🔗 このページを共有
+          </button>
+          <button class="share-btn" onclick="addToHomeScreen()">
+            📱 ホーム画面に追加
+          </button>
+        </div>
+      </div>
+
     </div><!-- /recordForm -->
   </div><!-- /tab-record -->
 
-  <!-- ── TAB: 過去の記録 ── -->
+  <!-- ── TAB: 履歴 ── -->
   <div id="tab-history" class="body" style="display:none">
     <div class="section" style="margin-top:4px">
-      <div class="section-title">📊 これまでの記録</div>
+      <div class="section-title">📋 これまでの記録</div>
       <div id="historyList">
         <div class="hist-empty">
           <div class="hist-empty-icon">📋</div>
@@ -553,11 +654,35 @@ input[type=range]::-webkit-slider-thumb{
     </div>
   </div>
 
+  <!-- ── TAB: グラフ ── -->
+  <div id="tab-graph" class="body" style="display:none">
+    <div class="section" style="margin-top:4px">
+      <div class="section-title">📈 体重推移</div>
+      <div class="graph-card">
+        <div class="graph-title">⚖️ 体重グラフ</div>
+        <div id="weightChartWrap">
+          <div class="graph-empty">記録が2件以上になるとグラフが表示されます</div>
+        </div>
+      </div>
+      <div class="graph-card">
+        <div class="graph-title">💪 モチベーション推移</div>
+        <div id="motiChartWrap">
+          <div class="graph-empty">記録が2件以上になるとグラフが表示されます</div>
+        </div>
+      </div>
+      <div class="graph-card">
+        <div class="graph-title">🏃 運動達成率推移</div>
+        <div id="exChartWrap">
+          <div class="graph-empty">記録が2件以上になるとグラフが表示されます</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── TAB: 目標 ── -->
   <div id="tab-goal" class="body" style="display:none">
     <div id="goalTabContent">
       <div class="section-title" style="margin-bottom:14px">🎯 あなたの目標</div>
-      <!-- JSで描画 -->
     </div>
   </div>
 
@@ -607,12 +732,22 @@ input[type=range]::-webkit-slider-thumb{
         </div>
       </div>
 
+      <!-- シェアボタン -->
+      <button class="share-btn" style="width:100%;margin-bottom:12px;border-radius:var(--radius)" onclick="shareResult()">
+        📤 記録結果をシェアする
+      </button>
+
       <button class="done-btn" onclick="onDone()">✨ 閉じる</button>
     </div>
   </div>
 </div>
 
 <script>
+/* ══════════════════════════════════════
+   CHART インスタンス管理
+══════════════════════════════════════ */
+const chartInstances = {};
+
 /* ══════════════════════════════════════
    STATE
 ══════════════════════════════════════ */
@@ -621,6 +756,7 @@ let motiVal = 0;
 let submitted = false;
 let deferredPrompt = null;
 let currentTab = 'record';
+let lastRecordData = null;
 
 const motiDescs = ['','全くやる気なし 😞','少し低め 😐','普通 🙂','やる気あり 💪','最高に燃えてる 🔥'];
 
@@ -634,7 +770,7 @@ if ('serviceWorker' in navigator) {
 
   navigator.serviceWorker.addEventListener('message', e => {
     if (e.data?.type === 'SYNC_COMPLETE') {
-      console.log('Sync complete');
+      showSyncToast('✅ オフライン中の記録を送信しました');
     }
   });
 }
@@ -645,8 +781,8 @@ if ('serviceWorker' in navigator) {
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
-  // 既にインストール済みでなければバナー表示
-  if (!window.matchMedia('(display-mode: standalone)').matches) {
+  if (!window.matchMedia('(display-mode: standalone)').matches &&
+      !localStorage.getItem('bl_install_dismissed')) {
     document.getElementById('installBanner').classList.add('show');
   }
 });
@@ -664,7 +800,7 @@ document.getElementById('dismissInstall').addEventListener('click', () => {
   localStorage.setItem('bl_install_dismissed', '1');
 });
 
-// iOS 向け（beforeinstallpromptが発火しない）
+// iOS 向け
 if (/iphone|ipad|ipod/i.test(navigator.userAgent) &&
     !window.matchMedia('(display-mode: standalone)').matches &&
     !localStorage.getItem('bl_install_dismissed')) {
@@ -676,32 +812,202 @@ if (/iphone|ipad|ipod/i.test(navigator.userAgent) &&
   document.getElementById('installBtn').style.display = 'none';
 }
 
+function addToHomeScreen() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+  } else if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+    document.getElementById('installBanner').classList.add('show');
+    document.getElementById('installBanner').querySelector('.install-banner-text').innerHTML =
+      '<strong>📱 ホーム画面に追加する方法</strong>' +
+      'Safariの「共有」→「ホーム画面に追加」をタップ';
+    document.getElementById('installBtn').style.display = 'none';
+  } else {
+    alert('ブラウザのメニューから「ホーム画面に追加」または「アプリをインストール」を選択してください。');
+  }
+}
+
 /* ══════════════════════════════════════
-   オフライン検知
+   Web Share API
+══════════════════════════════════════ */
+async function sharePageUrl() {
+  const url = location.href;
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: `BodyLog - ${patient?.name || ''}さんの記録ページ`,
+        text: '毎日の体重・モチベーションを記録しています 💪',
+        url
+      });
+    } catch {}
+  } else {
+    try {
+      await navigator.clipboard.writeText(url);
+      showSyncToast('🔗 URLをコピーしました');
+    } catch {
+      prompt('このURLをコピーしてください:', url);
+    }
+  }
+}
+
+async function shareResult() {
+  if (!lastRecordData) return;
+  const name = patient?.name || 'あなた';
+  const streak = calcStreak();
+  const weight = lastRecordData.weight ? `体重: ${lastRecordData.weight}kg\n` : '';
+  const moti = lastRecordData.moti ? `モチベ: ${'★'.repeat(lastRecordData.moti)}\n` : '';
+  const text = `📊 ${name}の今日の記録\n${weight}${moti}🔥 ${streak}日連続達成中！\n#BodyLog`;
+  if (navigator.share) {
+    try { await navigator.share({ title: 'BodyLog記録', text, url: location.href }); }
+    catch {}
+  } else {
+    try {
+      await navigator.clipboard.writeText(text);
+      showSyncToast('📋 記録テキストをコピーしました');
+    } catch {}
+  }
+}
+
+/* ══════════════════════════════════════
+   オフライン検知 + IndexedDB キュー
 ══════════════════════════════════════ */
 function updateOnlineStatus() {
   const dot = document.getElementById('onlineDot');
   const toast = document.getElementById('offlineToast');
   if (navigator.onLine) {
-    dot.style.display = 'inline-flex';
+    dot.classList.remove('offline');
     dot.textContent = 'サーバー接続中';
-    dot.style.color = 'var(--accent2)';
     toast.classList.remove('show');
+    // オンライン復帰時にキューを送信
+    flushOfflineQueue();
   } else {
-    dot.textContent = 'オフライン中';
-    dot.style.color = 'var(--danger)';
-    dot.style.setProperty('--accent2', '#ef4444');
+    dot.classList.add('offline');
+    dot.textContent = 'オフライン';
     toast.classList.add('show');
   }
+  updateOfflineQueueNotice();
 }
+
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
+
+/* ── IndexedDB オフラインキュー ── */
+const DB_NAME = 'bodylog-offline';
+const STORE_NAME = 'pending-records';
+
+function openOfflineDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore(STORE_NAME, { autoIncrement: true });
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = reject;
+  });
+}
+
+async function saveToOfflineQueue(patientId, data) {
+  const db = await openOfflineDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).add({ patientId, data, savedAt: new Date().toISOString() });
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
+  });
+}
+
+async function getOfflineQueue() {
+  const db = await openOfflineDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const req = tx.objectStore(STORE_NAME).getAll();
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = reject;
+  });
+}
+
+async function getOfflineQueueKeys() {
+  const db = await openOfflineDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const req = tx.objectStore(STORE_NAME).getAllKeys();
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = reject;
+  });
+}
+
+async function deleteFromOfflineQueue(key) {
+  const db = await openOfflineDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).delete(key);
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
+  });
+}
+
+async function flushOfflineQueue() {
+  if (!navigator.onLine) return;
+  const queue = await getOfflineQueue();
+  const keys = await getOfflineQueueKeys();
+  if (queue.length === 0) return;
+
+  let sent = 0;
+  for (let i = 0; i < queue.length; i++) {
+    const item = queue[i];
+    try {
+      const res = await fetch(`/api/patients/${item.patientId}/self-record`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item.data)
+      });
+      if (res.ok) {
+        await deleteFromOfflineQueue(keys[i]);
+        sent++;
+      }
+    } catch {}
+  }
+  if (sent > 0) {
+    showSyncToast(`✅ ${sent}件のオフライン記録を送信しました`);
+    updateOfflineQueueNotice();
+    // データ再取得
+    try {
+      if (patient) {
+        const fresh = await fetch(`/api/patients/${patient.id}`);
+        if (fresh.ok) { patient = await fresh.json(); }
+      }
+    } catch {}
+  }
+}
+
+async function updateOfflineQueueNotice() {
+  try {
+    const queue = await getOfflineQueue();
+    const notice = document.getElementById('offlineQueueNotice');
+    if (queue.length > 0) {
+      notice.style.display = 'flex';
+      document.getElementById('offlineQueueText').textContent =
+        `${queue.length}件の送信待ち記録があります（オンライン復帰後に自動送信）`;
+    } else {
+      notice.style.display = 'none';
+    }
+  } catch {}
+}
+
+function showSyncToast(msg) {
+  const el = document.getElementById('syncToast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
 
 /* ══════════════════════════════════════
    INIT
 ══════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async () => {
   updateOnlineStatus();
+  updateOfflineQueueNotice();
+  setupSliderStyle();
 
   const params = new URLSearchParams(location.search);
   const id = params.get('id');
@@ -723,7 +1029,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   initScreen();
-  setupSliderStyle();
 });
 
 function showScreen(id) {
@@ -739,7 +1044,7 @@ function initScreen() {
   const todayRec = allRecs.filter(r => r.date === today).sort((a,b) =>
     new Date(b.createdAt||0) - new Date(a.createdAt||0))[0];
 
-  // ヘッダー
+  // ヘッダー挨拶
   const hour = new Date().getHours();
   const greet = hour < 11 ? 'おはようございます' : hour < 18 ? 'こんにちは' : 'こんばんは';
   const firstName = patient.name?.split(' ')[0] || patient.name || 'あなた';
@@ -759,6 +1064,13 @@ function initScreen() {
   if (patient.finalGoal) {
     document.getElementById('goalBannerSmall').style.display = '';
     document.getElementById('goalBannerText').textContent = patient.finalGoal;
+  }
+
+  // ホームワークリマインダー
+  const lastSession = (patient.sessions || []).slice(-1)[0];
+  if (lastSession?.homework) {
+    document.getElementById('hwReminder').style.display = '';
+    document.getElementById('hwReminderText').textContent = lastSession.homework;
   }
 
   // 今日済み
@@ -799,6 +1111,14 @@ function renderTodaySummary(rec) {
 function showForm() {
   document.getElementById('alreadySection').style.display = 'none';
   document.getElementById('recordForm').style.display = '';
+  submitted = false;
+  motiVal = 0;
+  document.querySelectorAll('#motiStars .star').forEach(s => s.classList.remove('on'));
+  document.getElementById('motiDesc').textContent = '★をタップして評価してください（必須）';
+  document.getElementById('weightInput').value = '';
+  document.getElementById('memoInput').value = '';
+  document.getElementById('bmiPreview').classList.remove('visible');
+  document.getElementById('bmiFormula').style.display = 'none';
 }
 
 /* ══════════════════════════════════════
@@ -806,26 +1126,24 @@ function showForm() {
 ══════════════════════════════════════ */
 function switchTab(name) {
   currentTab = name;
-  ['record','history','goal'].forEach(t => {
-    document.getElementById('tab-' + t).style.display = t === name ? '' : 'none';
-    document.getElementById('bn-' + t).classList.toggle('active', t === name);
+  ['record','history','graph','goal'].forEach(t => {
+    const tab = document.getElementById('tab-' + t);
+    if (tab) tab.style.display = t === name ? '' : 'none';
+    const bn = document.getElementById('bn-' + t);
+    if (bn) bn.classList.toggle('active', t === name);
   });
   if (name === 'history') renderHistory();
+  if (name === 'graph') renderGraphs();
   if (name === 'goal') renderGoalTab();
-  // 記録タブに戻ったとき
-  if (name === 'record') {
-    document.getElementById('histBadge').style.display = 'none';
-  }
 }
 
 /* ══════════════════════════════════════
-   過去記録タブ
+   過去履歴タブ
 ══════════════════════════════════════ */
 function renderHistory() {
   const staffRecs = (patient.records || []).slice().reverse();
   const patRecs = (patient.patientRecords || []).slice().reverse();
 
-  // 全記録をマージして日付順
   const all = [
     ...staffRecs.map(r => ({ ...r, _src: 'staff' })),
     ...patRecs.map(r => ({ ...r, _src: 'patient' }))
@@ -852,10 +1170,12 @@ function renderHistory() {
       r.exercise != null ? { label:'運動', val: r.exercise, unit:'%' } : null,
     ].filter(Boolean);
 
+    const dateLabel = formatDate(r.date);
+
     return `
     <div class="hist-card">
       <div class="hc-head">
-        <div class="hc-date">${r.date}</div>
+        <div class="hc-date">${dateLabel}</div>
         <span class="hc-source ${srcClass}">${srcLabel}</span>
       </div>
       ${items.length ? `<div class="hc-grid">
@@ -868,6 +1188,114 @@ function renderHistory() {
       ${r.memo ? `<div class="hc-memo">💬 ${r.memo}</div>` : ''}
     </div>`;
   }).join('');
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('ja-JP', { year:'numeric', month:'short', day:'numeric', weekday:'short' });
+}
+
+/* ══════════════════════════════════════
+   グラフタブ
+══════════════════════════════════════ */
+function renderGraphs() {
+  const allRecs = [
+    ...(patient.records || []).map(r => ({...r, _src:'staff'})),
+    ...(patient.patientRecords || []).map(r => ({...r, _src:'patient'}))
+  ].sort((a, b) => a.date.localeCompare(b.date));
+
+  // 日付ごとに最新1件
+  const byDate = {};
+  allRecs.forEach(r => { byDate[r.date] = r; });
+  const sorted = Object.values(byDate).sort((a,b) => a.date.localeCompare(b.date));
+
+  const labels = sorted.map(r => {
+    const d = new Date(r.date + 'T00:00:00');
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  });
+
+  // 体重グラフ
+  const weights = sorted.map(r => r.weight ?? null);
+  const hasWeights = weights.some(w => w !== null);
+  renderLineChart('weightChartWrap', 'weightChart', labels, weights,
+    '体重 (kg)', '#4a72f5', hasWeights);
+
+  // モチベグラフ
+  const motis = sorted.map(r => r.moti ?? null);
+  const hasMotis = motis.some(m => m !== null);
+  renderLineChart('motiChartWrap', 'motiChart', labels, motis,
+    'モチベ (★)', '#f59e0b', hasMotis, { min: 0, max: 5 });
+
+  // 運動グラフ
+  const exercises = sorted.map(r => r.exercise ?? null);
+  const hasExercises = exercises.some(e => e !== null);
+  renderLineChart('exChartWrap', 'exChart', labels, exercises,
+    '運動達成率 (%)', '#10b981', hasExercises, { min: 0, max: 100 });
+}
+
+function renderLineChart(wrapId, chartId, labels, data, label, color, hasData, yOptions = {}) {
+  const wrap = document.getElementById(wrapId);
+  if (!hasData || labels.length < 2) {
+    wrap.innerHTML = `<div class="graph-empty">記録が2件以上になるとグラフが表示されます</div>`;
+    return;
+  }
+
+  // 既存チャートを破棄
+  if (chartInstances[chartId]) {
+    chartInstances[chartId].destroy();
+    delete chartInstances[chartId];
+  }
+
+  wrap.innerHTML = `<div class="chart-wrap"><canvas id="${chartId}"></canvas></div>`;
+  const ctx = document.getElementById(chartId).getContext('2d');
+
+  chartInstances[chartId] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label,
+        data,
+        borderColor: color,
+        backgroundColor: color + '18',
+        borderWidth: 2.5,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: color,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0.35,
+        fill: true,
+        spanGaps: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#18243d',
+          titleColor: '#fff',
+          bodyColor: '#9ba8c0',
+          cornerRadius: 10,
+          padding: 10,
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(0,0,0,.04)' },
+          ticks: { color: '#9ba8c0', font: { size: 11 } }
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,.04)' },
+          ticks: { color: '#9ba8c0', font: { size: 11 } },
+          ...yOptions
+        }
+      }
+    }
+  });
 }
 
 /* ══════════════════════════════════════
@@ -896,7 +1324,7 @@ function renderGoalTab() {
     <div class="section-title" style="margin-bottom:14px">🎯 あなたの目標</div>
 
     ${p.finalGoal ? `
-    <div class="goal-banner" style="margin-bottom:16px">
+    <div class="goal-banner" style="margin-bottom:14px">
       <div class="goal-icon">🎯</div>
       <div>
         <div class="goal-label">最終目標</div>
@@ -905,7 +1333,7 @@ function renderGoalTab() {
     </div>` : ''}
 
     ${p.midGoal ? `
-    <div class="goal-banner" style="margin-bottom:16px;border-color:rgba(74,114,245,.2);background:rgba(74,114,245,.05)">
+    <div class="goal-banner" style="margin-bottom:14px;border-color:rgba(74,114,245,.2);background:rgba(74,114,245,.05)">
       <div class="goal-icon">📍</div>
       <div>
         <div class="goal-label" style="color:var(--accent)">中間目標</div>
@@ -914,7 +1342,7 @@ function renderGoalTab() {
     </div>` : ''}
 
     ${prog !== null ? `
-    <div class="progress-section" style="margin-bottom:16px">
+    <div class="progress-section" style="margin-bottom:14px">
       <div class="prog-header">
         <div class="prog-title">📈 目標達成率</div>
         <div class="prog-pct">${prog}%</div>
@@ -923,12 +1351,12 @@ function renderGoalTab() {
         <div class="prog-fill" id="goalProgFill" style="width:0%"></div>
       </div>
       <div class="prog-sub">
-        ${remaining !== null && remaining > 0 ? `目標まであと ${remaining}kg` :
+        ${remaining !== null && remaining > 0 ? `目標まであと <b>${remaining}kg</b>` :
           remaining !== null && remaining <= 0 ? '🎉 目標体重達成！' : ''}
       </div>
     </div>` : ''}
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
       ${p.startWeight ? `<div class="hc-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
         <div class="hc-label">開始体重</div>
         <div class="hc-val">${p.startWeight}<span class="hc-unit">kg</span></div>
@@ -947,7 +1375,7 @@ function renderGoalTab() {
       </div>` : ''}
     </div>
 
-    <div class="streak-complete" style="margin-bottom:16px">
+    <div class="streak-complete" style="margin-bottom:14px">
       <div style="font-size:32px">🔥</div>
       <div>
         <div style="font-size:22px;font-weight:900;color:var(--warn)">${streak} 日連続</div>
@@ -956,14 +1384,22 @@ function renderGoalTab() {
     </div>
 
     ${p.targetDate ? `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;margin-bottom:14px">
       <div class="section-title" style="justify-content:center;margin-bottom:6px">🗓️ 目標期日</div>
       <div style="font-size:18px;font-weight:800;color:var(--text)">${p.targetDate}</div>
       <div style="font-size:12px;color:var(--text3);margin-top:4px">${daysUntil(p.targetDate)}</div>
     </div>` : ''}
+
+    ${p.homework ? `
+    <div class="hw-reminder">
+      <div class="hw-reminder-icon">📌</div>
+      <div>
+        <div class="hw-reminder-label">ホームワーク</div>
+        <div class="hw-reminder-text">${p.homework}</div>
+      </div>
+    </div>` : ''}
   `;
 
-  // 進捗バーアニメーション
   if (prog !== null) {
     setTimeout(() => {
       const fill = document.getElementById('goalProgFill');
@@ -1052,6 +1488,8 @@ function setMoti(v) {
   document.querySelectorAll('#motiStars .star').forEach((s, i) => s.classList.toggle('on', i < v));
   document.getElementById('motiDesc').textContent = motiDescs[v];
   document.getElementById('motiCard').classList.remove('required-unanswered');
+  // 触覚フィードバック
+  if (navigator.vibrate) navigator.vibrate(20);
 }
 
 /* ══════════════════════════════════════
@@ -1059,9 +1497,9 @@ function setMoti(v) {
 ══════════════════════════════════════ */
 function onExercise(v) {
   const n = parseInt(v);
-  document.getElementById('exValText').textContent = n + '%';
-  const color = n >= 80 ? 'var(--accent2)' : n >= 50 ? 'var(--accent)' : n >= 30 ? 'var(--warn)' : 'var(--danger)';
-  document.getElementById('exValText').style.color = color;
+  const el = document.getElementById('exValText');
+  el.textContent = n + '%';
+  el.style.color = n >= 80 ? 'var(--accent2)' : n >= 50 ? 'var(--accent)' : n >= 30 ? 'var(--warn)' : 'var(--danger)';
   setupSliderStyle();
 }
 
@@ -1078,48 +1516,83 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ══════════════════════════════════════
-   SUBMIT
+   SUBMIT（オフライン対応）
 ══════════════════════════════════════ */
 async function submitRecord() {
   if (submitted) return;
 
   // バリデーション
-  let hasError = false;
   if (motiVal === 0) {
     document.getElementById('motiCard').classList.add('required-unanswered');
     document.getElementById('motiCard').scrollIntoView({ behavior:'smooth', block:'center' });
-    hasError = true;
+    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+    return;
   }
-  if (hasError) return;
 
   const weight = parseFloat(document.getElementById('weightInput').value) || null;
   const exercise = parseInt(document.getElementById('exerciseSlider').value);
   const memo = document.getElementById('memoInput').value.trim();
+  const payload = { weight, moti: motiVal, exercise, memo };
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
   btn.innerHTML = '<span>⏳</span><span>送信中...</span>';
 
+  if (!navigator.onLine) {
+    // オフライン時：IndexedDBに保存
+    await saveToOfflineQueue(patient.id, payload);
+    submitted = true;
+    if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 100]);
+    lastRecordData = payload;
+    updateOfflineQueueNotice();
+
+    // ローカルに仮追加してcompletion表示
+    if (!patient.patientRecords) patient.patientRecords = [];
+    patient.patientRecords.push({
+      ...payload,
+      id: 'local-' + Date.now(),
+      date: new Date().toISOString().slice(0, 10),
+      createdAt: new Date().toISOString(),
+      _offline: true
+    });
+    showCompletionScreen(payload);
+    return;
+  }
+
   try {
     const res = await fetch(`/api/patients/${patient.id}/self-record`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ weight, moti: motiVal, exercise, memo })
+      body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('submit failed');
     submitted = true;
+    if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 100]);
+    lastRecordData = payload;
 
-    // 患者データ再取得してストリーク更新
     try {
       const fresh = await fetch(`/api/patients/${patient.id}`);
       if (fresh.ok) patient = await fresh.json();
     } catch {}
 
-    showCompletionScreen({ weight, moti: motiVal, exercise, memo });
+    showCompletionScreen(payload);
   } catch (e) {
-    btn.disabled = false;
-    btn.innerHTML = '<span>📤</span><span>今日の記録を送信する</span>';
-    alert('送信に失敗しました。ネットワーク接続を確認してください。');
+    // エラー時もオフラインキューに保存
+    await saveToOfflineQueue(patient.id, payload);
+    submitted = true;
+    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+    lastRecordData = payload;
+    updateOfflineQueueNotice();
+    patient.patientRecords = patient.patientRecords || [];
+    patient.patientRecords.push({
+      ...payload,
+      id: 'local-' + Date.now(),
+      date: new Date().toISOString().slice(0, 10),
+      createdAt: new Date().toISOString(),
+      _offline: true
+    });
+    showSyncToast('📵 保存しました（オンライン復帰後に自動送信）');
+    showCompletionScreen(payload);
   }
 }
 
@@ -1159,7 +1632,6 @@ function showCompletionScreen(rec) {
   ].filter(Boolean);
   document.getElementById('resultCards').innerHTML = cards.join('');
 
-  // 進捗
   if (rec.weight && patient.targetWeight && patient.startWeight) {
     const prog = Math.min(100, Math.max(0, Math.round(
       (patient.startWeight - rec.weight) / (patient.startWeight - patient.targetWeight) * 100
@@ -1172,7 +1644,6 @@ function showCompletionScreen(rec) {
     setTimeout(() => document.getElementById('progFill').style.width = prog + '%', 300);
   }
 
-  // ホームワーク
   const lastSession = (patient.sessions || []).slice(-1)[0];
   if (lastSession?.homework) {
     document.getElementById('homeworkBox').style.display = '';
@@ -1183,15 +1654,13 @@ function showCompletionScreen(rec) {
     document.getElementById('nextPlanText').textContent = lastSession.nextPlan;
   }
 
-  // ストリーク
-  const streak = calcStreak() + 1;
-  document.getElementById('completionStreak').textContent = `${streak} 日連続`;
+  const streak = calcStreak();
+  document.getElementById('completionStreak').textContent = `${streak + 1} 日連続`;
 
   showScreen('screenComplete');
 }
 
 function onDone() {
-  // 完了後は記録タブに戻ってリロード（今日の記録表示）
   location.reload();
 }
 </script>
