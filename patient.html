@@ -6,159 +6,315 @@
 <title>BodyLog - 今日の記録</title>
 <meta name="theme-color" content="#4a72f5">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BodyLog">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <style>
 :root{
-  --bg:#f0f4fb;--surface:#fff;--surface2:#eef2fb;--border:#dde3f0;
+  --bg:#f0f4fb;--surface:#fff;--surface2:#eef2fb;--surface3:#e4eaf8;--border:#dde3f0;
   --text:#18243d;--text2:#556080;--text3:#9ba8c0;
   --accent:#4a72f5;--accent2:#10b981;--danger:#ef4444;--warn:#f59e0b;
   --grad:linear-gradient(135deg,#4a72f5,#7c9ff7);
   --grad2:linear-gradient(135deg,#10b981,#34d399);
-  --shadow:0 2px 12px rgba(74,114,245,.1);
-  --shadow-lg:0 8px 32px rgba(74,114,245,.15);
+  --shadow:0 2px 12px rgba(74,114,245,.10);
+  --shadow-lg:0 8px 32px rgba(74,114,245,.16);
   --radius:16px;--radius-sm:12px;
 }
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
 body{
   font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;
   background:var(--bg);color:var(--text);font-size:15px;
-  min-height:100vh;padding-bottom:env(safe-area-inset-bottom,0)
+  min-height:100vh;
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 80px);
+  padding-top:env(safe-area-inset-top,0px);
 }
 
-/* ─ SCREENS ─ */
-.screen{display:none;min-height:100vh}.screen.active{display:block}
+/* ── SCREENS ── */
+.screen{display:none;min-height:100vh}
+.screen.active{display:block}
 
-/* ─ HEADER ─ */
+/* ── LOADING ── */
+.loading{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;flex-direction:column;gap:16px;
+  background:var(--bg)
+}
+.spinner{
+  width:44px;height:44px;border:3.5px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin 1s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── ERROR ── */
+.error-wrap{padding:80px 28px;text-align:center;max-width:400px;margin:0 auto}
+.error-icon{font-size:60px;margin-bottom:18px;opacity:.55}
+.error-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:10px}
+.error-sub{font-size:14px;color:var(--text2);line-height:1.8}
+
+/* ── INSTALL BANNER ── */
+.install-banner{
+  display:none;
+  background:linear-gradient(135deg,#4a72f5,#7c9ff7);
+  color:#fff;padding:14px 20px;
+  align-items:center;gap:12px;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 4px 16px rgba(74,114,245,.35)
+}
+.install-banner.show{display:flex}
+.install-banner-text{flex:1;font-size:13px;font-weight:600;line-height:1.5}
+.install-banner-text strong{display:block;font-size:14px;font-weight:800}
+.install-btn-wrap{display:flex;gap:8px;flex-shrink:0}
+.btn-install{
+  background:#fff;color:var(--accent);
+  border:none;border-radius:20px;padding:8px 16px;
+  font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;
+  white-space:nowrap
+}
+.btn-dismiss{
+  background:rgba(255,255,255,.2);color:#fff;
+  border:none;border-radius:20px;padding:8px 12px;
+  font-size:13px;cursor:pointer;font-family:inherit
+}
+
+/* ── HEADER ── */
 .header{
   background:linear-gradient(160deg,#fff 0%,var(--bg) 100%);
   border-bottom:1px solid var(--border);
-  padding:env(safe-area-inset-top,12px) 0 0;
-  position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)
+  position:sticky;top:0;z-index:10;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)
 }
-.header-inner{padding:20px 24px 18px;text-align:center}
-.logo{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px}
-.greeting{font-size:24px;font-weight:900;color:var(--text);letter-spacing:-.5px;line-height:1.3}
-.greeting-sub{font-size:14px;color:var(--text2);margin-top:4px}
-.streak-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.header-inner{padding:18px 22px 16px;text-align:center}
+.logo{
+  font-size:11px;font-weight:800;color:var(--text3);
+  letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;
+  display:flex;align-items:center;justify-content:center;gap:6px
+}
+.greeting{font-size:22px;font-weight:900;color:var(--text);letter-spacing:-.5px;line-height:1.3}
+.greeting-sub{font-size:13px;color:var(--text2);margin-top:3px}
+.badge-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap}
 .streak-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  background:rgba(245,158,11,.1);border:1.5px solid rgba(245,158,11,.22);
-  border-radius:22px;padding:6px 16px;font-size:13px;font-weight:700;color:var(--warn)
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(245,158,11,.1);border:1.5px solid rgba(245,158,11,.25);
+  border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:var(--warn)
 }
 .date-badge{
   display:inline-flex;align-items:center;gap:5px;
-  background:rgba(74,114,245,.08);border:1.5px solid rgba(74,114,245,.15);
-  border-radius:22px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--accent)
+  background:rgba(74,114,245,.08);border:1.5px solid rgba(74,114,245,.16);
+  border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;color:var(--accent)
+}
+.online-dot{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:600;color:var(--accent2)
+}
+.online-dot::before{
+  content:'';width:7px;height:7px;border-radius:50%;
+  background:var(--accent2);
+  box-shadow:0 0 0 0 rgba(16,185,129,.5);
+  animation:pulse-dot 2s infinite
+}
+@keyframes pulse-dot{
+  0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}
+  70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}
+  100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}
 }
 
-/* ─ BODY ─ */
-.body{padding:20px 20px 40px;max-width:520px;margin:0 auto}
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:var(--surface);border-top:1px solid var(--border);
+  display:flex;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  box-shadow:0 -4px 20px rgba(74,114,245,.10)
+}
+.bn-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;padding:10px 0;
+  cursor:pointer;border:none;background:none;font-family:inherit;
+  color:var(--text3);font-size:10px;font-weight:600;
+  transition:color .15s;-webkit-tap-highlight-color:transparent
+}
+.bn-item.active{color:var(--accent)}
+.bn-icon{font-size:22px;line-height:1;transition:transform .15s}
+.bn-item.active .bn-icon{transform:scale(1.12)}
+.bn-badge{
+  position:absolute;top:6px;right:calc(50% - 20px);
+  background:var(--danger);color:#fff;
+  font-size:9px;font-weight:800;padding:1px 5px;border-radius:8px;
+  min-width:16px;text-align:center;display:none
+}
+.bn-item{position:relative}
 
-/* ─ SECTION ─ */
-.section{margin-bottom:22px}
+/* ── BODY ── */
+.body{padding:18px 18px 0;max-width:520px;margin:0 auto}
+
+/* ── SECTION ── */
+.section{margin-bottom:20px}
 .section-title{
-  font-size:12px;font-weight:800;color:var(--text2);
-  letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;
+  font-size:11px;font-weight:800;color:var(--text2);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;
   display:flex;align-items:center;gap:6px
 }
 
-/* ─ WEIGHT ─ */
+/* ── GOAL BANNER ── */
+.goal-banner{
+  background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(16,185,129,.04));
+  border:1.5px solid rgba(16,185,129,.2);border-radius:var(--radius);
+  padding:14px 18px;margin-bottom:18px;
+  display:flex;align-items:flex-start;gap:12px
+}
+.goal-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+.goal-label{font-size:10px;font-weight:800;color:var(--accent2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.goal-text{font-size:14px;color:var(--text);line-height:1.6}
+
+/* ── ALREADY DONE ── */
+.already-box{
+  background:rgba(16,185,129,.07);border:2px solid rgba(16,185,129,.22);
+  border-radius:var(--radius);padding:22px;text-align:center
+}
+.already-icon{font-size:40px;margin-bottom:10px}
+.already-title{font-size:17px;font-weight:800;color:var(--accent2);margin-bottom:5px}
+.already-sub{font-size:13px;color:var(--text2);line-height:1.7}
+.already-rec{
+  margin-top:14px;background:var(--surface);border-radius:var(--radius-sm);
+  padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px
+}
+.ar-item{text-align:center}
+.ar-label{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.ar-val{font-size:20px;font-weight:900;color:var(--text);letter-spacing:-.5px}
+.ar-unit{font-size:11px;color:var(--text2);font-weight:500}
+
+/* ── WEIGHT CARD ── */
 .weight-card{
   background:var(--surface);border:2px solid var(--border);
-  border-radius:var(--radius);padding:24px 20px;
+  border-radius:var(--radius);padding:22px 20px;
   box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s;
   position:relative
 }
-.weight-card:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px rgba(74,114,245,.1)}
+.weight-card:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px rgba(74,114,245,.10)}
 .weight-row{display:flex;align-items:flex-end;justify-content:center;gap:8px}
 .weight-input{
   background:none;border:none;outline:none;
-  font-size:64px;font-weight:900;color:var(--text);
+  font-size:62px;font-weight:900;color:var(--text);
   width:180px;text-align:center;font-family:inherit;
   letter-spacing:-2px;line-height:1
 }
 .weight-input::placeholder{color:var(--text3)}
-.weight-unit{font-size:22px;font-weight:700;color:var(--text2);padding-bottom:8px}
+.weight-unit{font-size:22px;font-weight:700;color:var(--text2);padding-bottom:6px}
 .bmi-preview{
-  margin-top:14px;padding:10px 16px;
+  margin-top:12px;padding:10px 14px;
   background:var(--surface2);border-radius:var(--radius-sm);
-  display:none;align-items:center;gap:12px
+  display:none;align-items:center;gap:10px
 }
 .bmi-preview.visible{display:flex}
-.bmi-preview-num{font-size:22px;font-weight:900;letter-spacing:-.5px}
-.bmi-preview-label{font-size:12px;font-weight:700;padding:2px 10px;border-radius:12px}
-.bmi-preview-tip{font-size:11px;color:var(--text3);margin-left:auto}
+.bmi-num{font-size:22px;font-weight:900;letter-spacing:-.5px}
+.bmi-label{font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px}
+.bmi-tip{font-size:11px;color:var(--text3);margin-left:auto}
+.bmi-formula{
+  display:none;margin-top:8px;padding:8px 12px;
+  background:var(--surface2);border-radius:10px;
+  font-size:11px;color:var(--text3);line-height:1.7
+}
 
-/* ─ SLIDER ─ */
-.slider-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
-.required-mark{color:var(--danger);font-weight:900;margin-left:4px}
-.unanswered-hint{font-size:11px;color:var(--danger);margin-top:6px;display:none;font-weight:600}
-.slider-card.required-unanswered .unanswered-hint{display:block}
-.slider-row{display:flex;align-items:center;gap:12px;margin-top:6px}
-.slider-row input[type=range]{
-  flex:1;-webkit-appearance:none;appearance:none;height:6px;
-  border-radius:6px;background:var(--surface2);border:none;padding:0;cursor:pointer
+/* ── STAR CARD ── */
+.star-card{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)
 }
-.slider-row input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:26px;height:26px;border-radius:50%;
-  background:var(--accent);border:3px solid #fff;
-  box-shadow:0 2px 8px rgba(74,114,245,.38);cursor:pointer
+.star-card.required-unanswered{
+  border-color:var(--danger);
+  box-shadow:0 0 0 3px rgba(239,68,68,.10)
 }
-.slider-lbl{font-size:12px;color:var(--text3);min-width:26px;text-align:center}
-.slider-val{font-size:20px;font-weight:900;color:var(--accent);min-width:42px;text-align:right}
-/* ─ STARS ─ */
-.star-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
-.star-row{display:flex;justify-content:center;gap:14px;margin-top:10px}
-.star{font-size:42px;cursor:pointer;color:var(--surface2);transition:all .14s;line-height:1;user-select:none}
+.star-row{display:flex;justify-content:center;gap:10px;margin-top:10px}
+.star{
+  font-size:40px;cursor:pointer;color:var(--surface3);
+  transition:all .14s;line-height:1;user-select:none
+}
 .star:hover{transform:scale(1.18)}
 .star.on{color:var(--warn);filter:drop-shadow(0 2px 8px rgba(245,158,11,.45))}
 .star-desc{text-align:center;font-size:12px;color:var(--text3);margin-top:8px;min-height:18px}
+.required-mark{color:var(--danger);font-weight:900;margin-left:3px}
+.unanswered-hint{
+  font-size:11px;color:var(--danger);margin-top:6px;
+  display:none;font-weight:600;text-align:center
+}
+.star-card.required-unanswered .unanswered-hint{display:block}
 
-/* ─ EXERCISE SLIDER ─ */
-.exercise-track{position:relative;height:10px;background:var(--surface2);border-radius:10px;overflow:hidden;margin:12px 0 4px}
-.exercise-fill{height:100%;border-radius:10px;background:var(--grad2);transition:width .2s}
-.exercise-val-row{display:flex;align-items:center;justify-content:space-between}
+/* ── EXERCISE SLIDER ── */
+.slider-card{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)
+}
+.ex-val-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ex-val{font-size:28px;font-weight:900;color:var(--accent2);letter-spacing:-.5px}
+input[type=range]{
+  width:100%;-webkit-appearance:none;appearance:none;
+  height:8px;border-radius:8px;background:var(--surface2);
+  border:none;padding:0;cursor:pointer;outline:none
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:28px;height:28px;border-radius:50%;
+  background:var(--accent2);border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(16,185,129,.38);cursor:pointer
+}
+.ex-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px}
 
-/* ─ MEMO ─ */
+/* ── MEMO ── */
 .memo-input{
   width:100%;background:var(--surface);border:1.5px solid var(--border);
-  border-radius:var(--radius);padding:16px 18px;font-size:15px;color:var(--text);
+  border-radius:var(--radius);padding:14px 16px;font-size:15px;color:var(--text);
   outline:none;font-family:inherit;resize:none;line-height:1.65;
   transition:border-color .15s,box-shadow .15s;display:block
 }
-.memo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,114,245,.1)}
+.memo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,114,245,.10)}
 
-/* ─ SUBMIT ─ */
-.submit-area{margin-top:10px}
+/* ── SUBMIT ── */
 .submit-btn{
   width:100%;background:var(--grad);color:#fff;border:none;
   border-radius:var(--radius);padding:20px;font-size:18px;font-weight:900;
   cursor:pointer;letter-spacing:-.3px;
   box-shadow:0 4px 20px rgba(74,114,245,.38);transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:8px
+  display:flex;align-items:center;justify-content:center;gap:10px
 }
-.submit-btn:hover{filter:brightness(1.06);transform:translateY(-2px);box-shadow:0 8px 28px rgba(74,114,245,.45)}
-.submit-btn:active{transform:translateY(0)}
+.submit-btn:hover{filter:brightness(1.06);transform:translateY(-2px)}
+.submit-btn:active{transform:translateY(0);filter:brightness(.98)}
 .submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
 
-/* ─ ALREADY DONE ─ */
-.already-box{
-  background:rgba(16,185,129,.08);border:2px solid rgba(16,185,129,.25);
-  border-radius:var(--radius);padding:20px;text-align:center;margin-top:4px
+/* ── HISTORY TAB ── */
+.hist-empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.hist-empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
+.hist-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;
+  margin-bottom:12px;box-shadow:var(--shadow)
 }
-.already-icon{font-size:36px;margin-bottom:10px}
-.already-title{font-size:17px;font-weight:800;color:var(--accent2);margin-bottom:4px}
-.already-sub{font-size:13px;color:var(--text2);line-height:1.6}
+.hc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.hc-date{font-size:14px;font-weight:800;color:var(--text)}
+.hc-source{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+.hc-source.staff{background:rgba(74,114,245,.1);color:var(--accent)}
+.hc-source.patient{background:rgba(16,185,129,.1);color:var(--accent2)}
+.hc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hc-item{text-align:center;background:var(--surface2);border-radius:10px;padding:8px 6px}
+.hc-label{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
+.hc-val{font-size:17px;font-weight:900;color:var(--text);letter-spacing:-.3px}
+.hc-unit{font-size:10px;color:var(--text2);font-weight:500}
+.hc-memo{margin-top:10px;font-size:12px;color:var(--text2);line-height:1.6;
+  background:var(--surface2);border-radius:8px;padding:8px 10px}
 
-/* ─ COMPLETION SCREEN ─ */
-.completion{padding:40px 24px 60px;max-width:480px;margin:0 auto;text-align:center}
-.completion-icon{font-size:64px;margin-bottom:14px;animation:pop .5s cubic-bezier(.25,.46,.45,.94)}
-@keyframes pop{0%{transform:scale(.5);opacity:0}80%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+/* ── COMPLETION SCREEN ── */
+.completion{
+  padding:40px 22px 60px;max-width:480px;margin:0 auto;text-align:center
+}
+.completion-icon{
+  font-size:70px;margin-bottom:14px;
+  animation:pop .5s cubic-bezier(.25,.46,.45,.94)
+}
+@keyframes pop{0%{transform:scale(.5);opacity:0}80%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
 .completion-title{font-size:26px;font-weight:900;color:var(--text);letter-spacing:-.5px;margin-bottom:6px}
-.completion-sub{font-size:15px;color:var(--text2);margin-bottom:28px;line-height:1.6}
-.result-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.completion-sub{font-size:15px;color:var(--text2);margin-bottom:26px;line-height:1.65}
+.result-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
 .result-card{
   background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow)
@@ -167,25 +323,29 @@ body{
 .rc-val{font-size:24px;font-weight:900;color:var(--text);letter-spacing:-.5px}
 .rc-unit{font-size:12px;color:var(--text2);font-weight:500}
 .rc-sub{font-size:11px;color:var(--text2);margin-top:4px}
-.progress-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:24px;text-align:left;box-shadow:var(--shadow)}
+.progress-section{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px;margin-bottom:20px;
+  text-align:left;box-shadow:var(--shadow)
+}
 .prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .prog-title{font-size:13px;font-weight:700;color:var(--text)}
-.prog-pct{font-size:20px;font-weight:900;color:var(--accent2)}
+.prog-pct{font-size:22px;font-weight:900;color:var(--accent2)}
 .prog-bar{background:var(--surface2);border-radius:20px;height:8px;overflow:hidden}
-.prog-fill{height:100%;border-radius:20px;background:var(--grad2);transition:width 1s ease}
+.prog-fill{height:100%;border-radius:20px;background:var(--grad2);transition:width 1.2s ease}
 .prog-sub{font-size:11px;color:var(--text2);margin-top:6px;text-align:right}
-.homework-box{
-  background:rgba(245,158,11,.08);border:1.5px solid rgba(245,158,11,.22);
-  border-radius:var(--radius);padding:18px;margin-bottom:24px;text-align:left
+.info-box{
+  border-radius:var(--radius);padding:16px 18px;margin-bottom:16px;text-align:left
 }
-.hw-title{font-size:13px;font-weight:800;color:var(--warn);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.hw-text{font-size:14px;color:var(--text);line-height:1.7}
-.next-plan-box{
-  background:rgba(74,114,245,.07);border:1.5px solid rgba(74,114,245,.18);
-  border-radius:var(--radius);padding:18px;margin-bottom:24px;text-align:left
+.info-box.green{background:rgba(16,185,129,.07);border:1.5px solid rgba(16,185,129,.2)}
+.info-box.blue{background:rgba(74,114,245,.07);border:1.5px solid rgba(74,114,245,.18)}
+.ib-title{font-size:12px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.ib-text{font-size:14px;color:var(--text);line-height:1.7}
+.streak-complete{
+  background:rgba(245,158,11,.08);border:1.5px solid rgba(245,158,11,.2);
+  border-radius:var(--radius);padding:16px;margin-bottom:20px;
+  display:flex;align-items:center;gap:14px
 }
-.np-title{font-size:13px;font-weight:800;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.np-text{font-size:14px;color:var(--text);line-height:1.7}
 .done-btn{
   width:100%;background:var(--surface);border:2px solid var(--border);
   border-radius:var(--radius);padding:16px;font-size:16px;font-weight:700;
@@ -193,74 +353,113 @@ body{
 }
 .done-btn:hover{border-color:var(--accent);color:var(--accent)}
 
-/* ─ ERROR SCREEN ─ */
-.error-screen{padding:80px 24px;text-align:center;max-width:400px;margin:0 auto}
-.error-icon{font-size:56px;margin-bottom:18px;opacity:.6}
-.error-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px}
-.error-sub{font-size:14px;color:var(--text2);line-height:1.7}
-
-/* ─ LOADING ─ */
-.loading{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:14px}
-.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ─ RESPONSIVE ─ */
-@media(max-width:380px){
-  .weight-input{font-size:52px}
-  .star{font-size:36px}
-  .body{padding:16px 16px 40px}
+/* ── OFFLINE TOAST ── */
+#offlineToast{
+  position:fixed;top:70px;left:50%;transform:translateX(-50%);
+  background:#ef4444;color:#fff;padding:10px 22px;border-radius:20px;
+  font-size:13px;font-weight:700;z-index:9999;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+  box-shadow:0 4px 16px rgba(239,68,68,.35);white-space:nowrap
 }
+#offlineToast.show{opacity:1}
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
+<!-- オフライントースト -->
+<div id="offlineToast">📵 オフライン中 — データは接続後に送信されます</div>
+
+<!-- PWAインストールバナー -->
+<div class="install-banner" id="installBanner">
+  <div class="install-banner-text">
+    <strong>📱 ホーム画面に追加しよう</strong>
+    毎日かんたんに記録できます
+  </div>
+  <div class="install-btn-wrap">
+    <button class="btn-install" id="installBtn">追加する</button>
+    <button class="btn-dismiss" id="dismissInstall">✕</button>
+  </div>
+</div>
+
+<!-- ローディング -->
 <div class="loading" id="screenLoading">
   <div class="spinner"></div>
-  <div style="font-size:14px;color:var(--text3)">読み込み中...</div>
+  <div style="font-size:13px;color:var(--text3);font-weight:600">読み込み中...</div>
 </div>
 
-<!-- ERROR SCREEN -->
+<!-- エラー -->
 <div class="screen" id="screenError">
-  <div class="error-screen">
+  <div class="error-wrap">
     <div class="error-icon">⚠️</div>
     <div class="error-title">ページが見つかりません</div>
-    <div class="error-sub" id="errorMsg">URLが正しくないか、患者情報が存在しません。<br>担当スタッフにお問い合わせください。</div>
+    <div class="error-sub" id="errorMsg">
+      URLが正しくないか、患者情報が存在しません。<br>
+      担当スタッフにお問い合わせください。
+    </div>
   </div>
 </div>
 
-<!-- MAIN RECORD SCREEN -->
+<!-- メイン記録画面 -->
 <div class="screen" id="screenMain">
+
+  <!-- ヘッダー -->
   <div class="header">
     <div class="header-inner">
-      <div class="logo">BodyLog</div>
+      <div class="logo">
+        <span>💪</span> BodyLog
+      </div>
       <div class="greeting" id="greeting">こんにちは！</div>
       <div class="greeting-sub" id="greetingSub">今日の状態を記録しましょう</div>
-      <div class="streak-row">
+      <div class="badge-row">
         <div class="streak-badge" id="streakBadge">🔥 0日連続</div>
         <div class="date-badge" id="dateBadge">📅 —</div>
+        <div class="online-dot" id="onlineDot">サーバー接続中</div>
       </div>
     </div>
   </div>
 
-  <div class="body">
+  <!-- ボトムナビ -->
+  <div class="bottom-nav">
+    <button class="bn-item active" id="bn-record" onclick="switchTab('record')">
+      <div class="bn-icon">✏️</div>
+      <span>記録する</span>
+    </button>
+    <button class="bn-item" id="bn-history" onclick="switchTab('history')">
+      <div class="bn-icon">📊</div>
+      <span>過去の記録</span>
+      <div class="bn-badge" id="histBadge"></div>
+    </button>
+    <button class="bn-item" id="bn-goal" onclick="switchTab('goal')">
+      <div class="bn-icon">🎯</div>
+      <span>目標</span>
+    </button>
+  </div>
 
-    <!-- 目標表示 -->
-    <div id="goalSection" style="display:none;margin-bottom:20px">
-      <div style="background:rgba(16,185,129,.08);border:1.5px solid rgba(16,185,129,.2);border-radius:var(--radius);padding:14px 18px">
-        <div style="font-size:11px;font-weight:800;color:var(--accent2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">🎯 あなたの目標</div>
-        <div id="goalText" style="font-size:14px;color:var(--text);line-height:1.65"></div>
+  <!-- ── TAB: 記録 ── -->
+  <div id="tab-record" class="body">
+
+    <!-- 目標バナー -->
+    <div id="goalBannerSmall" style="display:none;margin-bottom:18px">
+      <div class="goal-banner">
+        <div class="goal-icon">🎯</div>
+        <div>
+          <div class="goal-label">あなたの目標</div>
+          <div class="goal-text" id="goalBannerText"></div>
+        </div>
       </div>
     </div>
 
-    <!-- 今日すでに記録済み -->
-    <div id="alreadySection" style="display:none">
+    <!-- 今日済み表示 -->
+    <div id="alreadySection" style="display:none;margin-bottom:16px">
       <div class="already-box">
         <div class="already-icon">✅</div>
         <div class="already-title">今日の記録は完了しています</div>
-        <div class="already-sub">お疲れ様でした！<br>また明日も記録を続けましょう 💪</div>
+        <div class="already-sub">お疲れ様でした！<br>明日もまた記録を続けましょう 💪</div>
+        <div class="already-rec" id="todayRecSummary"></div>
       </div>
-      <button class="submit-btn" style="margin-top:14px;background:var(--surface);color:var(--accent);border:2px solid var(--accent);box-shadow:none" onclick="showRecordForm()">もう一度記録する</button>
+      <button class="submit-btn" style="margin-top:14px;background:var(--surface);color:var(--accent);border:2px solid var(--accent);box-shadow:none" onclick="showForm()">
+        もう一度記録する
+      </button>
     </div>
 
     <!-- 記録フォーム -->
@@ -268,32 +467,26 @@ body{
 
       <!-- 体重 -->
       <div class="section">
-        <div class="section-title">⚖️ 体重
-          <span style="font-size:10px;font-weight:500;color:var(--text3);margin-left:4px">(入力でBMIを自動計算)</span>
-        </div>
+        <div class="section-title">⚖️ 体重</div>
         <div class="weight-card">
           <div class="weight-row">
-            <input
-              type="number" class="weight-input" id="weightInput"
+            <input type="number" class="weight-input" id="weightInput"
               placeholder="—" step="0.1" min="20" max="300"
-              inputmode="decimal" oninput="onWeightInput(this.value)"
-            >
+              inputmode="decimal" oninput="onWeightInput(this.value)">
             <span class="weight-unit">kg</span>
           </div>
           <div class="bmi-preview" id="bmiPreview">
             <div>
-              <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">BMI</div>
-              <div class="bmi-preview-num" id="bmiPreviewNum">—</div>
+              <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">BMI</div>
+              <div class="bmi-num" id="bmiNum">—</div>
             </div>
             <div>
-              <div class="bmi-preview-label" id="bmiPreviewLabel">—</div>
+              <div class="bmi-label" id="bmiLabel">—</div>
             </div>
-            <div class="bmi-preview-tip" id="bmiPreviewTip"></div>
+            <div class="bmi-tip" id="bmiTip"></div>
           </div>
-          <!-- 計算式説明 -->
-          <div id="bmiFormulaNote" style="display:none;margin-top:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;font-size:11px;color:var(--text3);line-height:1.7">
-            📊 <b style="color:var(--text2)">BMI計算式</b>: 体重(kg) ÷ 身長(m)²
-            &nbsp;&nbsp;—&nbsp;&nbsp;例: <span id="bmiFormulaExample"></span>
+          <div class="bmi-formula" id="bmiFormula">
+            📐 <b style="color:var(--text2)">BMI</b>: <span id="bmiFormulaText"></span>
           </div>
         </div>
       </div>
@@ -318,29 +511,26 @@ body{
       <div class="section">
         <div class="section-title">🏃 今週の運動達成率</div>
         <div class="slider-card">
-          <div class="exercise-val-row">
+          <div class="ex-val-row">
             <span style="font-size:13px;color:var(--text2)">目標に対して</span>
-            <span id="exerciseValText" style="font-size:24px;font-weight:900;color:var(--accent2)">50%</span>
+            <span class="ex-val" id="exValText">50%</span>
           </div>
-          <div style="position:relative;margin:12px 0 4px">
-            <input type="range" min="0" max="100" step="5" value="50" id="exerciseSlider"
-              oninput="onExerciseInput(this.value)"
-              style="-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:8px;background:var(--surface2);border:none;padding:0;cursor:pointer">
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3)">
-            <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
-          </div>
+          <input type="range" min="0" max="100" step="5" value="50" id="exerciseSlider"
+            oninput="onExercise(this.value)"
+            style="background:linear-gradient(90deg,var(--accent2) 50%,var(--surface2) 50%)">
+          <div class="ex-labels"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
         </div>
       </div>
 
       <!-- メモ -->
       <div class="section">
         <div class="section-title">📝 今日のメモ（任意）</div>
-        <textarea class="memo-input" id="memoInput" rows="3" placeholder="体調、食事、気になること、ひとことなど..."></textarea>
+        <textarea class="memo-input" id="memoInput" rows="3"
+          placeholder="体調、食事、気になること、ひとことなど..."></textarea>
       </div>
 
-      <!-- 送信ボタン -->
-      <div class="submit-area">
+      <!-- 送信 -->
+      <div class="section">
         <button class="submit-btn" id="submitBtn" onclick="submitRecord()">
           <span>📤</span>
           <span>今日の記録を送信する</span>
@@ -348,16 +538,38 @@ body{
       </div>
 
     </div><!-- /recordForm -->
-  </div><!-- /body -->
+  </div><!-- /tab-record -->
+
+  <!-- ── TAB: 過去の記録 ── -->
+  <div id="tab-history" class="body" style="display:none">
+    <div class="section" style="margin-top:4px">
+      <div class="section-title">📊 これまでの記録</div>
+      <div id="historyList">
+        <div class="hist-empty">
+          <div class="hist-empty-icon">📋</div>
+          <div>記録を読み込み中...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: 目標 ── -->
+  <div id="tab-goal" class="body" style="display:none">
+    <div id="goalTabContent">
+      <div class="section-title" style="margin-bottom:14px">🎯 あなたの目標</div>
+      <!-- JSで描画 -->
+    </div>
+  </div>
+
 </div><!-- /screenMain -->
 
-<!-- COMPLETION SCREEN -->
+<!-- 完了画面 -->
 <div class="screen" id="screenComplete">
   <div style="background:linear-gradient(160deg,#fff,var(--bg));min-height:100vh;padding-top:env(safe-area-inset-top,0)">
     <div class="completion">
       <div class="completion-icon">🎉</div>
       <div class="completion-title">記録完了！</div>
-      <div class="completion-sub" id="completeMsg">お疲れ様でした。<br>継続は力なり、明日もまた記録しましょう！</div>
+      <div class="completion-sub" id="completeMsg">お疲れ様でした。</div>
 
       <!-- 結果カード -->
       <div class="result-cards" id="resultCards"></div>
@@ -371,53 +583,133 @@ body{
         <div class="prog-bar">
           <div class="prog-fill" id="progFill" style="width:0%"></div>
         </div>
-        <div class="prog-sub" id="progSub">目標体重まで —kg</div>
+        <div class="prog-sub" id="progSub"></div>
       </div>
 
       <!-- ホームワーク -->
-      <div class="homework-box" id="homeworkBox" style="display:none">
-        <div class="hw-title">📌 今日の課題・ホームワーク</div>
-        <div class="hw-text" id="homeworkText"></div>
+      <div class="info-box green" id="homeworkBox" style="display:none">
+        <div class="ib-title" style="color:var(--accent2)">📌 今日の課題・ホームワーク</div>
+        <div class="ib-text" id="homeworkText"></div>
       </div>
 
       <!-- 次回プラン -->
-      <div class="next-plan-box" id="nextPlanBox" style="display:none">
-        <div class="np-title">🗓️ 次回の予定</div>
-        <div class="np-text" id="nextPlanText"></div>
+      <div class="info-box blue" id="nextPlanBox" style="display:none">
+        <div class="ib-title" style="color:var(--accent)">🗓️ 次回の予定</div>
+        <div class="ib-text" id="nextPlanText"></div>
       </div>
 
       <!-- ストリーク -->
-      <div style="background:rgba(245,158,11,.08);border:1.5px solid rgba(245,158,11,.2);border-radius:var(--radius);padding:16px;margin-bottom:22px;display:flex;align-items:center;gap:14px">
+      <div class="streak-complete">
         <div style="font-size:36px">🔥</div>
         <div>
-          <div style="font-size:18px;font-weight:900;color:var(--warn)" id="completionStreak">— 日連続</div>
+          <div style="font-size:20px;font-weight:900;color:var(--warn)" id="completionStreak">— 日連続</div>
           <div style="font-size:12px;color:var(--text2)">継続記録達成中！</div>
         </div>
       </div>
 
-      <button class="done-btn" onclick="location.reload()">✨ 閉じる</button>
+      <button class="done-btn" onclick="onDone()">✨ 閉じる</button>
     </div>
   </div>
-</div><!-- /screenComplete -->
+</div>
 
 <script>
-/* ═══════════════════════════════
+/* ══════════════════════════════════════
    STATE
-═══════════════════════════════ */
+══════════════════════════════════════ */
 let patient = null;
-let motiVal = 0;      // 0 = 未選択
+let motiVal = 0;
 let submitted = false;
+let deferredPrompt = null;
+let currentTab = 'record';
 
-/* ═══════════════════════════════
+const motiDescs = ['','全くやる気なし 😞','少し低め 😐','普通 🙂','やる気あり 💪','最高に燃えてる 🔥'];
+
+/* ══════════════════════════════════════
+   SERVICE WORKER 登録
+══════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    console.log('SW registered:', reg.scope);
+  }).catch(e => console.log('SW error:', e));
+
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data?.type === 'SYNC_COMPLETE') {
+      console.log('Sync complete');
+    }
+  });
+}
+
+/* ══════════════════════════════════════
+   PWA インストールバナー
+══════════════════════════════════════ */
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // 既にインストール済みでなければバナー表示
+  if (!window.matchMedia('(display-mode: standalone)').matches) {
+    document.getElementById('installBanner').classList.add('show');
+  }
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const result = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+document.getElementById('dismissInstall').addEventListener('click', () => {
+  document.getElementById('installBanner').classList.remove('show');
+  localStorage.setItem('bl_install_dismissed', '1');
+});
+
+// iOS 向け（beforeinstallpromptが発火しない）
+if (/iphone|ipad|ipod/i.test(navigator.userAgent) &&
+    !window.matchMedia('(display-mode: standalone)').matches &&
+    !localStorage.getItem('bl_install_dismissed')) {
+  const banner = document.getElementById('installBanner');
+  banner.classList.add('show');
+  banner.querySelector('.install-banner-text').innerHTML =
+    '<strong>📱 ホーム画面に追加する方法</strong>' +
+    'Safariの「共有」→「ホーム画面に追加」をタップ';
+  document.getElementById('installBtn').style.display = 'none';
+}
+
+/* ══════════════════════════════════════
+   オフライン検知
+══════════════════════════════════════ */
+function updateOnlineStatus() {
+  const dot = document.getElementById('onlineDot');
+  const toast = document.getElementById('offlineToast');
+  if (navigator.onLine) {
+    dot.style.display = 'inline-flex';
+    dot.textContent = 'サーバー接続中';
+    dot.style.color = 'var(--accent2)';
+    toast.classList.remove('show');
+  } else {
+    dot.textContent = 'オフライン中';
+    dot.style.color = 'var(--danger)';
+    dot.style.setProperty('--accent2', '#ef4444');
+    toast.classList.add('show');
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+/* ══════════════════════════════════════
    INIT
-═══════════════════════════════ */
+══════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async () => {
+  updateOnlineStatus();
+
   const params = new URLSearchParams(location.search);
   const id = params.get('id');
 
   if (!id) {
     showScreen('screenError');
-    document.getElementById('errorMsg').textContent = 'URLに患者IDが含まれていません。\n担当スタッフにお問い合わせください。';
+    document.getElementById('errorMsg').textContent =
+      'URLに患者IDが含まれていません。\n担当スタッフにお問い合わせください。';
     return;
   }
 
@@ -431,6 +723,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   initScreen();
+  setupSliderStyle();
 });
 
 function showScreen(id) {
@@ -442,45 +735,255 @@ function showScreen(id) {
 
 function initScreen() {
   const today = new Date().toISOString().slice(0, 10);
-  const todayRec = (patient.patientRecords || []).find(r => r.date === today);
+  const allRecs = [...(patient.records || []), ...(patient.patientRecords || [])];
+  const todayRec = allRecs.filter(r => r.date === today).sort((a,b) =>
+    new Date(b.createdAt||0) - new Date(a.createdAt||0))[0];
 
   // ヘッダー
   const hour = new Date().getHours();
-  const timeGreet = hour < 11 ? 'おはようございます' : hour < 18 ? 'こんにちは' : 'こんばんは';
-  document.getElementById('greeting').textContent = `${timeGreet}、${patient.name.split(' ')[0]}さん！`;
-  document.getElementById('greetingSub').textContent = todayRec ? '今日の記録を確認してください' : '今日の状態を記録しましょう 📋';
+  const greet = hour < 11 ? 'おはようございます' : hour < 18 ? 'こんにちは' : 'こんばんは';
+  const firstName = patient.name?.split(' ')[0] || patient.name || 'あなた';
+  document.getElementById('greeting').textContent = `${greet}、${firstName}さん！`;
+  document.getElementById('greetingSub').textContent =
+    todayRec ? '今日の記録を確認してください ✅' : '今日の状態を記録しましょう 📋';
 
   // ストリーク
   const streak = calcStreak();
   document.getElementById('streakBadge').textContent = `🔥 ${streak}日連続`;
 
   // 日付
-  const dateStr = new Date().toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
+  const dateStr = new Date().toLocaleDateString('ja-JP', { month:'long', day:'numeric', weekday:'short' });
   document.getElementById('dateBadge').textContent = `📅 ${dateStr}`;
 
-  // 目標表示
+  // 目標バナー
   if (patient.finalGoal) {
-    document.getElementById('goalSection').style.display = '';
-    document.getElementById('goalText').textContent = patient.finalGoal;
+    document.getElementById('goalBannerSmall').style.display = '';
+    document.getElementById('goalBannerText').textContent = patient.finalGoal;
   }
 
-  // 今日すでに記録済みの場合
+  // 今日済み
   if (todayRec) {
     document.getElementById('alreadySection').style.display = '';
     document.getElementById('recordForm').style.display = 'none';
-  } else {
-    document.getElementById('alreadySection').style.display = 'none';
-    document.getElementById('recordForm').style.display = '';
+    renderTodaySummary(todayRec);
+  }
+
+  // 過去記録バッジ
+  const recCount = (patient.records || []).length + (patient.patientRecords || []).length;
+  if (recCount > 0) {
+    const badge = document.getElementById('histBadge');
+    badge.textContent = recCount;
+    badge.style.display = 'block';
   }
 
   showScreen('screenMain');
 }
 
-function showRecordForm() {
+function renderTodaySummary(rec) {
+  const h = patient.height;
+  const bmi = (rec.weight && h) ? calcBMI(rec.weight, h) : null;
+  const bi = bmi ? bmiInfo(bmi) : null;
+  const items = [
+    rec.weight ? { label:'体重', val: rec.weight, unit:'kg' } : null,
+    bmi ? { label:'BMI', val: bmi, unit:'', color: bi?.color } : null,
+    rec.moti ? { label:'モチベ', val: `${'★'.repeat(rec.moti)}`, unit:'' } : null,
+    rec.exercise != null ? { label:'運動', val: rec.exercise, unit:'%' } : null,
+  ].filter(Boolean);
+  document.getElementById('todayRecSummary').innerHTML = items.map(it => `
+    <div class="ar-item">
+      <div class="ar-label">${it.label}</div>
+      <div class="ar-val" style="${it.color?'color:'+it.color:''}">${it.val}<span class="ar-unit">${it.unit}</span></div>
+    </div>`).join('');
+}
+
+function showForm() {
   document.getElementById('alreadySection').style.display = 'none';
   document.getElementById('recordForm').style.display = '';
 }
 
+/* ══════════════════════════════════════
+   BOTTOM NAV タブ切り替え
+══════════════════════════════════════ */
+function switchTab(name) {
+  currentTab = name;
+  ['record','history','goal'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === name ? '' : 'none';
+    document.getElementById('bn-' + t).classList.toggle('active', t === name);
+  });
+  if (name === 'history') renderHistory();
+  if (name === 'goal') renderGoalTab();
+  // 記録タブに戻ったとき
+  if (name === 'record') {
+    document.getElementById('histBadge').style.display = 'none';
+  }
+}
+
+/* ══════════════════════════════════════
+   過去記録タブ
+══════════════════════════════════════ */
+function renderHistory() {
+  const staffRecs = (patient.records || []).slice().reverse();
+  const patRecs = (patient.patientRecords || []).slice().reverse();
+
+  // 全記録をマージして日付順
+  const all = [
+    ...staffRecs.map(r => ({ ...r, _src: 'staff' })),
+    ...patRecs.map(r => ({ ...r, _src: 'patient' }))
+  ].sort((a, b) => b.date.localeCompare(a.date));
+
+  const el = document.getElementById('historyList');
+  if (!all.length) {
+    el.innerHTML = `<div class="hist-empty"><div class="hist-empty-icon">📋</div><div>まだ記録がありません</div></div>`;
+    return;
+  }
+
+  el.innerHTML = all.map(r => {
+    const h = patient.height;
+    const bmi = (r.weight && h) ? calcBMI(r.weight, h) : null;
+    const bi = bmi ? bmiInfo(bmi) : null;
+    const motiStars = r.moti ? '★'.repeat(r.moti) + '☆'.repeat(5 - r.moti) : null;
+    const srcLabel = r._src === 'patient' ? '自己記録' : 'スタッフ記録';
+    const srcClass = r._src === 'patient' ? 'patient' : 'staff';
+
+    const items = [
+      r.weight != null ? { label:'体重', val: (+r.weight).toFixed(1), unit:'kg' } : null,
+      bmi ? { label:'BMI', val: bmi, unit:'', color: bi.color } : null,
+      r.moti ? { label:'モチベ', val: motiStars, unit:'' } : null,
+      r.exercise != null ? { label:'運動', val: r.exercise, unit:'%' } : null,
+    ].filter(Boolean);
+
+    return `
+    <div class="hist-card">
+      <div class="hc-head">
+        <div class="hc-date">${r.date}</div>
+        <span class="hc-source ${srcClass}">${srcLabel}</span>
+      </div>
+      ${items.length ? `<div class="hc-grid">
+        ${items.map(it => `
+          <div class="hc-item">
+            <div class="hc-label">${it.label}</div>
+            <div class="hc-val" style="${it.color?'color:'+it.color:''}">${it.val}<span class="hc-unit">${it.unit}</span></div>
+          </div>`).join('')}
+      </div>` : ''}
+      ${r.memo ? `<div class="hc-memo">💬 ${r.memo}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   目標タブ
+══════════════════════════════════════ */
+function renderGoalTab() {
+  const p = patient;
+  const el = document.getElementById('goalTabContent');
+
+  const allRecs = [...(p.records || []), ...(p.patientRecords || [])]
+    .sort((a,b) => a.date.localeCompare(b.date));
+  const latestRec = allRecs.slice(-1)[0];
+  const latestW = latestRec?.weight ?? p.startWeight;
+  const bmi = latestW && p.height ? calcBMI(latestW, p.height) : null;
+  const bi = bmi ? bmiInfo(bmi) : null;
+
+  const prog = (p.startWeight && p.targetWeight && latestW)
+    ? Math.min(100, Math.max(0, Math.round(
+        (p.startWeight - latestW) / (p.startWeight - p.targetWeight) * 100
+      )))
+    : null;
+  const remaining = (p.targetWeight && latestW) ? +(latestW - p.targetWeight).toFixed(1) : null;
+  const streak = calcStreak();
+
+  el.innerHTML = `
+    <div class="section-title" style="margin-bottom:14px">🎯 あなたの目標</div>
+
+    ${p.finalGoal ? `
+    <div class="goal-banner" style="margin-bottom:16px">
+      <div class="goal-icon">🎯</div>
+      <div>
+        <div class="goal-label">最終目標</div>
+        <div class="goal-text">${p.finalGoal}</div>
+      </div>
+    </div>` : ''}
+
+    ${p.midGoal ? `
+    <div class="goal-banner" style="margin-bottom:16px;border-color:rgba(74,114,245,.2);background:rgba(74,114,245,.05)">
+      <div class="goal-icon">📍</div>
+      <div>
+        <div class="goal-label" style="color:var(--accent)">中間目標</div>
+        <div class="goal-text">${p.midGoal}</div>
+      </div>
+    </div>` : ''}
+
+    ${prog !== null ? `
+    <div class="progress-section" style="margin-bottom:16px">
+      <div class="prog-header">
+        <div class="prog-title">📈 目標達成率</div>
+        <div class="prog-pct">${prog}%</div>
+      </div>
+      <div class="prog-bar">
+        <div class="prog-fill" id="goalProgFill" style="width:0%"></div>
+      </div>
+      <div class="prog-sub">
+        ${remaining !== null && remaining > 0 ? `目標まであと ${remaining}kg` :
+          remaining !== null && remaining <= 0 ? '🎉 目標体重達成！' : ''}
+      </div>
+    </div>` : ''}
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      ${p.startWeight ? `<div class="hc-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
+        <div class="hc-label">開始体重</div>
+        <div class="hc-val">${p.startWeight}<span class="hc-unit">kg</span></div>
+      </div>` : ''}
+      ${p.targetWeight ? `<div class="hc-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
+        <div class="hc-label">目標体重</div>
+        <div class="hc-val" style="color:var(--accent2)">${p.targetWeight}<span class="hc-unit">kg</span></div>
+      </div>` : ''}
+      ${latestW ? `<div class="hc-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
+        <div class="hc-label">現在の体重</div>
+        <div class="hc-val">${(+latestW).toFixed(1)}<span class="hc-unit">kg</span></div>
+      </div>` : ''}
+      ${bmi ? `<div class="hc-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
+        <div class="hc-label">現在のBMI</div>
+        <div class="hc-val" style="color:${bi.color}">${bmi}</div>
+      </div>` : ''}
+    </div>
+
+    <div class="streak-complete" style="margin-bottom:16px">
+      <div style="font-size:32px">🔥</div>
+      <div>
+        <div style="font-size:22px;font-weight:900;color:var(--warn)">${streak} 日連続</div>
+        <div style="font-size:12px;color:var(--text2)">継続は力なり！記録を続けましょう</div>
+      </div>
+    </div>
+
+    ${p.targetDate ? `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center">
+      <div class="section-title" style="justify-content:center;margin-bottom:6px">🗓️ 目標期日</div>
+      <div style="font-size:18px;font-weight:800;color:var(--text)">${p.targetDate}</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px">${daysUntil(p.targetDate)}</div>
+    </div>` : ''}
+  `;
+
+  // 進捗バーアニメーション
+  if (prog !== null) {
+    setTimeout(() => {
+      const fill = document.getElementById('goalProgFill');
+      if (fill) fill.style.width = prog + '%';
+    }, 200);
+  }
+}
+
+function daysUntil(dateStr) {
+  const target = new Date(dateStr);
+  const today = new Date();
+  const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return `${Math.abs(diff)}日前に期日が過ぎています`;
+  if (diff === 0) return '今日が期日です！';
+  return `あと ${diff} 日`;
+}
+
+/* ══════════════════════════════════════
+   STREAK
+══════════════════════════════════════ */
 function calcStreak() {
   const recs = [...(patient.records || []), ...(patient.patientRecords || [])]
     .map(r => r.date).filter(Boolean);
@@ -497,9 +1000,9 @@ function calcStreak() {
   return streak;
 }
 
-/* ═══════════════════════════════
-   BMI PREVIEW
-═══════════════════════════════ */
+/* ══════════════════════════════════════
+   BMI
+══════════════════════════════════════ */
 function calcBMI(w, h) {
   if (!w || !h) return null;
   return +(w / (h / 100) ** 2).toFixed(1);
@@ -515,43 +1018,35 @@ function onWeightInput(v) {
   const w = parseFloat(v);
   const h = patient?.height;
   const preview = document.getElementById('bmiPreview');
-  const formulaNote = document.getElementById('bmiFormulaNote');
+  const formula = document.getElementById('bmiFormula');
   if (w && h) {
     const bmi = calcBMI(w, h);
     const info = bmiInfo(bmi);
-    document.getElementById('bmiPreviewNum').textContent = bmi;
-    document.getElementById('bmiPreviewNum').style.color = info.color;
-    const lbl = document.getElementById('bmiPreviewLabel');
+    document.getElementById('bmiNum').textContent = bmi;
+    document.getElementById('bmiNum').style.color = info.color;
+    const lbl = document.getElementById('bmiLabel');
     lbl.textContent = info.label;
     lbl.style.background = info.bg;
     lbl.style.color = info.color;
-    // 目標体重とのギャップ
     if (patient.targetWeight) {
       const diff = (w - patient.targetWeight).toFixed(1);
-      document.getElementById('bmiPreviewTip').textContent = diff <= 0 ? '🎉 目標達成！' : `目標まで -${diff}kg`;
-    } else {
-      document.getElementById('bmiPreviewTip').textContent = '';
+      document.getElementById('bmiTip').textContent =
+        diff <= 0 ? '🎉 目標達成！' : `目標まで -${diff}kg`;
     }
     preview.classList.add('visible');
-    // 計算式説明
     const hm = (h / 100).toFixed(2);
-    document.getElementById('bmiFormulaExample').textContent =
+    document.getElementById('bmiFormulaText').textContent =
       `${w}kg ÷ ${hm}m² = ${bmi}`;
-    formulaNote.style.display = '';
-  } else if (w && !h) {
-    preview.classList.remove('visible');
-    formulaNote.style.display = 'none';
+    formula.style.display = '';
   } else {
     preview.classList.remove('visible');
-    formulaNote.style.display = 'none';
+    formula.style.display = 'none';
   }
 }
 
-/* ═══════════════════════════════
+/* ══════════════════════════════════════
    MOTI STARS
-═══════════════════════════════ */
-const motiDescs = ['', '全くやる気なし 😞', '少し低め 😐', '普通 🙂', 'やる気あり 💪', '最高に燃えてる 🔥'];
-
+══════════════════════════════════════ */
 function setMoti(v) {
   motiVal = v;
   document.querySelectorAll('#motiStars .star').forEach((s, i) => s.classList.toggle('on', i < v));
@@ -559,27 +1054,40 @@ function setMoti(v) {
   document.getElementById('motiCard').classList.remove('required-unanswered');
 }
 
-/* ═══════════════════════════════
+/* ══════════════════════════════════════
    EXERCISE SLIDER
-═══════════════════════════════ */
-function onExerciseInput(v) {
+══════════════════════════════════════ */
+function onExercise(v) {
   const n = parseInt(v);
-  document.getElementById('exerciseValText').textContent = n + '%';
+  document.getElementById('exValText').textContent = n + '%';
   const color = n >= 80 ? 'var(--accent2)' : n >= 50 ? 'var(--accent)' : n >= 30 ? 'var(--warn)' : 'var(--danger)';
-  document.getElementById('exerciseValText').style.color = color;
+  document.getElementById('exValText').style.color = color;
+  setupSliderStyle();
 }
 
-/* ═══════════════════════════════
+function setupSliderStyle() {
+  const slider = document.getElementById('exerciseSlider');
+  if (!slider) return;
+  const pct = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+  slider.style.background = `linear-gradient(90deg, var(--accent2) ${pct}%, var(--surface2) ${pct}%)`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const slider = document.getElementById('exerciseSlider');
+  if (slider) slider.addEventListener('input', setupSliderStyle);
+});
+
+/* ══════════════════════════════════════
    SUBMIT
-═══════════════════════════════ */
+══════════════════════════════════════ */
 async function submitRecord() {
   if (submitted) return;
 
-  // 必須項目のバリデーション
+  // バリデーション
   let hasError = false;
   if (motiVal === 0) {
     document.getElementById('motiCard').classList.add('required-unanswered');
-    document.getElementById('motiCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('motiCard').scrollIntoView({ behavior:'smooth', block:'center' });
     hasError = true;
   }
   if (hasError) return;
@@ -600,6 +1108,13 @@ async function submitRecord() {
     });
     if (!res.ok) throw new Error('submit failed');
     submitted = true;
+
+    // 患者データ再取得してストリーク更新
+    try {
+      const fresh = await fetch(`/api/patients/${patient.id}`);
+      if (fresh.ok) patient = await fresh.json();
+    } catch {}
+
     showCompletionScreen({ weight, moti: motiVal, exercise, memo });
   } catch (e) {
     btn.disabled = false;
@@ -608,9 +1123,9 @@ async function submitRecord() {
   }
 }
 
-/* ═══════════════════════════════
-   COMPLETION SCREEN
-═══════════════════════════════ */
+/* ══════════════════════════════════════
+   COMPLETION
+══════════════════════════════════════ */
 function showCompletionScreen(rec) {
   const h = patient.height;
   const bmi = (rec.weight && h) ? calcBMI(rec.weight, h) : null;
@@ -625,16 +1140,14 @@ function showCompletionScreen(rec) {
     return Math.round(patient.gender === '女性' ? base - 161 : base + 5);
   })() : null;
 
-  // メッセージ
   const msgs = [
     'お疲れ様でした！継続は力なり 💪',
     '素晴らしい！記録を続けましょう 🌟',
     '頑張っています！明日も一緒に 🎯',
-    'Keep it up！着実に前進しています ✨'
+    'Keep it up！着実に前進中 ✨'
   ];
-  document.getElementById('completeMsg').innerHTML = msgs[Math.floor(Math.random() * msgs.length)];
+  document.getElementById('completeMsg').textContent = msgs[Math.floor(Math.random() * msgs.length)];
 
-  // 結果カード
   const cards = [
     rec.weight ? `<div class="result-card"><div class="rc-label">今日の体重</div><div class="rc-val">${rec.weight}<span class="rc-unit">kg</span></div></div>` : '',
     bmi ? (() => {
@@ -642,21 +1155,24 @@ function showCompletionScreen(rec) {
       return `<div class="result-card"><div class="rc-label">BMI</div><div class="rc-val" style="color:${info.color}">${bmi}</div><div class="rc-sub" style="color:${info.color}">${info.label}</div></div>`;
     })() : '',
     bmr ? `<div class="result-card"><div class="rc-label">基礎代謝</div><div class="rc-val">${bmr}<span class="rc-unit">kcal</span></div><div class="rc-sub">消費の基準値</div></div>` : '',
+    `<div class="result-card"><div class="rc-label">モチベ</div><div class="rc-val" style="color:var(--warn)">${'★'.repeat(rec.moti)}</div></div>`,
   ].filter(Boolean);
-  // 2個ずつ配置
   document.getElementById('resultCards').innerHTML = cards.join('');
 
   // 進捗
   if (rec.weight && patient.targetWeight && patient.startWeight) {
-    const prog = Math.min(100, Math.max(0, Math.round((patient.startWeight - rec.weight) / (patient.startWeight - patient.targetWeight) * 100)));
+    const prog = Math.min(100, Math.max(0, Math.round(
+      (patient.startWeight - rec.weight) / (patient.startWeight - patient.targetWeight) * 100
+    )));
     const remaining = +(rec.weight - patient.targetWeight).toFixed(1);
     document.getElementById('progressSection').style.display = '';
     document.getElementById('progPct').textContent = prog + '%';
-    document.getElementById('progSub').textContent = remaining <= 0 ? '🎉 目標体重達成！' : `目標まであと ${remaining}kg`;
+    document.getElementById('progSub').textContent =
+      remaining <= 0 ? '🎉 目標体重達成！' : `目標まであと ${remaining}kg`;
     setTimeout(() => document.getElementById('progFill').style.width = prog + '%', 300);
   }
 
-  // ホームワーク（最新セッションから）
+  // ホームワーク
   const lastSession = (patient.sessions || []).slice(-1)[0];
   if (lastSession?.homework) {
     document.getElementById('homeworkBox').style.display = '';
@@ -672,23 +1188,12 @@ function showCompletionScreen(rec) {
   document.getElementById('completionStreak').textContent = `${streak} 日連続`;
 
   showScreen('screenComplete');
-
-  // アニメーション
-  setTimeout(() => {
-    document.querySelector('.prog-fill')?.style && (document.getElementById('progFill').style.width = '');
-  }, 100);
 }
 
-/* ═══════════════════════════════
-   EXERCISE SLIDER STYLING
-═══════════════════════════════ */
-document.getElementById('exerciseSlider')?.addEventListener('input', function() {
-  const pct = (this.value - this.min) / (this.max - this.min) * 100;
-  this.style.background = `linear-gradient(90deg, #10b981 ${pct}%, var(--surface2) ${pct}%)`;
-});
-
-// 初期設定：運動達成率のみデフォルト値あり（モチベは必タップ）
-onExerciseInput(50);
+function onDone() {
+  // 完了後は記録タブに戻ってリロード（今日の記録表示）
+  location.reload();
+}
 </script>
 </body>
 </html>

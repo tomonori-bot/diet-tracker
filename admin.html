@@ -1037,7 +1037,7 @@ async function openPatient(id) {
     showPage('detail');
     renderDetail();
     switchTab('overview');
-    startPolling();
+    checkNewData();
   } catch(e) { toast('読み込みに失敗しました', 'error'); }
 }
 
@@ -1558,8 +1558,47 @@ function copyPatientUrl() {
 }
 
 /* ════════════════════════════════
-   POLLING (自動通知)
+   SSE リアルタイム通知
 ════════════════════════════════ */
+let sseSource = null;
+
+function startSSE(patientId) {
+  stopSSE();
+  sseSource = new EventSource(`/api/patients/${patientId}/stream`);
+
+  sseSource.onmessage = async (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'new-record') {
+        // 患者データ再取得
+        currentPatient = await api('GET', '/api/patients/' + patientId);
+        // バナー更新
+        checkNewData();
+        // ダッシュボードバッジ更新
+        loadDashboard();
+        // ブラウザ通知（許可があれば）
+        if (Notification?.permission === 'granted') {
+          new Notification(`📥 ${data.patientName}さんから記録が届きました`, {
+            body: data.record.weight ? `体重: ${data.record.weight}kg` : '新しい記録',
+            icon: '/icon-192.png'
+          });
+        }
+      }
+    } catch {}
+  };
+
+  sseSource.onerror = () => {
+    // SSE切断時はポーリングにフォールバック
+    stopSSE();
+    startPolling();
+  };
+}
+
+function stopSSE() {
+  if (sseSource) { sseSource.close(); sseSource = null; }
+}
+
+// フォールバック用ポーリング（SSEが使えない場合）
 function startPolling() {
   stopPolling();
   pollTimer = setInterval(async () => {
@@ -1569,28 +1608,53 @@ function startPolling() {
       const unimported = selfRecs.filter(r => !r.imported);
       const banner = document.getElementById('newBanner');
       if (unimported.length) {
-        const latest = unimported[unimported.length - 1];
-        document.getElementById('newChips').innerHTML = [
-          `<span class="new-chip">📅 ${latest.date}</span>`,
-          latest.weight != null ? `<span class="new-chip">⚖️ ${latest.weight}kg</span>` : '',
-          latest.pain != null ? `<span class="new-chip">🩹 痛み${latest.pain}/10</span>` : '',
-          latest.posture ? `<span class="new-chip">🧍 姿勢${latest.posture}/5</span>` : '',
-          latest.moti ? `<span class="new-chip">💪 モチベ${latest.moti}/5</span>` : '',
-          latest.memo ? `<span class="new-chip">💬 ${latest.memo.slice(0,24)}${latest.memo.length>24?'...':''}</span>` : '',
-        ].filter(Boolean).join('');
+        renderNewBanner(unimported);
         banner.style.display = '';
       } else {
         banner.style.display = 'none';
       }
     } catch {}
-  }, 4000);
+  }, 8000);
 }
 
 function stopPolling() {
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 }
 
-function checkNewData() { startPolling(); }
+function renderNewBanner(unimported) {
+  const latest = unimported[unimported.length - 1];
+  document.getElementById('newChips').innerHTML = [
+    `<span class="new-chip">📅 ${latest.date}</span>`,
+    latest.weight != null ? `<span class="new-chip">⚖️ ${latest.weight}kg</span>` : '',
+    latest.moti ? `<span class="new-chip">💪 モチベ${latest.moti}/5</span>` : '',
+    latest.exercise != null ? `<span class="new-chip">🏃 運動${latest.exercise}%</span>` : '',
+    latest.memo ? `<span class="new-chip">💬 ${latest.memo.slice(0,24)}${latest.memo.length>24?'...':''}</span>` : '',
+    unimported.length > 1 ? `<span class="new-chip" style="background:var(--danger);color:#fff">合計 ${unimported.length}件</span>` : '',
+  ].filter(Boolean).join('');
+}
+
+function checkNewData() {
+  // まずSSEを試みる
+  if (currentPatientId) {
+    startSSE(currentPatientId);
+    // 初回の未読チェックは即時
+    api('GET', `/api/patients/${currentPatientId}/self-records`).then(selfRecs => {
+      const unimported = selfRecs.filter(r => !r.imported);
+      const banner = document.getElementById('newBanner');
+      if (unimported.length) {
+        renderNewBanner(unimported);
+        banner.style.display = '';
+      }
+    }).catch(() => {});
+  }
+}
+
+// ブラウザ通知許可を要求
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
 
 async function importSelfRecords() {
   try {
@@ -1612,10 +1676,16 @@ document.querySelectorAll('.overlay').forEach(el => {
   });
 });
 
+window.addEventListener('beforeunload', () => {
+  stopSSE();
+  stopPolling();
+});
+
 /* ════════════════════════════════
    INIT
 ════════════════════════════════ */
 loadDashboard();
+requestNotificationPermission();
 </script>
 </body>
 </html>

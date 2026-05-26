@@ -1,12 +1,13 @@
 {
-  "name": "ダイエット進捗トラッカー",
-  "short_name": "進捗トラッカー",
-  "description": "患者ごとのダイエット進捗を記録・管理するアプリ",
-  "start_url": "./index.html",
+  "name": "BodyLog - 今日の記録",
+  "short_name": "BodyLog",
+  "description": "毎日の体重・体調を記録して目標達成をサポートするアプリ",
+  "start_url": "/patient.html",
   "display": "standalone",
-  "background_color": "#0c1a2e",
-  "theme_color": "#0c1a2e",
+  "background_color": "#f0f4fb",
+  "theme_color": "#4a72f5",
   "orientation": "portrait",
+  "lang": "ja",
   "icons": [
     {
       "src": "icon-192.png",

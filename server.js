@@ -227,6 +227,13 @@ app.post('/api/patients/:id/self-record', (req, res) => {
   const ei = p.patientRecords.findIndex(r => r.date === rec.date);
   if (ei >= 0) p.patientRecords[ei] = rec; else p.patientRecords.push(rec);
   writeDB(db);
+  // SSEでadminに通知
+  sseNotify(req.params.id, {
+    type: 'new-record',
+    patientId: req.params.id,
+    patientName: p.name,
+    record: rec
+  });
   res.json(rec);
 });
 
@@ -287,5 +294,42 @@ app.get('/api/stats', (req, res) => {
     recentActivity: recentActivity.slice(0, 15)
   });
 });
+
+/* ─── SSE: リアルタイム通知ストリーム ─── */
+const sseClients = new Map(); // patientId → Set of res
+
+app.get('/api/patients/:id/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.flushHeaders();
+
+  const { id } = req.params;
+  if (!sseClients.has(id)) sseClients.set(id, new Set());
+  sseClients.get(id).add(res);
+
+  // 初回接続確認
+  res.write('data: {"type":"connected"}\n\n');
+
+  // ハートビート（30秒ごと）
+  const hb = setInterval(() => {
+    res.write('data: {"type":"ping"}\n\n');
+  }, 30000);
+
+  req.on('close', () => {
+    clearInterval(hb);
+    sseClients.get(id)?.delete(res);
+  });
+});
+
+function sseNotify(patientId, data) {
+  const clients = sseClients.get(patientId);
+  if (!clients || clients.size === 0) return;
+  const msg = `data: ${JSON.stringify(data)}\n\n`;
+  clients.forEach(res => {
+    try { res.write(msg); } catch {}
+  });
+}
 
 app.listen(PORT, '0.0.0.0', () => console.log(`BodyLog server running on http://0.0.0.0:${PORT}`));
