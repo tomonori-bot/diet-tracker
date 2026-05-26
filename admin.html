@@ -331,6 +331,13 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   .dh-row{flex-direction:column}
 }
 .mobile-menu{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:16px}
+
+/* サイドバーオーバーレイ（スマホ用） */
+#sidebarOverlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);
+  z-index:199;
+}
+#sidebarOverlay.show{display:block}
 </style>
 </head>
 <body>
@@ -360,13 +367,16 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="sb-footer">BodyLog v2.0 &copy; 2025</div>
 </nav>
 
+<!-- サイドバー背景オーバーレイ -->
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 <!-- ═══ CONTENT ═══ -->
 <div class="content">
 
 <!-- TOP BAR -->
 <div class="topbar">
   <div class="topbar-left">
-    <div class="mobile-menu" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">☰</div>
+    <div class="mobile-menu" onclick="toggleSidebar()">☰</div>
     <div class="topbar-title" id="topbarTitle">ダッシュボード</div>
   </div>
   <div class="topbar-right">
@@ -440,8 +450,8 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="new-chips" id="newChips"></div>
     <div class="new-actions">
-      <button class="btn btn-green btn-sm" onclick="importSelfRecords()">✅ 記録に取り込む</button>
-      <button class="btn btn-outline btn-sm" onclick="document.getElementById('newBanner').style.display='none'">後で</button>
+      <span style="font-size:12px;color:var(--accent2);font-weight:600;">✅ 自動で記録に反映済み</span>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('newBanner').style.display='none'">閉じる</button>
     </div>
   </div>
 
@@ -1570,16 +1580,20 @@ function startSSE(patientId) {
     try {
       const data = JSON.parse(e.data);
       if (data.type === 'new-record') {
-        // 患者データ再取得
+        // 患者データ再取得（自動インポート済みのデータを反映）
         currentPatient = await api('GET', '/api/patients/' + patientId);
-        // バナー更新
-        checkNewData();
+        // 記録・グラフを即時更新
+        renderDetail();
+        renderRecords();
+        renderChart();
         // ダッシュボードバッジ更新
         loadDashboard();
+        // 自動反映バナー表示
+        showAutoImportBanner(data);
         // ブラウザ通知（許可があれば）
         if (Notification?.permission === 'granted') {
           new Notification(`📥 ${data.patientName}さんから記録が届きました`, {
-            body: data.record.weight ? `体重: ${data.record.weight}kg` : '新しい記録',
+            body: data.record.weight ? `体重: ${data.record.weight}kg（自動反映済み）` : '新しい記録（自動反映済み）',
             icon: '/icon-192.png'
           });
         }
@@ -1599,19 +1613,23 @@ function stopSSE() {
 }
 
 // フォールバック用ポーリング（SSEが使えない場合）
+let _lastSelfRecCount = 0;
 function startPolling() {
   stopPolling();
+  _lastSelfRecCount = 0;
   pollTimer = setInterval(async () => {
     if (!currentPatientId || !document.getElementById('page-detail').classList.contains('active')) return;
     try {
       const selfRecs = await api('GET', `/api/patients/${currentPatientId}/self-records`);
-      const unimported = selfRecs.filter(r => !r.imported);
-      const banner = document.getElementById('newBanner');
-      if (unimported.length) {
-        renderNewBanner(unimported);
-        banner.style.display = '';
-      } else {
-        banner.style.display = 'none';
+      if (selfRecs.length > _lastSelfRecCount) {
+        // 新着あり → 患者データ再取得して自動反映
+        _lastSelfRecCount = selfRecs.length;
+        currentPatient = await api('GET', '/api/patients/' + currentPatientId);
+        renderDetail();
+        renderRecords();
+        renderChart();
+        const latest = selfRecs[selfRecs.length - 1];
+        showAutoImportBanner({ record: latest });
       }
     } catch {}
   }, 8000);
@@ -1637,16 +1655,21 @@ function checkNewData() {
   // まずSSEを試みる
   if (currentPatientId) {
     startSSE(currentPatientId);
-    // 初回の未読チェックは即時
-    api('GET', `/api/patients/${currentPatientId}/self-records`).then(selfRecs => {
-      const unimported = selfRecs.filter(r => !r.imported);
-      const banner = document.getElementById('newBanner');
-      if (unimported.length) {
-        renderNewBanner(unimported);
-        banner.style.display = '';
-      }
-    }).catch(() => {});
   }
+}
+
+// 自動インポートバナー（新着通知）を表示
+function showAutoImportBanner(data) {
+  const rec = data.record || {};
+  const chips = [
+    `<span class="new-chip">📅 ${rec.date || ''}</span>`,
+    rec.weight != null ? `<span class="new-chip">⚖️ ${rec.weight}kg</span>` : '',
+    rec.moti    ? `<span class="new-chip">💪 モチベ${rec.moti}/5</span>` : '',
+    rec.exercise != null ? `<span class="new-chip">🏃 運動${rec.exercise}%</span>` : '',
+    rec.memo    ? `<span class="new-chip">💬 ${rec.memo.slice(0,24)}${rec.memo.length>24?'...':''}</span>` : '',
+  ].filter(Boolean).join('');
+  document.getElementById('newChips').innerHTML = chips;
+  document.getElementById('newBanner').style.display = '';
 }
 
 // ブラウザ通知許可を要求
@@ -1665,6 +1688,24 @@ async function importSelfRecords() {
     renderDetail();
     renderRecords();
   } catch(e) { toast('取り込みに失敗しました', 'error'); }
+}
+
+/* ════════════════════════════════
+   サイドバー開閉
+════════════════════════════════ */
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  if (sb.classList.contains('mobile-open')) {
+    closeSidebar();
+  } else {
+    sb.classList.add('mobile-open');
+    ov.classList.add('show');
+  }
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
 }
 
 /* ════════════════════════════════

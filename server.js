@@ -211,22 +211,50 @@ app.post('/api/patients/:id/self-record', (req, res) => {
   const db = readDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
+  const now = new Date().toISOString();
   const rec = {
     id: uuidv4(),
-    date: new Date().toISOString().slice(0,10),
+    date: now.slice(0,10),
     weight: req.body.weight != null ? parseFloat(req.body.weight) : null,
     pain: req.body.pain != null ? parseInt(req.body.pain) : null,
     posture: req.body.posture != null ? parseInt(req.body.posture) : null,
     moti: req.body.moti != null ? parseInt(req.body.moti) : null,
     exercise: req.body.exercise != null ? parseInt(req.body.exercise) : null,
     memo: req.body.memo || '',
-    imported: false,
-    createdAt: new Date().toISOString()
+    imported: true,
+    createdAt: now
   };
+
+  // patientRecords に保存（日付重複は上書き）
   if (!p.patientRecords) p.patientRecords = [];
   const ei = p.patientRecords.findIndex(r => r.date === rec.date);
   if (ei >= 0) p.patientRecords[ei] = rec; else p.patientRecords.push(rec);
+
+  // ─── 自動インポート：p.records にも即時反映 ───
+  const autoRec = {
+    id: uuidv4(),
+    date: rec.date,
+    weight: rec.weight,
+    pain: rec.pain,
+    posture: rec.posture,
+    moti: rec.moti,
+    exercise: rec.exercise,
+    memo: rec.memo,
+    source: 'patient',
+    createdAt: rec.createdAt
+  };
+  if (!p.records) p.records = [];
+  const ri = p.records.findIndex(r => r.date === autoRec.date);
+  if (ri >= 0) {
+    // 既存スタッフ記録があればpatient項目だけ上書き（スタッフ入力を残す）
+    p.records[ri] = { ...p.records[ri], ...autoRec };
+  } else {
+    p.records.push(autoRec);
+  }
+  p.records.sort((a, b) => a.date.localeCompare(b.date));
+
   writeDB(db);
+
   // SSEでadminに通知
   sseNotify(req.params.id, {
     type: 'new-record',
