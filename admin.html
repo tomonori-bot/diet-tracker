@@ -2,7 +2,11 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,maximum-scale=5.0">
+<meta name="theme-color" content="#4a72f5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
 <title>BodyLog 管理画面</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -320,15 +324,47 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 /* ═══ QUICK ACTIONS ═══ */
 .quick-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
 
+/* ═══ USER SLOT ═══ */
+.user-slot{display:flex;align-items:center;gap:8px;padding-left:10px;border-left:1px solid var(--border);margin-left:4px}
+.user-slot .user-name{font-size:13px;color:var(--text2);font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* ═══ RESPONSIVE ═══ */
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%);transition:transform .25s}
+  .sidebar{transform:translateX(-100%);transition:transform .25s;z-index:200}
   .sidebar.mobile-open{transform:translateX(0)}
   .content{margin-left:0}
-  .topbar{padding:0 16px}
-  .page{padding:16px}
+  .topbar{padding:0 12px;gap:8px;flex-wrap:wrap;height:auto;min-height:60px;padding-top:10px;padding-bottom:10px}
+  .topbar-right{flex-wrap:wrap;gap:8px;width:100%}
+  .topbar-right .search-box{flex:1;min-width:140px}
+  .topbar-right .btn-primary{flex-shrink:0}
+  .user-slot{padding-left:0;border-left:none;margin-left:auto}
+  .user-slot .user-name{max-width:80px;font-size:12px}
+  .page{padding:14px 12px}
   .mobile-menu{display:flex!important}
   .dh-row{flex-direction:column}
+  .topbar-title{font-size:15px}
+  .stat-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
+  .stat-card{padding:14px!important}
+  .stat-value{font-size:22px!important}
+  /* モーダルをスマホで全画面に近く */
+  .modal{max-width:95vw!important;max-height:92vh;margin:10px;border-radius:14px}
+  .modal-body{padding:16px!important}
+  .form-row{grid-template-columns:1fr!important}
+  /* タブを横スクロール可に */
+  .tab-bar{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tab-bar::-webkit-scrollbar{display:none}
+  .tab-btn{flex-shrink:0;white-space:nowrap}
+  /* 患者カード */
+  .patient-card{padding:14px!important}
+  /* ボタンをタップしやすく */
+  .btn{min-height:42px}
+  /* 入力フィールド */
+  input,select,textarea{font-size:16px!important} /* iOSズーム防止 */
+}
+@media(max-width:480px){
+  .stat-grid{grid-template-columns:1fr!important}
+  .topbar-right .search-box input{font-size:14px}
+  .user-slot .user-name{display:none}
 }
 .mobile-menu{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:16px}
 
@@ -385,6 +421,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
       <input type="text" placeholder="患者名・目的で検索..." id="searchInput" oninput="handleSearch(this.value)">
     </div>
     <button class="btn btn-primary" onclick="openAddPatientModal()">＋ 新規患者</button>
+    <div id="userSlot" class="user-slot"></div>
   </div>
 </div>
 
@@ -753,19 +790,55 @@ let pollTimer = null;
 let searchDebounce = null;
 
 /* ════════════════════════════════
-   UTILS
+   AUTH & UTILS
 ════════════════════════════════ */
+function getAuthToken() {
+  return localStorage.getItem('bodylog_token') || sessionStorage.getItem('bodylog_token') || '';
+}
+function getAuthUser() {
+  return localStorage.getItem('bodylog_user') || sessionStorage.getItem('bodylog_user') || '';
+}
+function clearAuth() {
+  localStorage.removeItem('bodylog_token');
+  localStorage.removeItem('bodylog_user');
+  sessionStorage.removeItem('bodylog_token');
+  sessionStorage.removeItem('bodylog_user');
+}
+function gotoLogin() {
+  clearAuth();
+  location.replace('login.html');
+}
+
 async function api(method, path, body) {
+  const token = getAuthToken();
   const res = await fetch(path, {
     method,
-    headers: {'Content-Type':'application/json'},
+    headers: {
+      'Content-Type':'application/json',
+      ...(token ? {'Authorization': 'Bearer ' + token} : {})
+    },
     body: body ? JSON.stringify(body) : undefined
   });
+  if (res.status === 401) {
+    gotoLogin();
+    throw new Error('Unauthorized');
+  }
   if (!res.ok) {
     const msg = await res.text().catch(() => 'Error');
     throw new Error(msg);
   }
   return res.json();
+}
+
+async function doLogout() {
+  const token = getAuthToken();
+  try {
+    await fetch('/api/auth/logout', {
+      method:'POST',
+      headers: token ? {'Authorization':'Bearer '+token} : {}
+    });
+  } catch {}
+  gotoLogin();
 }
 
 function toast(msg, type='success') {
@@ -1574,7 +1647,8 @@ let sseSource = null;
 
 function startSSE(patientId) {
   stopSSE();
-  sseSource = new EventSource(`/api/patients/${patientId}/stream`);
+  const token = getAuthToken();
+  sseSource = new EventSource(`/api/patients/${patientId}/stream?token=${encodeURIComponent(token)}`);
 
   sseSource.onmessage = async (e) => {
     try {
@@ -1585,7 +1659,8 @@ function startSSE(patientId) {
         // 記録・グラフを即時更新
         renderDetail();
         renderRecords();
-        renderChart();
+        renderSessions();
+        renderCharts();
         // ダッシュボードバッジ更新
         loadDashboard();
         // 自動反映バナー表示
@@ -1627,7 +1702,8 @@ function startPolling() {
         currentPatient = await api('GET', '/api/patients/' + currentPatientId);
         renderDetail();
         renderRecords();
-        renderChart();
+        renderSessions();
+        renderCharts();
         const latest = selfRecs[selfRecs.length - 1];
         showAutoImportBanner({ record: latest });
       }
@@ -1725,8 +1801,30 @@ window.addEventListener('beforeunload', () => {
 /* ════════════════════════════════
    INIT
 ════════════════════════════════ */
-loadDashboard();
-requestNotificationPermission();
+(async function init() {
+  const token = getAuthToken();
+  if (!token) { gotoLogin(); return; }
+  try {
+    const r = await fetch('/api/auth/check', { headers:{ Authorization:'Bearer '+token } });
+    const j = await r.json();
+    if (!j.authenticated) { gotoLogin(); return; }
+    // ヘッダにユーザー名/ログアウトボタンを差し込み
+    setupHeaderUser(j.username);
+    loadDashboard();
+    requestNotificationPermission();
+  } catch {
+    gotoLogin();
+  }
+})();
+
+function setupHeaderUser(username) {
+  const slot = document.getElementById('userSlot');
+  if (!slot) return;
+  slot.innerHTML = `
+    <span class="user-name" title="${username}">👤 ${username}</span>
+    <button class="btn btn-outline btn-sm" onclick="doLogout()">ログアウト</button>
+  `;
+}
 </script>
 </body>
 </html>
