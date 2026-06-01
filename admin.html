@@ -346,6 +346,27 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .check-miss{background:rgba(239,68,68,.06);color:var(--danger);font-size:13px}
 .check-none{background:var(--surface);color:var(--text3);font-size:12px}
 
+/* ═══ EXERCISE（セッションの種目記録）═══ */
+.ex-block{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px;background:var(--surface2)}
+.ex-head{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.ex-head select{flex:1}
+.ex-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px 6px;border-radius:6px;flex-shrink:0}
+.ex-del:hover{color:var(--danger);background:rgba(239,68,68,.08)}
+.ex-set{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.ex-set .setno{font-size:11px;font-weight:800;color:var(--text3);width:34px;flex-shrink:0}
+.ex-set input{padding:7px 9px;font-size:13px}
+.ex-set .w{width:78px;flex-shrink:0}
+.ex-set .r{width:70px;flex-shrink:0}
+.ex-set .m{flex:1;min-width:0}
+.ex-set .unit{font-size:11px;color:var(--text3);flex-shrink:0}
+.ex-set-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 5px;flex-shrink:0}
+.ex-set-del:hover{color:var(--danger)}
+.ex-addset{background:none;border:1px dashed var(--border);color:var(--text2);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:2px}
+.ex-addset:hover{border-color:var(--accent);color:var(--accent)}
+.si-ex{background:rgba(74,114,245,.05);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:4px}
+.si-ex-name{font-size:13px;font-weight:800;color:var(--accent);margin-bottom:3px}
+.si-ex-sets{font-size:12px;color:var(--text);line-height:1.7}
+
 /* ═══ QUICK ACTIONS ═══ */
 .quick-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
 
@@ -699,6 +720,13 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="form-group"><label class="fl">体重 (kg)</label><input type="number" id="s-weight" step="0.1" placeholder="65.2" /></div>
     </div>
     <hr class="divider" style="margin:16px 0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-transform:uppercase">🏋️ トレーニング種目</div>
+      <button type="button" class="btn btn-outline btn-xs" onclick="manageExercises()">種目リストを編集</button>
+    </div>
+    <div id="exerciseList"></div>
+    <button type="button" class="btn btn-outline btn-sm" style="width:100%;margin-bottom:6px" onclick="addExerciseRow()">＋ 種目を追加</button>
+    <hr class="divider" style="margin:16px 0">
     <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">施術記録</div>
     <div class="form-grid">
       <div class="form-group full"><label class="fl">施術内容</label><textarea id="s-treatment" rows="2" placeholder="例：腰部・骨盤アジャスト、肩甲骨モビライゼーション、筋膜リリース"></textarea></div>
@@ -800,6 +828,27 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 </div>
 
 <!-- 問診票リンクモーダル -->
+<!-- 種目リスト編集モーダル -->
+<div class="overlay" id="exManageModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">🏋️ マイ種目リスト</div>
+      <button class="modal-close" onclick="closeModal('exManageModal')">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+      よく使う種目を登録しておくと、セッション記録で選ぶだけで使えます。
+    </div>
+    <div class="input-group" style="margin-bottom:14px">
+      <input type="text" id="ex-newName" placeholder="種目名（例：インクラインベンチプレス）" onkeydown="if(event.key==='Enter')addExerciseMaster()">
+      <button class="btn btn-primary btn-sm" onclick="addExerciseMaster()">追加</button>
+    </div>
+    <div id="exMasterList" style="max-height:340px;overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('exManageModal')">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="intakeModal">
   <div class="modal" style="max-width:380px;text-align:center">
     <div class="modal-header">
@@ -1355,11 +1404,14 @@ function renderOverview() {
 /* ════════════════════════════════
    SESSION
 ════════════════════════════════ */
-function openSessionModal(sessionId=null) {
+async function openSessionModal(sessionId=null) {
   document.getElementById('s-editId').value = sessionId || '';
   const isEdit = !!sessionId;
   document.getElementById('sessionModal').querySelector('.modal-title').textContent = isEdit ? '✏️ セッション編集' : '🗂️ セッション記録';
   document.getElementById('sessionSubmitBtn').textContent = isEdit ? '更新する' : '記録する';
+
+  // マイ種目リストを読み込んでおく（ドロップダウン用）
+  await loadExerciseMaster();
 
   if (isEdit) {
     const s = (currentPatient.sessions || []).find(s => s.id === sessionId);
@@ -1372,6 +1424,7 @@ function openSessionModal(sessionId=null) {
     document.getElementById('s-homework').value = s.homework || '';
     document.getElementById('s-nextPlan').value = s.nextPlan || '';
     document.getElementById('s-note').value = s.staffNote || '';
+    renderExerciseEditor(s.exercises || []);
   } else {
     document.getElementById('s-date').value = new Date().toISOString().slice(0,10);
     document.getElementById('s-duration').value = '';
@@ -1381,6 +1434,7 @@ function openSessionModal(sessionId=null) {
     document.getElementById('s-homework').value = '';
     document.getElementById('s-nextPlan').value = '';
     document.getElementById('s-note').value = '';
+    renderExerciseEditor([]);
   }
   openModal('sessionModal');
 }
@@ -1396,6 +1450,7 @@ async function submitSession() {
     homework: document.getElementById('s-homework').value,
     nextPlan: document.getElementById('s-nextPlan').value,
     staffNote: document.getElementById('s-note').value,
+    exercises: collectExercises(),
   };
   try {
     if (editId) {
@@ -1431,7 +1486,12 @@ function renderSessions() {
       <div class="si-chips">
         ${s.weight != null ? `<span class="badge badge-blue">⚖️ ${s.weight}kg</span>` : ''}
         ${s.duration ? `<span class="badge badge-purple">⏱️ ${s.duration}分</span>` : ''}
+        ${(s.exercises && s.exercises.length) ? `<span class="badge badge-green">🏋️ ${s.exercises.length}種目</span>` : ''}
       </div>
+      ${(s.exercises && s.exercises.length) ? `<div class="si-field"><div class="si-field-label">🏋️ トレーニング</div>${s.exercises.map(ex => `
+        <div class="si-ex"><div class="si-ex-name">${escapeHtml(ex.name)}</div><div class="si-ex-sets">${
+          (ex.sets && ex.sets.length) ? ex.sets.map((st,i) => `${i+1}set: ${st.weight!=null?st.weight+'kg':'—'} × ${st.reps!=null?st.reps+'回':'—'}${st.memo?` <span style="color:var(--text3)">(${escapeHtml(st.memo)})</span>`:''}`).join('<br>') : '記録なし'
+        }</div></div>`).join('')}</div>` : ''}
       ${s.treatment ? `<div class="si-field"><div class="si-field-label">🔧 施術内容</div><div class="si-field-val">${s.treatment}</div></div>` : ''}
       ${s.response ? `<div class="si-field"><div class="si-field-label">💬 患者の反応・状態変化</div><div class="si-field-val">${s.response}</div></div>` : ''}
       ${s.homework ? `<div class="si-note"><div class="si-field-label" style="color:var(--accent2)">📌 ホームワーク・指示</div><div class="si-field-val">${s.homework}</div></div>` : ''}
@@ -1449,6 +1509,153 @@ async function deleteSession(sid) {
     renderDetail();
     renderSessions();
   } catch(e) { toast('削除に失敗しました', 'error'); }
+}
+
+/* ════════════════════════════════
+   EXERCISE（種目記録）
+════════════════════════════════ */
+let exerciseMaster = []; // マイ種目リスト
+
+function escapeHtml(s) {
+  const map = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+  return String(s).replace(/[&<>"']/g, function(c){ return map[c]; });
+}
+
+async function loadExerciseMaster() {
+  try { exerciseMaster = await api('GET', '/api/exercises'); }
+  catch { exerciseMaster = []; }
+}
+
+// 種目セレクトのoptions HTML（「＋ 新しい種目を入力」付き）
+function exerciseOptions(selected) {
+  const opts = exerciseMaster.map(name =>
+    `<option value="${escapeHtml(name)}"${name===selected?' selected':''}>${escapeHtml(name)}</option>`).join('');
+  // selected がリストにない（過去に使った種目）場合も表示
+  const extra = (selected && !exerciseMaster.includes(selected))
+    ? `<option value="${escapeHtml(selected)}" selected>${escapeHtml(selected)}</option>` : '';
+  return `<option value="">種目を選択...</option>${extra}${opts}<option value="__new__">＋ 新しい種目を入力</option>`;
+}
+
+// エディタを既存データから描画
+function renderExerciseEditor(exercises) {
+  const wrap = document.getElementById('exerciseList');
+  wrap.innerHTML = '';
+  (exercises || []).forEach(ex => addExerciseRow(ex));
+}
+
+// 種目ブロックを1つ追加
+function addExerciseRow(ex) {
+  const wrap = document.getElementById('exerciseList');
+  const block = document.createElement('div');
+  block.className = 'ex-block';
+  const name = ex && ex.name ? ex.name : '';
+  block.innerHTML = `
+    <div class="ex-head">
+      <select onchange="onExerciseSelect(this)">${exerciseOptions(name)}</select>
+      <button type="button" class="ex-del" title="この種目を削除" onclick="this.closest('.ex-block').remove()">🗑️</button>
+    </div>
+    <div class="ex-sets"></div>
+    <button type="button" class="ex-addset" onclick="addSetRow(this.closest('.ex-block'))">＋ セットを追加</button>`;
+  wrap.appendChild(block);
+  const sets = (ex && ex.sets && ex.sets.length) ? ex.sets : [{}];
+  sets.forEach(st => addSetRow(block, st));
+}
+
+// 種目セレクトで「新しい種目を入力」を選んだとき
+async function onExerciseSelect(sel) {
+  if (sel.value !== '__new__') return;
+  const name = (prompt('新しい種目名を入力してください') || '').trim();
+  if (!name) { sel.value = ''; return; }
+  try {
+    exerciseMaster = await api('POST', '/api/exercises', { name });
+  } catch { toast('種目の追加に失敗しました', 'error'); }
+  // 全ての種目セレクトを更新し、この欄を新種目に設定
+  document.querySelectorAll('#exerciseList .ex-head select').forEach(s => {
+    const cur = s === sel ? name : s.value;
+    s.innerHTML = exerciseOptions(cur);
+    s.value = cur;
+  });
+}
+
+// セット行を追加
+function addSetRow(block, st) {
+  const setsWrap = block.querySelector('.ex-sets');
+  const row = document.createElement('div');
+  row.className = 'ex-set';
+  const n = setsWrap.children.length + 1;
+  row.innerHTML = `
+    <span class="setno">${n}set</span>
+    <input class="w" type="number" step="0.5" placeholder="重量" value="${st&&st.weight!=null?st.weight:''}"><span class="unit">kg</span>
+    <input class="r" type="number" placeholder="回数" value="${st&&st.reps!=null?st.reps:''}"><span class="unit">回</span>
+    <input class="m" type="text" placeholder="メモ(任意)" value="${st&&st.memo?escapeHtml(st.memo):''}">
+    <button type="button" class="ex-set-del" onclick="delSetRow(this)">✕</button>`;
+  setsWrap.appendChild(row);
+}
+
+function delSetRow(btn) {
+  const setsWrap = btn.closest('.ex-sets');
+  btn.closest('.ex-set').remove();
+  // セット番号を振り直し
+  [...setsWrap.children].forEach((r,i) => r.querySelector('.setno').textContent = (i+1)+'set');
+}
+
+// 入力内容を配列に集約
+function collectExercises() {
+  const out = [];
+  document.querySelectorAll('#exerciseList .ex-block').forEach(block => {
+    const name = block.querySelector('.ex-head select').value;
+    if (!name || name === '__new__') return;
+    const sets = [];
+    block.querySelectorAll('.ex-set').forEach(row => {
+      const w = row.querySelector('.w').value;
+      const r = row.querySelector('.r').value;
+      const m = row.querySelector('.m').value.trim();
+      if (w === '' && r === '' && !m) return; // 空セットは無視
+      sets.push({ weight: w!==''?parseFloat(w):null, reps: r!==''?parseInt(r):null, memo: m });
+    });
+    out.push({ name, sets });
+  });
+  return out;
+}
+
+/* ─── マイ種目リスト編集モーダル ─── */
+async function manageExercises() {
+  await loadExerciseMaster();
+  renderExerciseMasterList();
+  openModal('exManageModal');
+}
+function renderExerciseMasterList() {
+  const wrap = document.getElementById('exMasterList');
+  if (!exerciseMaster.length) {
+    wrap.innerHTML = '<div class="empty-state" style="padding:20px 0"><div class="empty-state-msg">種目がありません</div></div>';
+    return;
+  }
+  wrap.innerHTML = exerciseMaster.map((name, i) => `
+    <div class="training-item">
+      <span class="training-item-text">🏋️ ${escapeHtml(name)}</span>
+      <button class="btn btn-danger btn-xs" onclick="deleteExerciseMaster(${i})">削除</button>
+    </div>`).join('');
+}
+async function addExerciseMaster() {
+  const input = document.getElementById('ex-newName');
+  const name = input.value.trim();
+  if (!name) { toast('種目名を入力してください', 'error'); return; }
+  try {
+    exerciseMaster = await api('POST', '/api/exercises', { name });
+    input.value = '';
+    renderExerciseMasterList();
+    toast('追加しました ✅');
+  } catch { toast('追加に失敗しました', 'error'); }
+}
+async function deleteExerciseMaster(index) {
+  const name = exerciseMaster[index];
+  if (name == null) return;
+  if (!confirm(`「${name}」を種目リストから削除しますか？\n（過去の記録は残ります）`)) return;
+  try {
+    exerciseMaster = await api('DELETE', '/api/exercises', { name });
+    renderExerciseMasterList();
+    toast('削除しました');
+  } catch { toast('削除に失敗しました', 'error'); }
 }
 
 /* ════════════════════════════════

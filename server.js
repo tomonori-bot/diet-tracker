@@ -13,8 +13,15 @@ const DATA_FILE = path.join(__dirname, 'data', 'db.json');
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'bodylog2025';
 
+// マイ種目リストが空のトレーナーに最初から出す定番種目
+const DEFAULT_EXERCISES = [
+  'スクワット', 'デッドリフト', 'ベンチプレス', 'ラットプルダウン',
+  'ショルダープレス', 'レッグプレス', 'チェストプレス', 'ローイング',
+  'プランク', 'ランジ'
+];
+
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '12mb' }));
 
 /* ─── DB helpers ─── */
 function readDB() {
@@ -25,9 +32,10 @@ function readDB() {
     if (!db.patients) db.patients = [];
     if (!db.users) db.users = [];
     if (!db.intakeCodes) db.intakeCodes = {};
+    if (!db.exercises) db.exercises = {};
     return db;
   }
-  catch { return { patients: [], sessions: {}, users: [], intakeCodes: {} }; }
+  catch { return { patients: [], sessions: {}, users: [], intakeCodes: {}, exercises: {} }; }
 }
 
 /* ─── パスワードハッシュ（ソルト付き） ─── */
@@ -178,6 +186,25 @@ app.use(express.static(__dirname));
 function ownsPatient(p, ownerId) {
   const owner = p.ownerId || ADMIN_USER;
   return owner === ownerId;
+}
+
+/* ─── セッションの種目データを安全な形に整える ───
+   [{ name, sets:[{weight, reps, memo}] }] の形だけを許可 */
+function normalizeExercises(input) {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map(ex => {
+      const name = (ex && typeof ex.name === 'string') ? ex.name.trim() : '';
+      if (!name) return null;
+      const sets = Array.isArray(ex.sets) ? ex.sets.map(s => ({
+        weight: (s && s.weight !== '' && s.weight != null) ? parseFloat(s.weight) : null,
+        reps: (s && s.reps !== '' && s.reps != null) ? parseInt(s.reps) : null,
+        memo: (s && typeof s.memo === 'string') ? s.memo.slice(0, 200) : ''
+      })) : [];
+      return { name: name.slice(0, 60), sets };
+    })
+    .filter(Boolean)
+    .slice(0, 30); // 1セッション最大30種目
 }
 
 /* ─── 患者一覧取得（自分の患者のみ） ─── */
@@ -342,6 +369,7 @@ app.post('/api/patients/:id/sessions', requireAdmin, (req, res) => {
     nextPlan: req.body.nextPlan || '',
     staffNote: req.body.staffNote || '',
     duration: req.body.duration != null ? parseInt(req.body.duration) : null,
+    exercises: normalizeExercises(req.body.exercises),
     createdAt: new Date().toISOString()
   };
   if (!p.sessions) p.sessions = [];
@@ -359,7 +387,9 @@ app.put('/api/patients/:id/sessions/:sid', requireAdmin, (req, res) => {
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   const idx = (p.sessions || []).findIndex(s => s.id === req.params.sid);
   if (idx < 0) return res.status(404).json({ error: 'Session not found' });
-  p.sessions[idx] = { ...p.sessions[idx], ...req.body, id: req.params.sid };
+  const body = { ...req.body };
+  if ('exercises' in body) body.exercises = normalizeExercises(body.exercises);
+  p.sessions[idx] = { ...p.sessions[idx], ...body, id: req.params.sid };
   p.sessions.sort((a,b) => b.date.localeCompare(a.date));
   writeDB(db);
   res.json(p.sessions[idx]);
@@ -577,6 +607,46 @@ app.post('/api/intake/:code', (req, res) => {
   db.patients.push(p);
   writeDB(db);
   res.json({ ok: true, name: p.name });
+});
+
+/* ════════════════════════════════
+   マイ種目マスタ（トレーナーごと）
+════════════════════════════════ */
+
+/* ─── マイ種目リスト取得（無ければ初期種目を保存して返す） ─── */
+app.get('/api/exercises', requireAdmin, (req, res) => {
+  const db = readDB();
+  if (!Array.isArray(db.exercises[req.ownerId])) {
+    db.exercises[req.ownerId] = [...DEFAULT_EXERCISES];
+    writeDB(db);
+  }
+  res.json(db.exercises[req.ownerId]);
+});
+
+/* ─── マイ種目を追加 ─── */
+app.post('/api/exercises', requireAdmin, (req, res) => {
+  const name = (req.body?.name || '').trim();
+  if (!name) return res.status(400).json({ error: '種目名を入力してください' });
+  const db = readDB();
+  if (!Array.isArray(db.exercises[req.ownerId])) db.exercises[req.ownerId] = [...DEFAULT_EXERCISES];
+  // 重複（大文字小文字・前後空白無視）は追加しない
+  const exists = db.exercises[req.ownerId].some(e => e.toLowerCase() === name.toLowerCase());
+  if (!exists) {
+    db.exercises[req.ownerId].push(name);
+    writeDB(db);
+  }
+  res.json(db.exercises[req.ownerId]);
+});
+
+/* ─── マイ種目を削除 ─── */
+app.delete('/api/exercises', requireAdmin, (req, res) => {
+  const name = (req.body?.name || '').trim();
+  const db = readDB();
+  if (Array.isArray(db.exercises[req.ownerId])) {
+    db.exercises[req.ownerId] = db.exercises[req.ownerId].filter(e => e !== name);
+    writeDB(db);
+  }
+  res.json(db.exercises[req.ownerId] || []);
 });
 
 /* ─── 写真アップロード（ビフォーアフター） ─── */
