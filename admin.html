@@ -513,7 +513,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:8px;flex-wrap:wrap">
     <div class="section-title">患者一覧</div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-outline" onclick="openIntakeModal()">📋 問診票リンク</button>
+      <button class="btn btn-outline" onclick="openIntakeModal()">問診票リンク</button>
       <button class="btn btn-primary" onclick="openAddPatientModal()">＋ 新規患者</button>
     </div>
   </div>
@@ -537,7 +537,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="dh-kana" id="detailKana"></div>
         <div class="dh-tags" id="detailTags"></div>
         <div class="dh-actions">
-          <button class="btn btn-outline btn-sm" onclick="showQR()">📱 QRコード</button>
+          <button class="btn btn-outline btn-sm" onclick="showQR()">QRコード</button>
           <button class="btn btn-outline btn-sm" onclick="openEditPatientModal()">✏️ 編集</button>
           <button class="btn btn-primary btn-sm" onclick="openSessionModal()">＋ セッション記録</button>
           <button class="btn btn-outline btn-sm" onclick="openRecordModal()">＋ 体重記録</button>
@@ -569,30 +569,30 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 
   <!-- タブ -->
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('overview')">📋 概要</button>
-    <button class="tab-btn" onclick="switchTab('sessions')">🗂️ セッション</button>
-    <button class="tab-btn" onclick="switchTab('records')">⚖️ 体重記録</button>
-    <button class="tab-btn" onclick="switchTab('chart')">📈 グラフ</button>
-    <button class="tab-btn" onclick="switchTab('photos')">📷 写真</button>
+    <button class="tab-btn active" onclick="switchTab('overview')">概要</button>
+    <button class="tab-btn" onclick="switchTab('sessions')">セッション</button>
+    <button class="tab-btn" onclick="switchTab('records')">体重記録</button>
+    <button class="tab-btn" onclick="switchTab('chart')">グラフ</button>
+    <button class="tab-btn" onclick="switchTab('photos')">写真</button>
   </div>
 
   <!-- 概要タブ -->
   <div id="tab-overview" class="tab-panel active">
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div style="font-size:14px;font-weight:700">📋 基本情報・目標</div>
+        <div style="font-size:14px;font-weight:700">基本情報・目標</div>
         <button class="btn btn-outline btn-sm" onclick="openEditPatientModal()">✏️ 編集</button>
       </div>
       <div class="info-grid" id="overviewInfo"></div>
       <div id="overviewGoals" style="margin-top:14px"></div>
     </div>
     <div class="card">
-      <div style="font-size:14px;font-weight:700;margin-bottom:12px">🗒️ カルテ・備考</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">カルテ・備考</div>
       <div id="overviewKarte" style="font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.8;background:var(--surface2);border-radius:var(--radius-sm);padding:14px">-</div>
     </div>
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div style="font-size:14px;font-weight:700">🏋️ セルフトレーニング項目</div>
+        <div style="font-size:14px;font-weight:700">セルフトレーニング項目</div>
         <button class="btn btn-primary btn-sm" onclick="openAddTrainingModal()">＋ 追加</button>
       </div>
       <div id="trainingItemList"></div>
@@ -636,7 +636,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
   <!-- 写真タブ -->
   <div id="tab-photos" class="tab-panel">
     <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
-      <button class="btn btn-primary" onclick="openPhotoModal()">📷 写真を追加</button>
+      <button class="btn btn-primary" onclick="openPhotoModal()">写真を追加</button>
     </div>
     <div id="photoGrid" class="photo-grid"></div>
   </div>
@@ -651,7 +651,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="overlay" id="addPatientModal">
   <div class="modal modal-lg">
     <div class="modal-header">
-      <div class="modal-title">👤 新規患者登録</div>
+      <div class="modal-title">新規患者登録</div>
       <button class="modal-close" onclick="closeModal('addPatientModal')">✕</button>
     </div>
     <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px;padding:8px 12px;background:rgba(14,165,233,.06);border-radius:8px">基本情報</div>
@@ -727,7 +727,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="overlay" id="sessionModal">
   <div class="modal modal-wide">
     <div class="modal-header">
-      <div class="modal-title">🗂️ セッション記録</div>
+      <div class="modal-title">セッション記録</div>
       <button class="modal-close" onclick="closeModal('sessionModal')">✕</button>
     </div>
     <input type="hidden" id="s-editId">
@@ -739,7 +739,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <hr class="divider" style="margin:16px 0">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-transform:uppercase">🏋️ トレーニング種目</div>
+      <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-transform:uppercase">トレーニング種目</div>
       <button type="button" class="btn btn-outline btn-xs" onclick="manageExercises()">種目リストを編集</button>
     </div>
     <div id="exerciseList"></div>
@@ -773,7 +773,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="overlay" id="recordModal">
   <div class="modal modal-wide">
     <div class="modal-header">
-      <div class="modal-title">⚖️ 体重・状態を記録</div>
+      <div class="modal-title">体重・状態を記録</div>
       <button class="modal-close" onclick="closeModal('recordModal')">✕</button>
     </div>
     <input type="hidden" id="r-editId">
@@ -803,7 +803,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="overlay" id="addTrainingModal">
   <div class="modal" style="max-width:420px">
     <div class="modal-header">
-      <div class="modal-title">🏋️ トレーニング項目を追加</div>
+      <div class="modal-title">トレーニング項目を追加</div>
       <button class="modal-close" onclick="closeModal('addTrainingModal')">✕</button>
     </div>
     <div class="form-group">
@@ -821,7 +821,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="overlay" id="photoModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">📷 写真を追加</div>
+      <div class="modal-title">写真を追加</div>
       <button class="modal-close" onclick="closeModal('photoModal')">✕</button>
     </div>
     <div class="photo-upload-zone" id="photoUploadZone" onclick="document.getElementById('photoFileInput').click()"
@@ -850,7 +850,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="overlay" id="exManageModal">
   <div class="modal" style="max-width:440px">
     <div class="modal-header">
-      <div class="modal-title">🏋️ マイ種目リスト</div>
+      <div class="modal-title">マイ種目リスト</div>
       <button class="modal-close" onclick="closeModal('exManageModal')">✕</button>
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
@@ -870,7 +870,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="overlay" id="intakeModal">
   <div class="modal" style="max-width:380px;text-align:center">
     <div class="modal-header">
-      <div class="modal-title">📋 問診票リンク</div>
+      <div class="modal-title">問診票リンク</div>
       <button class="modal-close" onclick="closeModal('intakeModal')">✕</button>
     </div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.7">
@@ -890,7 +890,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="overlay" id="qrModal">
   <div class="modal" style="max-width:340px;text-align:center">
     <div class="modal-header">
-      <div class="modal-title" id="qrTitle">📱 患者用QRコード</div>
+      <div class="modal-title" id="qrTitle">患者用QRコード</div>
       <button class="modal-close" onclick="closeModal('qrModal')">✕</button>
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:18px;line-height:1.6">
@@ -1347,7 +1347,7 @@ function renderDetail() {
           ${idealMin ? `<div style="font-size:13px;color:var(--text2)">標準体重目安：<strong>${idealMin}〜${idealMax}kg</strong></div>` : ''}
           ${tw ? `<div style="font-size:13px;color:var(--text2);margin-top:4px">目標体重：<strong>${tw}kg</strong>（目標BMI: ${calcBMI(tw, p.height)}）</div>` : ''}
           <div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.6);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.8">
-            <div><b>📐 BMI計算式</b>：体重(kg) ÷ 身長(m)²</div>
+            <div><b>BMI計算式</b>：体重(kg) ÷ 身長(m)²</div>
             ${hm ? `<div style="color:var(--text3)">${latestW}kg ÷ ${hm}m² = <b style="color:${bi.color}">${bmi}</b></div>` : ''}
           </div>
         </div>
@@ -1411,8 +1411,8 @@ function renderOverview() {
     </div>`).join('');
 
   const goals = [
-    p.finalGoal ? `<div style="margin-bottom:12px"><div class="info-lbl" style="color:var(--accent2);margin-bottom:5px">🎯 最終目標</div><div style="font-size:14px;color:var(--text);line-height:1.7;background:rgba(16,185,129,.06);border-radius:var(--radius-sm);padding:12px 14px;border-left:3px solid var(--accent2)">${p.finalGoal}</div></div>` : '',
-    p.midGoal ? `<div><div class="info-lbl" style="color:var(--accent);margin-bottom:5px">📍 中間目標</div><div style="font-size:14px;color:var(--text);line-height:1.7;background:rgba(14,165,233,.06);border-radius:var(--radius-sm);padding:12px 14px;border-left:3px solid var(--accent)">${p.midGoal}</div></div>` : '',
+    p.finalGoal ? `<div style="margin-bottom:12px"><div class="info-lbl" style="color:var(--accent2);margin-bottom:5px">最終目標</div><div style="font-size:14px;color:var(--text);line-height:1.7;background:rgba(16,185,129,.06);border-radius:var(--radius-sm);padding:12px 14px;border-left:3px solid var(--accent2)">${p.finalGoal}</div></div>` : '',
+    p.midGoal ? `<div><div class="info-lbl" style="color:var(--accent);margin-bottom:5px">中間目標</div><div style="font-size:14px;color:var(--text);line-height:1.7;background:rgba(14,165,233,.06);border-radius:var(--radius-sm);padding:12px 14px;border-left:3px solid var(--accent)">${p.midGoal}</div></div>` : '',
   ].join('');
   document.getElementById('overviewGoals').innerHTML = goals;
   document.getElementById('overviewKarte').textContent = p.karteInfo || '記録なし';
@@ -1506,15 +1506,15 @@ function renderSessions() {
         ${s.duration ? `<span class="badge badge-purple">⏱️ ${s.duration}分</span>` : ''}
         ${(s.exercises && s.exercises.length) ? `<span class="badge badge-green">🏋️ ${s.exercises.length}種目</span>` : ''}
       </div>
-      ${(s.exercises && s.exercises.length) ? `<div class="si-field"><div class="si-field-label">🏋️ トレーニング</div>${s.exercises.map(ex => `
+      ${(s.exercises && s.exercises.length) ? `<div class="si-field"><div class="si-field-label">トレーニング</div>${s.exercises.map(ex => `
         <div class="si-ex"><div class="si-ex-name">${escapeHtml(ex.name)}</div><div class="si-ex-sets">${
           (ex.sets && ex.sets.length) ? ex.sets.map((st,i) => `${i+1}set: ${st.weight!=null?st.weight+'kg':'—'} × ${st.reps!=null?st.reps+'回':'—'}${st.memo?` <span style="color:var(--text3)">(${escapeHtml(st.memo)})</span>`:''}`).join('<br>') : '記録なし'
         }</div></div>`).join('')}</div>` : ''}
-      ${s.treatment ? `<div class="si-field"><div class="si-field-label">🔧 施術内容</div><div class="si-field-val">${s.treatment}</div></div>` : ''}
-      ${s.response ? `<div class="si-field"><div class="si-field-label">💬 患者の反応・状態変化</div><div class="si-field-val">${s.response}</div></div>` : ''}
-      ${s.homework ? `<div class="si-note"><div class="si-field-label" style="color:var(--accent2)">📌 ホームワーク・指示</div><div class="si-field-val">${s.homework}</div></div>` : ''}
-      ${s.nextPlan ? `<div class="si-field" style="margin-top:8px"><div class="si-field-label" style="color:var(--warn)">🗓️ 次回プラン</div><div class="si-field-val">${s.nextPlan}</div></div>` : ''}
-      ${s.staffNote ? `<div class="si-staff-note" style="margin-top:8px"><div class="si-field-label">🔒 スタッフメモ</div><div class="si-field-val" style="color:var(--text2)">${s.staffNote}</div></div>` : ''}
+      ${s.treatment ? `<div class="si-field"><div class="si-field-label">施術内容</div><div class="si-field-val">${s.treatment}</div></div>` : ''}
+      ${s.response ? `<div class="si-field"><div class="si-field-label">患者の反応・状態変化</div><div class="si-field-val">${s.response}</div></div>` : ''}
+      ${s.homework ? `<div class="si-note"><div class="si-field-label" style="color:var(--accent2)">ホームワーク・指示</div><div class="si-field-val">${s.homework}</div></div>` : ''}
+      ${s.nextPlan ? `<div class="si-field" style="margin-top:8px"><div class="si-field-label" style="color:var(--warn)">次回プラン</div><div class="si-field-val">${s.nextPlan}</div></div>` : ''}
+      ${s.staffNote ? `<div class="si-staff-note" style="margin-top:8px"><div class="si-field-label">スタッフメモ</div><div class="si-field-val" style="color:var(--text2)">${s.staffNote}</div></div>` : ''}
     </div>`).join('');
 }
 

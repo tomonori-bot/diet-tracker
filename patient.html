@@ -576,7 +576,7 @@ input[type=range]::-webkit-slider-thumb{
 
       <!-- 体重 -->
       <div class="section">
-        <div class="section-title">⚖️ 体重</div>
+        <div class="section-title">体重</div>
         <div class="weight-card">
           <div class="weight-row">
             <input type="number" class="weight-input" id="weightInput"
@@ -602,7 +602,7 @@ input[type=range]::-webkit-slider-thumb{
 
       <!-- モチベーション -->
       <div class="section">
-        <div class="section-title">💪 モチベーション<span class="required-mark">*</span></div>
+        <div class="section-title">モチベーション<span class="required-mark">*</span></div>
         <div class="star-card" id="motiCard">
           <div class="star-row" id="motiStars">
             <span class="star" onclick="setMoti(1)">★</span>
@@ -618,13 +618,13 @@ input[type=range]::-webkit-slider-thumb{
 
       <!-- セルフトレーニング -->
       <div class="section" id="trainingSection" style="display:none">
-        <div class="section-title">🏋️ 今日のトレーニング</div>
+        <div class="section-title">今日のトレーニング</div>
         <div id="trainingChecklist"></div>
       </div>
 
       <!-- 振り返り -->
       <div class="section">
-        <div class="section-title">✏️ 今日の振り返り（任意）</div>
+        <div class="section-title">今日の振り返り（任意）</div>
         <textarea class="memo-input" id="memoInput" rows="3"
           placeholder="今日頑張れたこと、気づいたこと、明日への一言..."></textarea>
       </div>
@@ -655,7 +655,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ── TAB: 履歴 ── -->
   <div id="tab-history" class="body" style="display:none">
     <div class="section" style="margin-top:4px">
-      <div class="section-title">📋 これまでの記録</div>
+      <div class="section-title">これまでの記録</div>
       <div id="historyList">
         <div class="hist-empty">
           <div class="hist-empty-icon">📋</div>
@@ -668,15 +668,15 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ── TAB: グラフ ── -->
   <div id="tab-graph" class="body" style="display:none">
     <div class="section" style="margin-top:4px">
-      <div class="section-title">📈 体重推移</div>
+      <div class="section-title">体重推移</div>
       <div class="graph-card">
-        <div class="graph-title">⚖️ 体重グラフ</div>
+        <div class="graph-title">体重グラフ</div>
         <div id="weightChartWrap">
           <div class="graph-empty">記録が2件以上になるとグラフが表示されます</div>
         </div>
       </div>
       <div class="graph-card">
-        <div class="graph-title">💪 モチベーション推移</div>
+        <div class="graph-title">モチベーション推移</div>
         <div id="motiChartWrap">
           <div class="graph-empty">記録が2件以上になるとグラフが表示されます</div>
         </div>
@@ -687,7 +687,7 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ── TAB: 目標 ── -->
   <div id="tab-goal" class="body" style="display:none">
     <div id="goalTabContent">
-      <div class="section-title" style="margin-bottom:14px">🎯 あなたの目標</div>
+      <div class="section-title" style="margin-bottom:14px">あなたの目標</div>
     </div>
   </div>
 
@@ -707,7 +707,7 @@ input[type=range]::-webkit-slider-thumb{
       <!-- 進捗バー -->
       <div class="progress-section" id="progressSection" style="display:none">
         <div class="prog-header">
-          <div class="prog-title">🎯 目標達成率</div>
+          <div class="prog-title">目標達成率</div>
           <div class="prog-pct" id="progPct">0%</div>
         </div>
         <div class="prog-bar">
@@ -724,7 +724,7 @@ input[type=range]::-webkit-slider-thumb{
 
       <!-- 次回プラン -->
       <div class="info-box blue" id="nextPlanBox" style="display:none">
-        <div class="ib-title" style="color:var(--accent)">🗓️ 次回の予定</div>
+        <div class="ib-title" style="color:var(--accent)">次回の予定</div>
         <div class="ib-text" id="nextPlanText"></div>
       </div>
 
@@ -1327,7 +1327,7 @@ function renderGoalTab() {
   const streak = calcStreak();
 
   el.innerHTML = `
-    <div class="section-title" style="margin-bottom:14px">🎯 あなたの目標</div>
+    <div class="section-title" style="margin-bottom:14px">あなたの目標</div>
 
     ${p.finalGoal ? `
     <div class="goal-banner" style="margin-bottom:14px">
@@ -1350,7 +1350,7 @@ function renderGoalTab() {
     ${prog !== null ? `
     <div class="progress-section" style="margin-bottom:14px">
       <div class="prog-header">
-        <div class="prog-title">📈 目標達成率</div>
+        <div class="prog-title">目標達成率</div>
         <div class="prog-pct">${prog}%</div>
       </div>
       <div class="prog-bar">
@@ -1391,7 +1391,7 @@ function renderGoalTab() {
 
     ${p.targetDate ? `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;margin-bottom:14px">
-      <div class="section-title" style="justify-content:center;margin-bottom:6px">🗓️ 目標期日</div>
+      <div class="section-title" style="justify-content:center;margin-bottom:6px">目標期日</div>
       <div style="font-size:18px;font-weight:800;color:var(--text)">${p.targetDate}</div>
       <div style="font-size:12px;color:var(--text3);margin-top:4px">${daysUntil(p.targetDate)}</div>
     </div>` : ''}
