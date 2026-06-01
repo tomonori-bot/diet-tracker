@@ -129,7 +129,15 @@
     <div class="logo">
       <div class="logo-icon">📊</div>
       <h1>BodyLog</h1>
-      <div class="sub">管理者ログイン</div>
+      <div class="sub" id="subLabel">管理者ログイン</div>
+    </div>
+
+    <!-- ログイン / 新規登録 切り替えタブ -->
+    <div style="display:flex;gap:6px;background:var(--surface2);border-radius:12px;padding:4px;margin-bottom:18px">
+      <button type="button" id="tabLogin" onclick="switchMode('login')"
+        style="flex:1;border:none;border-radius:9px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;background:#fff;color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.08)">ログイン</button>
+      <button type="button" id="tabRegister" onclick="switchMode('register')"
+        style="flex:1;border:none;border-radius:9px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;background:none;color:var(--text2)">新規登録</button>
     </div>
 
     <div class="err" id="err"></div>
@@ -137,11 +145,11 @@
     <form id="loginForm">
       <div class="field">
         <label for="username">ユーザー名</label>
-        <input type="text" id="username" autocomplete="username" required autocapitalize="none" autocorrect="off">
+        <input type="text" id="username" autocomplete="username" required autocapitalize="none" autocorrect="off" placeholder="3文字以上">
       </div>
       <div class="field">
         <label for="password">パスワード</label>
-        <input type="password" id="password" autocomplete="current-password" required>
+        <input type="password" id="password" autocomplete="current-password" required placeholder="6文字以上">
       </div>
       <label class="remember">
         <input type="checkbox" id="remember" checked>
@@ -150,7 +158,7 @@
       <button type="submit" class="btn" id="loginBtn">ログイン</button>
     </form>
 
-    <div class="info">
+    <div class="info" id="infoText">
       PC・スマホ どちらからでもログインできます<br>
       同じデータがリアルタイムで共有されます 📱💻
     </div>
@@ -172,24 +180,49 @@ const form = document.getElementById('loginForm');
 const errEl = document.getElementById('err');
 const btn = document.getElementById('loginBtn');
 
+let mode = 'login'; // 'login' | 'register'
+
+function switchMode(m) {
+  mode = m;
+  errEl.classList.remove('show');
+  const tabLogin = document.getElementById('tabLogin');
+  const tabReg = document.getElementById('tabRegister');
+  const active = 'flex:1;border:none;border-radius:9px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;background:#fff;color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.08)';
+  const inactive = 'flex:1;border:none;border-radius:9px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;background:none;color:var(--text2)';
+  if (m === 'login') {
+    tabLogin.style.cssText = active; tabReg.style.cssText = inactive;
+    document.getElementById('subLabel').textContent = '管理者ログイン';
+    btn.textContent = 'ログイン';
+    document.getElementById('password').autocomplete = 'current-password';
+    document.getElementById('infoText').innerHTML = 'PC・スマホ どちらからでもログインできます<br>同じデータがリアルタイムで共有されます 📱💻';
+  } else {
+    tabReg.style.cssText = active; tabLogin.style.cssText = inactive;
+    document.getElementById('subLabel').textContent = '新規アカウント登録';
+    btn.textContent = '登録する';
+    document.getElementById('password').autocomplete = 'new-password';
+    document.getElementById('infoText').innerHTML = 'ユーザー名は3文字以上、パスワードは6文字以上<br>登録したアカウントの患者データはあなただけが見られます 🔒';
+  }
+}
+
 form.addEventListener('submit', async e => {
   e.preventDefault();
   errEl.classList.remove('show');
   btn.disabled = true;
-  btn.textContent = 'ログイン中...';
+  btn.textContent = mode === 'login' ? 'ログイン中...' : '登録中...';
 
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
   const remember = document.getElementById('remember').checked;
+  const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
 
   try {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(endpoint, {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({ username, password })
     });
     const j = await res.json();
-    if (!res.ok) throw new Error(j.error || 'ログインに失敗しました');
+    if (!res.ok) throw new Error(j.error || (mode === 'login' ? 'ログインに失敗しました' : '登録に失敗しました'));
 
     if (remember) {
       localStorage.setItem('bodylog_token', j.token);
@@ -203,7 +236,7 @@ form.addEventListener('submit', async e => {
     errEl.textContent = err.message;
     errEl.classList.add('show');
     btn.disabled = false;
-    btn.textContent = 'ログイン';
+    btn.textContent = mode === 'login' ? 'ログイン' : '登録する';
   }
 });
 </script>

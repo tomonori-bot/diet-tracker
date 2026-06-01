@@ -18,14 +18,26 @@ app.use(express.json());
 
 /* ─── DB helpers ─── */
 function readDB() {
-  if (!fs.existsSync(DATA_FILE)) return { patients: [], sessions: {} };
+  if (!fs.existsSync(DATA_FILE)) return { patients: [], sessions: {}, users: [] };
   try {
     const db = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     if (!db.sessions) db.sessions = {};
     if (!db.patients) db.patients = [];
+    if (!db.users) db.users = [];
     return db;
   }
-  catch { return { patients: [], sessions: {} }; }
+  catch { return { patients: [], sessions: {}, users: [] }; }
+}
+
+/* ─── パスワードハッシュ（ソルト付き） ─── */
+function hashPassword(password, salt) {
+  salt = salt || crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return { salt, hash };
+}
+function verifyPassword(password, salt, hash) {
+  const h = crypto.scryptSync(password, salt, 64).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(h), Buffer.from(hash));
 }
 function writeDB(db) {
   const dir = path.dirname(DATA_FILE);
@@ -57,19 +69,57 @@ function requireAdmin(req, res, next) {
     return res.status(401).json({ error: 'Token expired' });
   }
   req.session = sess;
+  // 所有者ID（このアカウントが見られる患者の範囲）
+  req.ownerId = sess.username;
   next();
 }
+
+/* ─── 新規登録API ─── */
+app.post('/api/auth/register', (req, res) => {
+  const username = (req.body?.username || '').trim();
+  const password = req.body?.password || '';
+  if (username.length < 3) return res.status(400).json({ error: 'ユーザー名は3文字以上にしてください' });
+  if (password.length < 6) return res.status(400).json({ error: 'パスワードは6文字以上にしてください' });
+  const db = readDB();
+  // adminは予約名 + 既存ユーザーと重複不可（大文字小文字無視）
+  const lower = username.toLowerCase();
+  if (lower === ADMIN_USER.toLowerCase()) return res.status(409).json({ error: 'このユーザー名は使用できません' });
+  if (db.users.some(u => u.username.toLowerCase() === lower)) {
+    return res.status(409).json({ error: 'このユーザー名は既に使われています' });
+  }
+  const { salt, hash } = hashPassword(password);
+  const user = { id: uuidv4(), username, salt, hash, createdAt: new Date().toISOString() };
+  db.users.push(user);
+  // 登録と同時にログイン状態にする
+  const token = makeToken();
+  db.sessions[token] = { token, role: 'admin', username, createdAt: new Date().toISOString() };
+  writeDB(db);
+  res.json({ token, role: 'admin', username });
+});
 
 /* ─── 認証API ─── */
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body || {};
-  if (username !== ADMIN_USER || password !== ADMIN_PASS) {
+  const db = readDB();
+  let ok = false;
+  let authUser = username;
+  // 1) デフォルト管理者アカウント
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    ok = true;
+  } else {
+    // 2) 登録ユーザー（大文字小文字無視で照合）
+    const u = db.users.find(u => u.username.toLowerCase() === (username || '').toLowerCase());
+    if (u && verifyPassword(password || '', u.salt, u.hash)) {
+      ok = true;
+      authUser = u.username;
+    }
+  }
+  if (!ok) {
     return res.status(401).json({ error: 'ユーザー名またはパスワードが正しくありません' });
   }
-  const db = readDB();
   const token = makeToken();
   db.sessions[token] = {
-    token, role: 'admin', username,
+    token, role: 'admin', username: authUser,
     createdAt: new Date().toISOString()
   };
   // 古いセッション掃除（30日以上前）
@@ -78,7 +128,7 @@ app.post('/api/auth/login', (req, res) => {
     if (Date.now() - new Date(s.createdAt).getTime() > 30 * 24 * 3600 * 1000) delete db.sessions[t];
   });
   writeDB(db);
-  res.json({ token, role: 'admin', username });
+  res.json({ token, role: 'admin', username: authUser });
 });
 
 app.get('/api/auth/check', (req, res) => {
@@ -108,14 +158,32 @@ app.post('/api/auth/logout', (req, res) => {
 /* ─── ルート(/) は admin に飛ばす（admin内で未認証ならlogin.htmlへリダイレクト） ─── */
 app.get('/', (req, res) => res.redirect('/admin.html'));
 
+/* ─── 写真ファイル配信（token認証・staticより前に置く） ─── */
+app.get('/data/photos/:file', (req, res) => {
+  const token = getToken(req);
+  const db = readDB();
+  const sess = token && db.sessions[token];
+  if (!sess || sess.role !== 'admin') return res.status(401).end();
+  const filePath = path.join(__dirname, 'data', 'photos', path.basename(req.params.file));
+  if (!fs.existsSync(filePath)) return res.status(404).end();
+  res.sendFile(filePath);
+});
+
 /* ─── ログインページ・静的ファイルは認証不要 ─── */
 app.use(express.static(__dirname));
 
-/* ─── 患者一覧取得 ─── */
+/* ─── 所有権ヘルパー：この患者がリクエスト元のものか ───
+   ownerId 未設定の既存患者は「admin」のものとして扱う（後方互換） */
+function ownsPatient(p, ownerId) {
+  const owner = p.ownerId || ADMIN_USER;
+  return owner === ownerId;
+}
+
+/* ─── 患者一覧取得（自分の患者のみ） ─── */
 app.get('/api/patients', requireAdmin, (req, res) => {
   const db = readDB();
   const { q } = req.query;
-  let list = db.patients;
+  let list = db.patients.filter(p => ownsPatient(p, req.ownerId));
   if (q) {
     const qLower = q.toLowerCase();
     list = list.filter(p =>
@@ -144,6 +212,7 @@ app.post('/api/patients', requireAdmin, (req, res) => {
   const db = readDB();
   const p = {
     id: uuidv4(),
+    ownerId: req.ownerId,
     name: req.body.name,
     kana: req.body.kana || '',
     gender: req.body.gender || '',
@@ -169,7 +238,9 @@ app.post('/api/patients', requireAdmin, (req, res) => {
   res.json(p);
 });
 
-/* ─── 患者1件取得 ─── */
+/* ─── 患者1件取得 ───
+   注意：患者用URL(patient.html)からも認証なしで呼ばれるため、ここは所有チェックしない。
+   患者IDはランダムなUUIDなので推測困難。 */
 app.get('/api/patients/:id', (req, res) => {
   const db = readDB();
   const p = db.patients.find(p => p.id === req.params.id);
@@ -182,7 +253,10 @@ app.put('/api/patients/:id', requireAdmin, (req, res) => {
   const db = readDB();
   const idx = db.patients.findIndex(p => p.id === req.params.id);
   if (idx < 0) return res.status(404).json({ error: 'Not found' });
-  db.patients[idx] = { ...db.patients[idx], ...req.body, id: req.params.id };
+  if (!ownsPatient(db.patients[idx], req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
+  // ownerId は上書きさせない
+  const { ownerId, ...body } = req.body || {};
+  db.patients[idx] = { ...db.patients[idx], ...body, id: req.params.id };
   writeDB(db);
   res.json(db.patients[idx]);
 });
@@ -190,6 +264,9 @@ app.put('/api/patients/:id', requireAdmin, (req, res) => {
 /* ─── 患者削除 ─── */
 app.delete('/api/patients/:id', requireAdmin, (req, res) => {
   const db = readDB();
+  const p = db.patients.find(p => p.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   db.patients = db.patients.filter(p => p.id !== req.params.id);
   writeDB(db);
   res.json({ ok: true });
@@ -200,6 +277,7 @@ app.post('/api/patients/:id/records', requireAdmin, (req, res) => {
   const db = readDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   const rec = {
     id: uuidv4(),
     date: req.body.date || new Date().toISOString().slice(0,10),
@@ -225,6 +303,7 @@ app.put('/api/patients/:id/records/:rid', requireAdmin, (req, res) => {
   const db = readDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   const idx = (p.records || []).findIndex(r => r.id === req.params.rid);
   if (idx < 0) return res.status(404).json({ error: 'Record not found' });
   p.records[idx] = { ...p.records[idx], ...req.body, id: req.params.rid };
@@ -238,6 +317,7 @@ app.delete('/api/patients/:id/records/:rid', requireAdmin, (req, res) => {
   const db = readDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   p.records = (p.records || []).filter(r => r.id !== req.params.rid);
   writeDB(db);
   res.json({ ok: true });
@@ -248,6 +328,7 @@ app.post('/api/patients/:id/sessions', requireAdmin, (req, res) => {
   const db = readDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   const session = {
     id: uuidv4(),
     date: req.body.date || new Date().toISOString().slice(0,10),
@@ -274,6 +355,7 @@ app.put('/api/patients/:id/sessions/:sid', requireAdmin, (req, res) => {
   const db = readDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   const idx = (p.sessions || []).findIndex(s => s.id === req.params.sid);
   if (idx < 0) return res.status(404).json({ error: 'Session not found' });
   p.sessions[idx] = { ...p.sessions[idx], ...req.body, id: req.params.sid };
@@ -287,6 +369,7 @@ app.delete('/api/patients/:id/sessions/:sid', requireAdmin, (req, res) => {
   const db = readDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   p.sessions = (p.sessions || []).filter(s => s.id !== req.params.sid);
   writeDB(db);
   res.json({ ok: true });
@@ -354,6 +437,7 @@ app.get('/api/patients/:id/self-records', requireAdmin, (req, res) => {
   const db = readDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   res.json(p.patientRecords || []);
 });
 
@@ -362,6 +446,7 @@ app.post('/api/patients/:id/import-self', requireAdmin, (req, res) => {
   const db = readDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   const unimported = (p.patientRecords || []).filter(r => !r.imported);
   unimported.forEach(pr => {
     const rec = {
@@ -385,7 +470,7 @@ app.post('/api/patients/:id/import-self', requireAdmin, (req, res) => {
 /* ─── ダッシュボード統計API ─── */
 app.get('/api/stats', requireAdmin, (req, res) => {
   const db = readDB();
-  const patients = db.patients;
+  const patients = db.patients.filter(p => ownsPatient(p, req.ownerId));
   const totalRecords = patients.reduce((s,p) => s + (p.records?.length||0), 0);
   const totalSessions = patients.reduce((s,p) => s + (p.sessions?.length||0), 0);
   const totalUnimported = patients.reduce((s,p) => s + (p.patientRecords||[]).filter(r=>!r.imported).length, 0);
@@ -405,6 +490,56 @@ app.get('/api/stats', requireAdmin, (req, res) => {
     totalUnimported,
     recentActivity: recentActivity.slice(0, 15)
   });
+});
+
+/* ─── 写真アップロード（ビフォーアフター） ─── */
+app.post('/api/patients/:id/photos', requireAdmin, (req, res) => {
+  const db = readDB();
+  const p = db.patients.find(p => p.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
+  const { dataUrl, label, date } = req.body;
+  if (!dataUrl) return res.status(400).json({ error: 'No image' });
+  const photoId = uuidv4();
+  const ext = (dataUrl.match(/^data:image\/(\w+);/) || [])[1] || 'jpg';
+  const filename = `${photoId}.${ext}`;
+  const photoDir = path.join(__dirname, 'data', 'photos');
+  if (!fs.existsSync(photoDir)) fs.mkdirSync(photoDir, { recursive: true });
+  const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+  fs.writeFileSync(path.join(photoDir, filename), Buffer.from(base64Data, 'base64'));
+  const photo = {
+    id: photoId, filename,
+    url: `/data/photos/${filename}`,
+    label: label || '',
+    date: date || new Date().toISOString().slice(0,10),
+    createdAt: new Date().toISOString()
+  };
+  if (!p.photos) p.photos = [];
+  p.photos.push(photo);
+  writeDB(db);
+  res.json(photo);
+});
+
+app.get('/api/patients/:id/photos', requireAdmin, (req, res) => {
+  const db = readDB();
+  const p = db.patients.find(p => p.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
+  res.json(p.photos || []);
+});
+
+app.delete('/api/patients/:id/photos/:pid', requireAdmin, (req, res) => {
+  const db = readDB();
+  const p = db.patients.find(p => p.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
+  const photo = (p.photos || []).find(ph => ph.id === req.params.pid);
+  if (photo) {
+    try { fs.unlinkSync(path.join(__dirname, 'data', 'photos', photo.filename)); } catch {}
+  }
+  p.photos = (p.photos || []).filter(ph => ph.id !== req.params.pid);
+  writeDB(db);
+  res.json({ ok: true });
 });
 
 /* ─── SSE: リアルタイム通知ストリーム ─── */
