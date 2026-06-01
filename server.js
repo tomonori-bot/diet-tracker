@@ -204,10 +204,9 @@ app.post('/api/patients/:id/records', requireAdmin, (req, res) => {
     id: uuidv4(),
     date: req.body.date || new Date().toISOString().slice(0,10),
     weight: req.body.weight != null ? parseFloat(req.body.weight) : null,
-    pain: req.body.pain != null ? parseInt(req.body.pain) : null,
-    posture: req.body.posture != null ? parseInt(req.body.posture) : null,
     moti: req.body.moti != null ? parseInt(req.body.moti) : null,
-    exercise: req.body.exercise != null ? parseInt(req.body.exercise) : null,
+    checkResults: req.body.checkResults || {},
+    reflection: req.body.reflection || '',
     memo: req.body.memo || '',
     source: req.body.source || 'staff',
     createdAt: new Date().toISOString()
@@ -303,10 +302,9 @@ app.post('/api/patients/:id/self-record', (req, res) => {
     id: uuidv4(),
     date: now.slice(0,10),
     weight: req.body.weight != null ? parseFloat(req.body.weight) : null,
-    pain: req.body.pain != null ? parseInt(req.body.pain) : null,
-    posture: req.body.posture != null ? parseInt(req.body.posture) : null,
     moti: req.body.moti != null ? parseInt(req.body.moti) : null,
-    exercise: req.body.exercise != null ? parseInt(req.body.exercise) : null,
+    checkResults: req.body.checkResults || {},
+    reflection: req.body.reflection || '',
     memo: req.body.memo || '',
     imported: true,
     createdAt: now
@@ -322,10 +320,9 @@ app.post('/api/patients/:id/self-record', (req, res) => {
     id: uuidv4(),
     date: rec.date,
     weight: rec.weight,
-    pain: rec.pain,
-    posture: rec.posture,
     moti: rec.moti,
-    exercise: rec.exercise,
+    checkResults: rec.checkResults,
+    reflection: rec.reflection,
     memo: rec.memo,
     source: 'patient',
     createdAt: rec.createdAt
@@ -369,8 +366,8 @@ app.post('/api/patients/:id/import-self', requireAdmin, (req, res) => {
   unimported.forEach(pr => {
     const rec = {
       id: uuidv4(),
-      date: pr.date, weight: pr.weight, pain: pr.pain,
-      posture: pr.posture, moti: pr.moti, exercise: pr.exercise,
+      date: pr.date, weight: pr.weight, moti: pr.moti,
+      checkResults: pr.checkResults || {}, reflection: pr.reflection || '',
       memo: pr.memo || '', source: 'patient',
       createdAt: new Date().toISOString()
     };

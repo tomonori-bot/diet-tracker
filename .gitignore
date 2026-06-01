@@ -3,3 +3,4 @@ node_modules/
 .DS_Store
 shot_*.png
 data/db.json
+data/photos/

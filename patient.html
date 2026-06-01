@@ -411,6 +411,21 @@ input[type=range]::-webkit-slider-thumb{
 }
 .done-btn:hover{border-color:var(--accent);color:var(--accent)}
 
+/* ── TRAINING CHECKLIST ── */
+.check-item{
+  display:flex;align-items:center;gap:14px;
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;margin-bottom:10px;
+  cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent
+}
+.check-item.checked{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.35)}
+.check-item input[type=checkbox]{
+  width:22px;height:22px;accent-color:var(--accent2);
+  flex-shrink:0;cursor:pointer
+}
+.check-item-text{font-size:15px;color:var(--text);line-height:1.4;flex:1}
+.check-item.checked .check-item-text{color:var(--accent2);text-decoration:line-through;opacity:.8}
+
 /* ── OFFLINE TOAST ── */
 #offlineToast{
   position:fixed;top:70px;left:50%;transform:translateX(-50%);
@@ -597,25 +612,17 @@ input[type=range]::-webkit-slider-thumb{
         </div>
       </div>
 
-      <!-- 運動達成率 -->
-      <div class="section">
-        <div class="section-title">🏃 今週の運動達成率</div>
-        <div class="slider-card">
-          <div class="ex-val-row">
-            <span style="font-size:13px;color:var(--text2)">目標に対して</span>
-            <span class="ex-val" id="exValText">50%</span>
-          </div>
-          <input type="range" min="0" max="100" step="5" value="50" id="exerciseSlider"
-            oninput="onExercise(this.value)">
-          <div class="ex-labels"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
-        </div>
+      <!-- セルフトレーニング -->
+      <div class="section" id="trainingSection" style="display:none">
+        <div class="section-title">🏋️ 今日のトレーニング</div>
+        <div id="trainingChecklist"></div>
       </div>
 
-      <!-- メモ -->
+      <!-- 振り返り -->
       <div class="section">
-        <div class="section-title">📝 今日のメモ（任意）</div>
+        <div class="section-title">✏️ 今日の振り返り（任意）</div>
         <textarea class="memo-input" id="memoInput" rows="3"
-          placeholder="体調、食事、気になること、ひとことなど..."></textarea>
+          placeholder="今日頑張れたこと、気づいたこと、明日への一言..."></textarea>
       </div>
 
       <!-- 送信 -->
@@ -667,12 +674,6 @@ input[type=range]::-webkit-slider-thumb{
       <div class="graph-card">
         <div class="graph-title">💪 モチベーション推移</div>
         <div id="motiChartWrap">
-          <div class="graph-empty">記録が2件以上になるとグラフが表示されます</div>
-        </div>
-      </div>
-      <div class="graph-card">
-        <div class="graph-title">🏃 運動達成率推移</div>
-        <div id="exChartWrap">
           <div class="graph-empty">記録が2件以上になるとグラフが表示されます</div>
         </div>
       </div>
@@ -1007,7 +1008,6 @@ function showSyncToast(msg) {
 document.addEventListener('DOMContentLoaded', async () => {
   updateOnlineStatus();
   updateOfflineQueueNotice();
-  setupSliderStyle();
 
   const params = new URLSearchParams(location.search);
   const id = params.get('id');
@@ -1073,6 +1073,9 @@ function initScreen() {
     document.getElementById('hwReminderText').textContent = lastSession.homework;
   }
 
+  // トレーニングチェックリスト
+  renderTrainingChecklist();
+
   // 今日済み
   if (todayRec) {
     document.getElementById('alreadySection').style.display = '';
@@ -1099,7 +1102,6 @@ function renderTodaySummary(rec) {
     rec.weight ? { label:'体重', val: rec.weight, unit:'kg' } : null,
     bmi ? { label:'BMI', val: bmi, unit:'', color: bi?.color } : null,
     rec.moti ? { label:'モチベ', val: `${'★'.repeat(rec.moti)}`, unit:'' } : null,
-    rec.exercise != null ? { label:'運動', val: rec.exercise, unit:'%' } : null,
   ].filter(Boolean);
   document.getElementById('todayRecSummary').innerHTML = items.map(it => `
     <div class="ar-item">
@@ -1119,6 +1121,7 @@ function showForm() {
   document.getElementById('memoInput').value = '';
   document.getElementById('bmiPreview').classList.remove('visible');
   document.getElementById('bmiFormula').style.display = 'none';
+  renderTrainingChecklist();
 }
 
 /* ══════════════════════════════════════
@@ -1167,10 +1170,14 @@ function renderHistory() {
       r.weight != null ? { label:'体重', val: (+r.weight).toFixed(1), unit:'kg' } : null,
       bmi ? { label:'BMI', val: bmi, unit:'', color: bi.color } : null,
       r.moti ? { label:'モチベ', val: motiStars, unit:'' } : null,
-      r.exercise != null ? { label:'運動', val: r.exercise, unit:'%' } : null,
     ].filter(Boolean);
 
     const dateLabel = formatDate(r.date);
+
+    const trainingItems = patient.trainingItems || [];
+    const checkLines = (r.checkResults && trainingItems.length)
+      ? trainingItems.map(it => `<span style="margin-right:8px">${r.checkResults[it.id] ? '✅' : '⬜'} ${it.text}</span>`).join('')
+      : '';
 
     return `
     <div class="hist-card">
@@ -1185,7 +1192,8 @@ function renderHistory() {
             <div class="hc-val" style="${it.color?'color:'+it.color:''}">${it.val}<span class="hc-unit">${it.unit}</span></div>
           </div>`).join('')}
       </div>` : ''}
-      ${r.memo ? `<div class="hc-memo">💬 ${r.memo}</div>` : ''}
+      ${checkLines ? `<div class="hc-memo" style="display:flex;flex-wrap:wrap;gap:2px">${checkLines}</div>` : ''}
+      ${r.reflection || r.memo ? `<div class="hc-memo">✏️ ${r.reflection || r.memo}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1226,12 +1234,6 @@ function renderGraphs() {
   const hasMotis = motis.some(m => m !== null);
   renderLineChart('motiChartWrap', 'motiChart', labels, motis,
     'モチベ (★)', '#f59e0b', hasMotis, { min: 0, max: 5 });
-
-  // 運動グラフ
-  const exercises = sorted.map(r => r.exercise ?? null);
-  const hasExercises = exercises.some(e => e !== null);
-  renderLineChart('exChartWrap', 'exChart', labels, exercises,
-    '運動達成率 (%)', '#10b981', hasExercises, { min: 0, max: 100 });
 }
 
 function renderLineChart(wrapId, chartId, labels, data, label, color, hasData, yOptions = {}) {
@@ -1493,27 +1495,27 @@ function setMoti(v) {
 }
 
 /* ══════════════════════════════════════
-   EXERCISE SLIDER
+   TRAINING CHECKLIST
 ══════════════════════════════════════ */
-function onExercise(v) {
-  const n = parseInt(v);
-  const el = document.getElementById('exValText');
-  el.textContent = n + '%';
-  el.style.color = n >= 80 ? 'var(--accent2)' : n >= 50 ? 'var(--accent)' : n >= 30 ? 'var(--warn)' : 'var(--danger)';
-  setupSliderStyle();
+function renderTrainingChecklist() {
+  const items = patient.trainingItems || [];
+  const section = document.getElementById('trainingSection');
+  const list = document.getElementById('trainingChecklist');
+  if (!items.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  list.innerHTML = items.map(item => `
+    <label class="check-item" id="label-${item.id}">
+      <input type="checkbox" id="check-${item.id}" onchange="onCheckChange('${item.id}')">
+      <span class="check-item-text">${item.text}</span>
+    </label>`).join('');
 }
 
-function setupSliderStyle() {
-  const slider = document.getElementById('exerciseSlider');
-  if (!slider) return;
-  const pct = (slider.value - slider.min) / (slider.max - slider.min) * 100;
-  slider.style.background = `linear-gradient(90deg, var(--accent2) ${pct}%, var(--surface2) ${pct}%)`;
+function onCheckChange(id) {
+  const cb = document.getElementById('check-' + id);
+  const label = document.getElementById('label-' + id);
+  label.classList.toggle('checked', cb.checked);
+  if (navigator.vibrate) navigator.vibrate(15);
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  const slider = document.getElementById('exerciseSlider');
-  if (slider) slider.addEventListener('input', setupSliderStyle);
-});
 
 /* ══════════════════════════════════════
    SUBMIT（オフライン対応）
@@ -1530,9 +1532,13 @@ async function submitRecord() {
   }
 
   const weight = parseFloat(document.getElementById('weightInput').value) || null;
-  const exercise = parseInt(document.getElementById('exerciseSlider').value);
-  const memo = document.getElementById('memoInput').value.trim();
-  const payload = { weight, moti: motiVal, exercise, memo };
+  const reflection = document.getElementById('memoInput').value.trim();
+  const checkResults = {};
+  (patient.trainingItems || []).forEach(item => {
+    const el = document.getElementById('check-' + item.id);
+    checkResults[item.id] = el ? el.checked : false;
+  });
+  const payload = { weight, moti: motiVal, checkResults, reflection, memo: reflection };
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
@@ -1629,6 +1635,12 @@ function showCompletionScreen(rec) {
     })() : '',
     bmr ? `<div class="result-card"><div class="rc-label">基礎代謝</div><div class="rc-val">${bmr}<span class="rc-unit">kcal</span></div><div class="rc-sub">消費の基準値</div></div>` : '',
     `<div class="result-card"><div class="rc-label">モチベ</div><div class="rc-val" style="color:var(--warn)">${'★'.repeat(rec.moti)}</div></div>`,
+    (() => {
+      const ti = patient.trainingItems || [];
+      if (!ti.length) return '';
+      const done = ti.filter(it => rec.checkResults?.[it.id]).length;
+      return `<div class="result-card"><div class="rc-label">トレーニング</div><div class="rc-val" style="color:var(--accent2)">${done}<span class="rc-unit">/${ti.length}</span></div><div class="rc-sub">完了</div></div>`;
+    })(),
   ].filter(Boolean);
   document.getElementById('resultCards').innerHTML = cards.join('');
 
