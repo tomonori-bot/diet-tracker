@@ -4,28 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>BodyLog - 今日の記録</title>
-<meta name="theme-color" content="#4a72f5">
+<meta name="theme-color" content="#10b981">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BodyLog">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
+/* ═══ Ascend エメラルドテーマ（緑×丸ゴシック・親しみやすさ） ═══ */
 :root{
-  --bg:#f0f4fb;--surface:#fff;--surface2:#eef2fb;--surface3:#e4eaf8;--border:#dde3f0;
-  --text:#18243d;--text2:#556080;--text3:#9ba8c0;
-  --accent:#4a72f5;--accent2:#10b981;--danger:#ef4444;--warn:#f59e0b;
-  --grad:linear-gradient(135deg,#4a72f5,#7c9ff7);
+  --bg:#eef5f0;--surface:#ffffff;--surface2:#f4f8f6;--surface3:#e6ece8;--border:#e6ece8;
+  --text:#1f2733;--text2:#8a93a3;--text3:#aab3c0;
+  --accent:#10b981;--accent2:#34d399;--danger:#ef4444;--warn:#f59e0b;
+  --grad:linear-gradient(135deg,#10b981,#34d399);
   --grad2:linear-gradient(135deg,#10b981,#34d399);
-  --shadow:0 2px 12px rgba(74,114,245,.10);
-  --shadow-lg:0 8px 32px rgba(74,114,245,.16);
+  --shadow:0 2px 12px rgba(16,185,129,.10);
+  --shadow-lg:0 8px 32px rgba(16,185,129,.16);
   --radius:16px;--radius-sm:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
 body{
-  font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;
+  font-family:'Zen Maru Gothic',-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;
   background:var(--bg);color:var(--text);font-size:15px;
   min-height:100vh;
   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 80px);
@@ -59,11 +63,11 @@ body{
 /* ── INSTALL BANNER ── */
 .install-banner{
   display:none;
-  background:linear-gradient(135deg,#4a72f5,#7c9ff7);
+  background:linear-gradient(135deg,#10b981,#34d399);
   color:#fff;padding:12px 16px;
   align-items:center;gap:12px;
   position:sticky;top:0;z-index:200;
-  box-shadow:0 4px 16px rgba(74,114,245,.35)
+  box-shadow:0 4px 16px rgba(16,185,129,.35)
 }
 .install-banner.show{display:flex}
 .install-banner-text{flex:1;font-size:13px;font-weight:600;line-height:1.5}
@@ -107,7 +111,7 @@ body{
 }
 .date-badge{
   display:inline-flex;align-items:center;gap:4px;
-  background:rgba(74,114,245,.08);border:1.5px solid rgba(74,114,245,.16);
+  background:rgba(16,185,129,.08);border:1.5px solid rgba(16,185,129,.16);
   border-radius:20px;padding:4px 11px;font-size:12px;font-weight:600;color:var(--accent)
 }
 .online-dot{
@@ -134,7 +138,7 @@ body{
   background:var(--surface);border-top:1px solid var(--border);
   display:flex;
   padding-bottom:env(safe-area-inset-bottom,0px);
-  box-shadow:0 -4px 20px rgba(74,114,245,.10)
+  box-shadow:0 -4px 20px rgba(16,185,129,.10)
 }
 .bn-item{
   flex:1;display:flex;flex-direction:column;align-items:center;
@@ -183,8 +187,8 @@ body{
 
 /* ── HOMEWORK REMINDER ── */
 .hw-reminder{
-  background:linear-gradient(135deg,rgba(74,114,245,.06),rgba(74,114,245,.02));
-  border:1.5px solid rgba(74,114,245,.18);border-radius:var(--radius);
+  background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(16,185,129,.02));
+  border:1.5px solid rgba(16,185,129,.18);border-radius:var(--radius);
   padding:14px 16px;margin-bottom:16px;
   display:flex;align-items:flex-start;gap:12px
 }
@@ -224,7 +228,7 @@ body{
   box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s;
   position:relative
 }
-.weight-card:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px rgba(74,114,245,.10)}
+.weight-card:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px rgba(16,185,129,.10)}
 .weight-row{display:flex;align-items:flex-end;justify-content:center;gap:8px}
 .weight-input{
   background:none;border:none;outline:none;
@@ -299,14 +303,14 @@ input[type=range]::-webkit-slider-thumb{
   outline:none;font-family:inherit;resize:none;line-height:1.65;
   transition:border-color .15s,box-shadow .15s;display:block
 }
-.memo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,114,245,.10)}
+.memo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(16,185,129,.10)}
 
 /* ── SUBMIT ── */
 .submit-btn{
   width:100%;background:var(--grad);color:#fff;border:none;
   border-radius:var(--radius);padding:20px;font-size:18px;font-weight:900;
   cursor:pointer;letter-spacing:-.3px;
-  box-shadow:0 4px 20px rgba(74,114,245,.38);transition:all .2s;
+  box-shadow:0 4px 20px rgba(16,185,129,.38);transition:all .2s;
   display:flex;align-items:center;justify-content:center;gap:10px;
   font-family:inherit;
 }
@@ -338,7 +342,7 @@ input[type=range]::-webkit-slider-thumb{
 .hc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .hc-date{font-size:14px;font-weight:800;color:var(--text)}
 .hc-source{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
-.hc-source.staff{background:rgba(74,114,245,.1);color:var(--accent)}
+.hc-source.staff{background:rgba(16,185,129,.1);color:var(--accent)}
 .hc-source.patient{background:rgba(16,185,129,.1);color:var(--accent2)}
 .hc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .hc-item{text-align:center;background:var(--surface2);border-radius:10px;padding:8px 6px}
@@ -401,7 +405,7 @@ input[type=range]::-webkit-slider-thumb{
   border-radius:var(--radius);padding:16px 18px;margin-bottom:16px;text-align:left
 }
 .info-box.green{background:rgba(16,185,129,.07);border:1.5px solid rgba(16,185,129,.2)}
-.info-box.blue{background:rgba(74,114,245,.07);border:1.5px solid rgba(74,114,245,.18)}
+.info-box.blue{background:rgba(16,185,129,.07);border:1.5px solid rgba(16,185,129,.18)}
 .ib-title{font-size:12px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .ib-text{font-size:14px;color:var(--text);line-height:1.7}
 .done-btn{
@@ -1227,7 +1231,7 @@ function renderGraphs() {
   const weights = sorted.map(r => r.weight ?? null);
   const hasWeights = weights.some(w => w !== null);
   renderLineChart('weightChartWrap', 'weightChart', labels, weights,
-    '体重 (kg)', '#4a72f5', hasWeights);
+    '体重 (kg)', '#10b981', hasWeights);
 
   // モチベグラフ
   const motis = sorted.map(r => r.moti ?? null);
@@ -1335,7 +1339,7 @@ function renderGoalTab() {
     </div>` : ''}
 
     ${p.midGoal ? `
-    <div class="goal-banner" style="margin-bottom:14px;border-color:rgba(74,114,245,.2);background:rgba(74,114,245,.05)">
+    <div class="goal-banner" style="margin-bottom:14px;border-color:rgba(16,185,129,.2);background:rgba(16,185,129,.05)">
       <div class="goal-icon">📍</div>
       <div>
         <div class="goal-label" style="color:var(--accent)">中間目標</div>
@@ -1446,7 +1450,7 @@ function calcBMI(w, h) {
   return +(w / (h / 100) ** 2).toFixed(1);
 }
 function bmiInfo(bmi) {
-  if (bmi < 18.5) return { label:'低体重', color:'#4a72f5', bg:'rgba(74,114,245,.12)' };
+  if (bmi < 18.5) return { label:'低体重', color:'#10b981', bg:'rgba(16,185,129,.12)' };
   if (bmi < 25)   return { label:'標準体重 ✓', color:'#10b981', bg:'rgba(16,185,129,.12)' };
   if (bmi < 30)   return { label:'肥満(1度)', color:'#f59e0b', bg:'rgba(245,158,11,.12)' };
   return { label:'肥満(2度以上)', color:'#ef4444', bg:'rgba(239,68,68,.12)' };
