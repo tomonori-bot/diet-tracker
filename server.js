@@ -18,15 +18,16 @@ app.use(express.json());
 
 /* ─── DB helpers ─── */
 function readDB() {
-  if (!fs.existsSync(DATA_FILE)) return { patients: [], sessions: {}, users: [] };
+  if (!fs.existsSync(DATA_FILE)) return { patients: [], sessions: {}, users: [], intakeCodes: {} };
   try {
     const db = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     if (!db.sessions) db.sessions = {};
     if (!db.patients) db.patients = [];
     if (!db.users) db.users = [];
+    if (!db.intakeCodes) db.intakeCodes = {};
     return db;
   }
-  catch { return { patients: [], sessions: {}, users: [] }; }
+  catch { return { patients: [], sessions: {}, users: [], intakeCodes: {} }; }
 }
 
 /* ─── パスワードハッシュ（ソルト付き） ─── */
@@ -490,6 +491,92 @@ app.get('/api/stats', requireAdmin, (req, res) => {
     totalUnimported,
     recentActivity: recentActivity.slice(0, 15)
   });
+});
+
+/* ════════════════════════════════
+   問診票（事前カウンセリングアンケート）
+════════════════════════════════ */
+
+/* ─── トレーナーの問診リンク用コードを取得（無ければ発行） ─── */
+app.get('/api/intake/code', requireAdmin, (req, res) => {
+  const db = readDB();
+  // 既にこのトレーナーのコードがあれば再利用
+  let code = Object.keys(db.intakeCodes).find(c => db.intakeCodes[c] === req.ownerId);
+  if (!code) {
+    code = crypto.randomBytes(6).toString('hex'); // 12文字のランダムコード
+    db.intakeCodes[code] = req.ownerId;
+    writeDB(db);
+  }
+  res.json({ code });
+});
+
+/* ─── 問診コードの有効性チェック（顧客ページ用・認証不要） ─── */
+app.get('/api/intake/:code/valid', (req, res) => {
+  const db = readDB();
+  res.json({ valid: !!db.intakeCodes[req.params.code] });
+});
+
+/* ─── 問診票の送信（認証不要・顧客が記入）→ 顧客を自動新規登録 ─── */
+app.post('/api/intake/:code', (req, res) => {
+  const db = readDB();
+  const owner = db.intakeCodes[req.params.code];
+  if (!owner) return res.status(404).json({ error: '無効なリンクです' });
+
+  const b = req.body || {};
+  const name = (b.name || '').trim();
+  if (!name) return res.status(400).json({ error: 'お名前を入力してください' });
+
+  // 悩み・症状（配列）を文字列にまとめてカルテに残す
+  const concerns = Array.isArray(b.concerns) ? b.concerns : [];
+  const karteLines = [];
+  if (b.email) karteLines.push(`メール: ${b.email}`);
+  if (b.job) karteLines.push(`職業: ${b.job}`);
+  if (concerns.length) karteLines.push(`悩み・症状: ${concerns.join('、')}`);
+  if (b.painLevel != null && b.painLevel !== '') karteLines.push(`痛み・不調レベル: ${b.painLevel}/10`);
+  if (b.history) karteLines.push(`既往歴・通院歴: ${b.history}`);
+  if (b.note) karteLines.push(`その他・ご要望: ${b.note}`);
+  karteLines.push(`（問診票より自動登録 ${new Date().toISOString().slice(0,10)}）`);
+
+  // 年齢→生年月日の概算（年齢しか聞いていないため、誕生日は1/1で概算）
+  let birthdate = '';
+  const age = parseInt(b.age);
+  if (!isNaN(age) && age > 0 && age < 120) {
+    birthdate = `${new Date().getFullYear() - age}-01-01`;
+  }
+
+  const p = {
+    id: uuidv4(),
+    ownerId: owner,
+    name,
+    kana: b.kana || '',
+    gender: b.gender || '',
+    birthdate,
+    height: b.height ? parseFloat(b.height) : null,
+    memo: '',
+    targetWeight: b.targetWeight ? parseFloat(b.targetWeight) : null,
+    startWeight: b.startWeight ? parseFloat(b.startWeight) : null,
+    startDate: new Date().toISOString().slice(0,10),
+    targetDate: '',
+    purpose: concerns[0] || b.purpose || '',
+    finalGoal: b.goal || '',
+    midGoal: '',
+    karteInfo: karteLines.join('\n'),
+    intake: {
+      email: b.email || '', age: b.age || '', job: b.job || '',
+      concerns, painLevel: b.painLevel ?? '', history: b.history || '',
+      goal: b.goal || '', note: b.note || '',
+      submittedAt: new Date().toISOString()
+    },
+    tags: ['問診票'],
+    createdAt: new Date().toISOString(),
+    records: [],
+    sessions: [],
+    patientRecords: [],
+    photos: []
+  };
+  db.patients.push(p);
+  writeDB(db);
+  res.json({ ok: true, name: p.name });
 });
 
 /* ─── 写真アップロード（ビフォーアフター） ─── */

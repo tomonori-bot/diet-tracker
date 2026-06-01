@@ -471,9 +471,12 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <!-- ═══ PAGE: PATIENTS ═══ -->
 <div id="page-patients" class="page">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:8px;flex-wrap:wrap">
     <div class="section-title">患者一覧</div>
-    <button class="btn btn-primary" onclick="openAddPatientModal()">＋ 新規患者</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" onclick="openIntakeModal()">📋 問診票リンク</button>
+      <button class="btn btn-primary" onclick="openAddPatientModal()">＋ 新規患者</button>
+    </div>
   </div>
   <div class="section-sub">カードをクリックして詳細表示</div>
   <div class="pt-grid" id="patientGrid"></div>
@@ -792,6 +795,26 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('photoModal')">キャンセル</button>
       <button class="btn btn-primary" onclick="submitPhoto()">📤 アップロード</button>
+    </div>
+  </div>
+</div>
+
+<!-- 問診票リンクモーダル -->
+<div class="overlay" id="intakeModal">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div class="modal-header">
+      <div class="modal-title">📋 問診票リンク</div>
+      <button class="modal-close" onclick="closeModal('intakeModal')">✕</button>
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.7">
+      このQR・URLを見込み客に渡すと、<br>問診票に記入してもらえます。<br>
+      <b style="color:var(--accent)">送信されると自動であなたの患者一覧に登録されます。</b>
+    </div>
+    <div id="intakeQr" style="display:inline-block;background:#fff;padding:14px;border-radius:var(--radius);box-shadow:var(--shadow-md)"></div>
+    <div style="font-size:10px;color:var(--text3);margin-top:12px;word-break:break-all;padding:0 8px" id="intakeUrlText">発行中...</div>
+    <div class="modal-footer" style="justify-content:center">
+      <button class="btn btn-outline btn-sm" onclick="copyIntakeUrl()">📋 URLをコピー</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('intakeModal')">閉じる</button>
     </div>
   </div>
 </div>
@@ -1650,6 +1673,35 @@ function showQR() {
 function copyPatientUrl() {
   const url = location.origin + '/patient.html?id=' + currentPatientId;
   navigator.clipboard.writeText(url).then(() => toast('URLをコピーしました 📋'));
+}
+
+/* ════════════════════════════════
+   問診票リンク
+════════════════════════════════ */
+let intakeUrl = '';
+async function openIntakeModal() {
+  openModal('intakeModal');
+  document.getElementById('intakeUrlText').textContent = '発行中...';
+  document.getElementById('intakeQr').innerHTML = '';
+  try {
+    const { code } = await api('GET', '/api/intake/code');
+    intakeUrl = location.origin + '/intake.html?c=' + code;
+    document.getElementById('intakeUrlText').textContent = intakeUrl;
+    const box = document.getElementById('intakeQr');
+    box.innerHTML = '';
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(box, { text: intakeUrl, width: 200, height: 200,
+        colorDark: '#18243d', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+    } else {
+      box.innerHTML = '<div style="padding:20px;font-size:12px;color:var(--text2)">URLをコピーして共有してください</div>';
+    }
+  } catch(e) {
+    document.getElementById('intakeUrlText').textContent = '発行に失敗しました';
+  }
+}
+function copyIntakeUrl() {
+  if (!intakeUrl) return;
+  navigator.clipboard.writeText(intakeUrl).then(() => toast('問診票URLをコピーしました 📋'));
 }
 
 /* ════════════════════════════════

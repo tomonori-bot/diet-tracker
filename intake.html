@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#4a72f5">
+<title>事前カウンセリングアンケート | BodyLog</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f5f7fb;--surface:#fff;--surface2:#eef2fb;
+  --text:#1a2238;--text2:#5a6580;--text3:#8b95ad;
+  --border:#e1e7f5;--accent:#4a72f5;--accent2:#10b981;--danger:#ef4444;
+  --radius:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",Meiryo,system-ui,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:40px}
+.hero{background:linear-gradient(135deg,#4a72f5 0%,#7c5cff 100%);color:#fff;padding:30px 22px 26px;
+  padding-top:max(30px,env(safe-area-inset-top))}
+.hero .logo{font-size:11px;font-weight:800;letter-spacing:.18em;opacity:.85;margin-bottom:8px}
+.hero h1{font-size:22px;font-weight:900;letter-spacing:-.3px;margin-bottom:6px}
+.hero p{font-size:13px;line-height:1.6;opacity:.92}
+.container{max-width:560px;margin:0 auto;padding:20px 16px}
+.card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);
+  padding:20px 18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(74,114,245,.05)}
+.q{margin-bottom:18px}
+.q:last-child{margin-bottom:0}
+.q-label{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;display:block}
+.q-label .req{color:var(--danger);font-size:12px;margin-left:4px}
+.q-hint{font-size:12px;color:var(--text3);margin-bottom:8px}
+input[type=text],input[type=email],input[type=number],textarea,select{
+  width:100%;border:1.5px solid var(--border);background:#fafbff;border-radius:10px;
+  padding:13px 14px;font-size:16px;color:var(--text);font-family:inherit;transition:.15s;-webkit-appearance:none}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(74,114,245,.08)}
+textarea{resize:vertical;min-height:80px;line-height:1.6}
+.checks{display:flex;flex-direction:column;gap:9px}
+.check{display:flex;align-items:center;gap:11px;padding:12px 14px;border:1.5px solid var(--border);
+  border-radius:10px;cursor:pointer;background:#fafbff;transition:.15s}
+.check.on{border-color:var(--accent);background:rgba(74,114,245,.06)}
+.check input{width:20px;height:20px;accent-color:var(--accent);flex-shrink:0}
+.check span{font-size:15px}
+.scale{display:flex;gap:6px;flex-wrap:wrap}
+.scale-btn{flex:1;min-width:38px;border:1.5px solid var(--border);background:#fafbff;border-radius:9px;
+  padding:11px 0;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--text2);transition:.15s}
+.scale-btn.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 3px 10px rgba(74,114,245,.3)}
+.scale-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:6px}
+.sec-title{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.05em;margin-bottom:14px;
+  padding-bottom:8px;border-bottom:2px solid var(--surface2)}
+.row2{display:flex;gap:10px}
+.row2>div{flex:1}
+.btn{width:100%;border:none;background:linear-gradient(135deg,#4a72f5,#7c5cff);color:#fff;font-weight:800;
+  font-size:16px;padding:16px;border-radius:12px;cursor:pointer;margin-top:6px;font-family:inherit;
+  box-shadow:0 6px 18px rgba(74,114,245,.3)}
+.btn:disabled{opacity:.6}
+.err{background:#fef2f2;color:var(--danger);padding:12px 14px;border-radius:10px;font-size:13px;
+  margin-bottom:14px;border:1px solid #fecaca;display:none}
+.err.show{display:block}
+.done{text-align:center;padding:60px 24px}
+.done-icon{font-size:64px;margin-bottom:18px}
+.done h2{font-size:22px;font-weight:900;margin-bottom:12px}
+.done p{font-size:15px;color:var(--text2);line-height:1.8}
+.loading,.invalid{text-align:center;padding:80px 24px;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<div id="loadingView" class="loading">読み込み中...</div>
+
+<div id="invalidView" class="invalid" style="display:none">
+  <div style="font-size:54px;margin-bottom:16px">⚠️</div>
+  <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">無効なリンクです</div>
+  <div style="font-size:14px">トレーナーに正しいリンクを確認してください</div>
+</div>
+
+<div id="formView" style="display:none">
+  <div class="hero">
+    <div class="logo">📋 BODYLOG</div>
+    <h1>事前カウンセリングアンケート</h1>
+    <p>より良いサポートのため、以下にご記入ください。<br>所要時間は2〜3分です。</p>
+  </div>
+  <div class="container">
+    <div class="err" id="err"></div>
+
+    <div class="card">
+      <div class="sec-title">基本情報</div>
+      <div class="q">
+        <label class="q-label">お名前（フルネーム）<span class="req">必須</span></label>
+        <input type="text" id="f-name" placeholder="山田 太郎">
+      </div>
+      <div class="q">
+        <label class="q-label">フリガナ</label>
+        <input type="text" id="f-kana" placeholder="ヤマダ タロウ">
+      </div>
+      <div class="q">
+        <label class="q-label">メールアドレス</label>
+        <input type="email" id="f-email" placeholder="example@email.com" autocapitalize="none">
+      </div>
+      <div class="row2">
+        <div class="q">
+          <label class="q-label">年齢<span class="req">必須</span></label>
+          <input type="number" id="f-age" placeholder="35" min="1" max="120">
+        </div>
+        <div class="q">
+          <label class="q-label">性別</label>
+          <select id="f-gender">
+            <option value="">選択</option>
+            <option>女性</option><option>男性</option><option>その他</option>
+          </select>
+        </div>
+      </div>
+      <div class="q">
+        <label class="q-label">職業<span class="req">必須</span></label>
+        <input type="text" id="f-job" placeholder="会社員・主婦・自営業 など">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">身体の情報</div>
+      <div class="row2">
+        <div class="q">
+          <label class="q-label">身長 (cm)</label>
+          <input type="number" id="f-height" placeholder="165" step="0.1">
+        </div>
+        <div class="q">
+          <label class="q-label">現在の体重 (kg)</label>
+          <input type="number" id="f-startWeight" placeholder="65" step="0.1">
+        </div>
+      </div>
+      <div class="q">
+        <label class="q-label">目標体重 (kg)</label>
+        <input type="number" id="f-targetWeight" placeholder="58" step="0.1">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">お悩みについて</div>
+      <div class="q">
+        <label class="q-label">現在のお悩み・症状<span class="req">必須</span></label>
+        <div class="q-hint">当てはまるものをすべて選んでください</div>
+        <div class="checks" id="f-concerns">
+          <label class="check"><input type="checkbox" value="体重が増えた"><span>体重が増えた</span></label>
+          <label class="check"><input type="checkbox" value="肩こり"><span>肩こり</span></label>
+          <label class="check"><input type="checkbox" value="腰痛"><span>腰痛</span></label>
+          <label class="check"><input type="checkbox" value="姿勢が悪い"><span>姿勢が悪い</span></label>
+          <label class="check"><input type="checkbox" value="むくみ"><span>むくみ</span></label>
+          <label class="check"><input type="checkbox" value="睡眠の質が悪い"><span>睡眠の質が悪い</span></label>
+          <label class="check"><input type="checkbox" value="膝・関節の痛み"><span>膝・関節の痛み</span></label>
+          <label class="check"><input type="checkbox" value="その他"><span>その他</span></label>
+        </div>
+      </div>
+      <div class="q">
+        <label class="q-label">現在の痛み・不調レベル<span class="req">必須</span></label>
+        <div class="q-hint">1（軽い）〜 10（とてもつらい）</div>
+        <div class="scale" id="f-pain"></div>
+        <div class="scale-ends"><span>軽い</span><span>とてもつらい</span></div>
+      </div>
+      <div class="q">
+        <label class="q-label">既往歴・通院歴・服薬中のお薬など</label>
+        <textarea id="f-history" placeholder="持病、過去のケガ、現在通院中・服薬中のものがあればご記入ください"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">目標・ご要望</div>
+      <div class="q">
+        <label class="q-label">なりたい姿・達成したい目標</label>
+        <textarea id="f-goal" placeholder="例：夏までに5kg減らしたい、腰痛なく過ごせるようになりたい"></textarea>
+      </div>
+      <div class="q">
+        <label class="q-label">その他ご要望・伝えておきたいこと</label>
+        <textarea id="f-note" placeholder="ご自由にご記入ください"></textarea>
+      </div>
+    </div>
+
+    <button class="btn" id="submitBtn" onclick="submitIntake()">送信する</button>
+  </div>
+</div>
+
+<div id="doneView" style="display:none">
+  <div class="done">
+    <div class="done-icon">✅</div>
+    <h2>ご回答ありがとうございました</h2>
+    <p>アンケートを受け付けました。<br>担当トレーナーよりご連絡いたします。<br>このページは閉じていただいて大丈夫です。</p>
+  </div>
+</div>
+
+<script>
+const code = new URLSearchParams(location.search).get('c');
+let painValue = null;
+
+// 痛みスケール 1〜10 を生成
+const painWrap = document.getElementById('f-pain');
+for (let i = 1; i <= 10; i++) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'scale-btn'; b.textContent = i;
+  b.onclick = () => {
+    painValue = i;
+    document.querySelectorAll('#f-pain .scale-btn').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+  };
+  painWrap.appendChild(b);
+}
+
+// チェックボックスの見た目トグル
+document.querySelectorAll('#f-concerns .check').forEach(lbl => {
+  const cb = lbl.querySelector('input');
+  cb.addEventListener('change', () => lbl.classList.toggle('on', cb.checked));
+});
+
+// リンクの有効性チェック
+(async () => {
+  if (!code) { showInvalid(); return; }
+  try {
+    const r = await fetch(`/api/intake/${code}/valid`);
+    const j = await r.json();
+    if (j.valid) {
+      document.getElementById('loadingView').style.display = 'none';
+      document.getElementById('formView').style.display = 'block';
+    } else showInvalid();
+  } catch { showInvalid(); }
+})();
+
+function showInvalid() {
+  document.getElementById('loadingView').style.display = 'none';
+  document.getElementById('invalidView').style.display = 'block';
+}
+
+function showErr(msg) {
+  const e = document.getElementById('err');
+  e.textContent = msg; e.classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function submitIntake() {
+  const name = document.getElementById('f-name').value.trim();
+  const age = document.getElementById('f-age').value.trim();
+  const job = document.getElementById('f-job').value.trim();
+  const concerns = [...document.querySelectorAll('#f-concerns input:checked')].map(c => c.value);
+
+  if (!name) return showErr('お名前を入力してください');
+  if (!age) return showErr('年齢を入力してください');
+  if (!job) return showErr('職業を入力してください');
+  if (!concerns.length) return showErr('お悩み・症状を1つ以上選んでください');
+  if (painValue == null) return showErr('痛み・不調レベルを選んでください');
+
+  const payload = {
+    name,
+    kana: document.getElementById('f-kana').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    age,
+    gender: document.getElementById('f-gender').value,
+    job,
+    height: document.getElementById('f-height').value,
+    startWeight: document.getElementById('f-startWeight').value,
+    targetWeight: document.getElementById('f-targetWeight').value,
+    concerns,
+    painLevel: painValue,
+    history: document.getElementById('f-history').value.trim(),
+    goal: document.getElementById('f-goal').value.trim(),
+    note: document.getElementById('f-note').value.trim(),
+  };
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '送信中...';
+  try {
+    const r = await fetch(`/api/intake/${code}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || '送信に失敗しました');
+    document.getElementById('formView').style.display = 'none';
+    document.getElementById('doneView').style.display = 'block';
+    window.scrollTo({ top: 0 });
+  } catch (e) {
+    showErr(e.message);
+    btn.disabled = false; btn.textContent = '送信する';
+  }
+}
+</script>
+</body>
+</html>
