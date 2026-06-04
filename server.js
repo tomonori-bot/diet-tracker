@@ -406,48 +406,64 @@ app.delete('/api/patients/:id/sessions/:sid', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-/* ─── 患者セルフ記録（患者用URL）─── */
+/* ─── 患者セルフ記録（患者用URL）───
+   案A（追記式）対応：同じ日に複数回送れる。
+   送られてきた項目だけ更新し、送られなかった項目は既存値を維持する（マージ方式）。
+   例：朝に体重だけ送る→夜にトレーニングだけ送っても、朝の体重は消えない。 */
 app.post('/api/patients/:id/self-record', (req, res) => {
   const db = readDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   const now = new Date().toISOString();
+  const today = now.slice(0,10);
+
+  // 今日の既存記録（あれば）を土台にする
+  if (!p.patientRecords) p.patientRecords = [];
+  const ei = p.patientRecords.findIndex(r => r.date === today);
+  const existing = ei >= 0 ? p.patientRecords[ei] : null;
+
+  // 送られてきたフィールドだけ取り込む（未送信は既存値を維持）
+  const has = (k) => Object.prototype.hasOwnProperty.call(req.body, k);
   const rec = {
-    id: uuidv4(),
-    date: now.slice(0,10),
-    weight: req.body.weight != null ? parseFloat(req.body.weight) : null,
-    moti: req.body.moti != null ? parseInt(req.body.moti) : null,
-    checkResults: req.body.checkResults || {},
-    reflection: req.body.reflection || '',
-    memo: req.body.memo || '',
+    id: existing ? existing.id : uuidv4(),
+    date: today,
+    weight: has('weight') && req.body.weight != null ? parseFloat(req.body.weight)
+            : (existing ? existing.weight : null),
+    moti: has('moti') && req.body.moti != null ? parseInt(req.body.moti)
+            : (existing ? existing.moti : null),
+    checkResults: has('checkResults') && req.body.checkResults && Object.keys(req.body.checkResults).length
+            ? req.body.checkResults
+            : (existing ? (existing.checkResults || {}) : {}),
+    reflection: has('reflection') && req.body.reflection
+            ? req.body.reflection
+            : (existing ? (existing.reflection || '') : ''),
+    memo: has('reflection') && req.body.reflection
+            ? req.body.reflection
+            : (existing ? (existing.memo || '') : ''),
     imported: true,
-    createdAt: now
+    createdAt: existing ? existing.createdAt : now,
+    updatedAt: now
   };
 
-  // patientRecords に保存（日付重複は上書き）
-  if (!p.patientRecords) p.patientRecords = [];
-  const ei = p.patientRecords.findIndex(r => r.date === rec.date);
   if (ei >= 0) p.patientRecords[ei] = rec; else p.patientRecords.push(rec);
 
   // ─── 自動インポート：p.records にも即時反映 ───
+  if (!p.records) p.records = [];
+  const ri = p.records.findIndex(r => r.date === today);
   const autoRec = {
-    id: uuidv4(),
-    date: rec.date,
+    date: today,
     weight: rec.weight,
     moti: rec.moti,
     checkResults: rec.checkResults,
     reflection: rec.reflection,
     memo: rec.memo,
     source: 'patient',
-    createdAt: rec.createdAt
   };
-  if (!p.records) p.records = [];
-  const ri = p.records.findIndex(r => r.date === autoRec.date);
   if (ri >= 0) {
-    // 既存スタッフ記録があればpatient項目だけ上書き（スタッフ入力を残す）
+    // 既存記録に上書きマージ（id等は保持）
     p.records[ri] = { ...p.records[ri], ...autoRec };
   } else {
-    p.records.push(autoRec);
+    p.records.push({ id: uuidv4(), createdAt: now, ...autoRec });
   }
   p.records.sort((a, b) => a.date.localeCompare(b.date));
 

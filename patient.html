@@ -611,7 +611,7 @@ input[type=range]::-webkit-slider-thumb{
             <span class="star" onclick="setMoti(4)">★</span>
             <span class="star" onclick="setMoti(5)">★</span>
           </div>
-          <div class="star-desc" id="motiDesc">★をタップして評価してください（必須）</div>
+          <div class="star-desc" id="motiDesc">★をタップして評価（任意）</div>
           <div class="unanswered-hint">モチベーションを選択してください</div>
         </div>
       </div>
@@ -1118,14 +1118,40 @@ function showForm() {
   document.getElementById('alreadySection').style.display = 'none';
   document.getElementById('recordForm').style.display = '';
   submitted = false;
-  motiVal = 0;
-  document.querySelectorAll('#motiStars .star').forEach(s => s.classList.remove('on'));
-  document.getElementById('motiDesc').textContent = '★をタップして評価してください（必須）';
-  document.getElementById('weightInput').value = '';
-  document.getElementById('memoInput').value = '';
+
+  // 今日すでに入力済みの記録があれば、フォームに復元（追記しやすくする）
+  const today = new Date().toISOString().slice(0, 10);
+  const allRecs = [...(patient.records || []), ...(patient.patientRecords || [])];
+  const todayRec = allRecs.filter(r => r.date === today)
+    .sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0))[0];
+
+  // モチベ
+  motiVal = (todayRec && todayRec.moti) ? todayRec.moti : 0;
+  document.querySelectorAll('#motiStars .star').forEach((s,i) => s.classList.toggle('on', i < motiVal));
+  document.getElementById('motiDesc').textContent = motiVal > 0
+    ? `モチベーション：${motiVal}/5`
+    : '★をタップして評価（任意）';
+
+  // 体重・振り返り
+  const wval = (todayRec && todayRec.weight != null) ? todayRec.weight : '';
+  document.getElementById('weightInput').value = wval;
+  document.getElementById('memoInput').value = (todayRec && (todayRec.reflection || todayRec.memo)) || '';
   document.getElementById('bmiPreview').classList.remove('visible');
   document.getElementById('bmiFormula').style.display = 'none';
+  if (wval !== '' && typeof onWeightInput === 'function') { try { onWeightInput(wval); } catch {} }
+
+  // トレーニングチェックを復元
   renderTrainingChecklist();
+  if (todayRec && todayRec.checkResults) {
+    (patient.trainingItems || []).forEach(item => {
+      const el = document.getElementById('check-' + item.id);
+      const lbl = document.getElementById('label-' + item.id);
+      if (el && todayRec.checkResults[item.id]) {
+        el.checked = true;
+        if (lbl) lbl.classList.add('checked');
+      }
+    });
+  }
 }
 
 /* ══════════════════════════════════════
@@ -1527,22 +1553,35 @@ function onCheckChange(id) {
 async function submitRecord() {
   if (submitted) return;
 
-  // バリデーション
-  if (motiVal === 0) {
-    document.getElementById('motiCard').classList.add('required-unanswered');
-    document.getElementById('motiCard').scrollIntoView({ behavior:'smooth', block:'center' });
-    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-    return;
-  }
-
+  // 入力値を集める
   const weight = parseFloat(document.getElementById('weightInput').value) || null;
   const reflection = document.getElementById('memoInput').value.trim();
   const checkResults = {};
+  let anyCheck = false;
   (patient.trainingItems || []).forEach(item => {
     const el = document.getElementById('check-' + item.id);
-    checkResults[item.id] = el ? el.checked : false;
+    const v = el ? el.checked : false;
+    checkResults[item.id] = v;
+    if (v) anyCheck = true;
   });
-  const payload = { weight, moti: motiVal, checkResults, reflection, memo: reflection };
+
+  // 案A（追記式）：何か1つでも入力されていれば送信OK。
+  // 体重だけ（朝イチ）でも、トレーニングだけ（夜）でも送れる。
+  const hasAnything = (weight != null) || (motiVal > 0) || anyCheck || reflection;
+  if (!hasAnything) {
+    const wc = document.getElementById('weightInput');
+    if (wc) wc.scrollIntoView({ behavior:'smooth', block:'center' });
+    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+    alert('体重・モチベ・トレーニングなど、いずれか入力してから送信してください');
+    return;
+  }
+
+  // 送られた項目だけpayloadに入れる（未入力は送らない→サーバー側で既存値を維持）
+  const payload = {};
+  if (weight != null) payload.weight = weight;
+  if (motiVal > 0) payload.moti = motiVal;
+  if (anyCheck) payload.checkResults = checkResults;
+  if (reflection) payload.reflection = reflection;
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
