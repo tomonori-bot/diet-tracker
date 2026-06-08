@@ -415,9 +415,16 @@ app.post('/api/patients/:id/self-record', (req, res) => {
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   const now = new Date().toISOString();
-  const today = now.slice(0,10);
+  const realToday = now.slice(0,10);
 
-  // 今日の既存記録（あれば）を土台にする
+  // 通常は今日固定。ただし date 指定があれば過去日を許可（テストデータ投入・後から記録用）。
+  // 未来日は不正なので拒否。形式(YYYY-MM-DD)もチェック。
+  let today = realToday;
+  if (req.body.date && /^\d{4}-\d{2}-\d{2}$/.test(req.body.date) && req.body.date <= realToday) {
+    today = req.body.date;
+  }
+
+  // その日の既存記録（あれば）を土台にする
   if (!p.patientRecords) p.patientRecords = [];
   const ei = p.patientRecords.findIndex(r => r.date === today);
   const existing = ei >= 0 ? p.patientRecords[ei] : null;
@@ -469,13 +476,15 @@ app.post('/api/patients/:id/self-record', (req, res) => {
 
   writeDB(db);
 
-  // SSEでadminに通知
-  sseNotify(req.params.id, {
-    type: 'new-record',
-    patientId: req.params.id,
-    patientName: p.name,
-    record: rec
-  });
+  // SSEでadminに通知（過去日の投入時は通知しない）
+  if (today === realToday) {
+    sseNotify(req.params.id, {
+      type: 'new-record',
+      patientId: req.params.id,
+      patientName: p.name,
+      record: rec
+    });
+  }
   res.json(rec);
 });
 
