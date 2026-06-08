@@ -13,6 +13,10 @@ const DATA_FILE = path.join(__dirname, 'data', 'db.json');
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'bodylog2025';
 
+// 全体バックアップ用の秘密キー（運営者のみが知る。環境変数で設定）
+// 未設定なら全体バックアップAPIは無効（安全側に倒す）
+const BACKUP_KEY = process.env.BACKUP_KEY || '';
+
 // マイ種目リストが空のトレーナーに最初から出す定番種目
 const DEFAULT_EXERCISES = [
   'スクワット', 'デッドリフト', 'ベンチプレス', 'ラットプルダウン',
@@ -162,6 +166,19 @@ app.post('/api/auth/logout', (req, res) => {
     writeDB(db);
   }
   res.json({ ok: true });
+});
+
+/* ─── 全体バックアップ（運営者専用・秘密キー必須） ───
+   使い方：/api/backup?key=（BACKUP_KEYの値）
+   db.json全体をJSONで返す。移行前のフルバックアップ用。 */
+app.get('/api/backup', (req, res) => {
+  if (!BACKUP_KEY) return res.status(403).json({ error: 'バックアップ機能は無効です（BACKUP_KEY未設定）' });
+  if (req.query.key !== BACKUP_KEY) return res.status(401).json({ error: 'キーが正しくありません' });
+  const db = readDB();
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  res.setHeader('Content-Disposition', `attachment; filename="bodylog-backup-${stamp}.json"`);
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(db, null, 2));
 });
 
 /* ─── ルート(/) は admin に飛ばす（admin内で未認証ならlogin.htmlへリダイレクト） ─── */
