@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════
-   db.js — データ層（Supabase対応 / ファイル保存フォールバック）
+   db.js — データ層（Supabase REST API / ファイル保存フォールバック）
 
    設計（中間案・ハイブリッドB）：
    - patients テーブル：顧客1人 = 1行（中身はJSON）。増えても1行ずつ扱うので速い
@@ -10,38 +10,98 @@
    - loadDB() が今まで通りの { patients:[], users:[], sessions:{}, intakeCodes:{}, exercises:{} } を返す
    - saveDB(db) が「前回からの差分だけ」をSupabaseに保存（全件書き戻さない＝速い）
 
+   ※ supabase-js は使わず Supabase の REST(PostgREST) API を fetch で直接叩く。
+      → WebSocket(realtime)依存が無く、Node 20 でそのまま動く。依存も増やさない。
+
    Supabase未設定時（ローカル開発など）は data/db.json に保存（フォールバック）。
    ════════════════════════════════════════════════════════ */
 
 const fs = require('fs');
 const path = require('path');
 
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+// 環境変数を掃除：前後の空白・引用符・★などの装飾文字や全角を除去
+// （コピペ時に混入しがちな文字でHTTPヘッダーが壊れるのを防ぐ）
+function cleanEnv(v) {
+  if (!v) return '';
+  let s = String(v).trim();
+  // 前後のクォートを除去
+  s = s.replace(/^["'\s]+|["'\s]+$/g, '');
+  // ASCII範囲外の文字（★ や全角など）を除去
+  s = s.replace(/[^\x21-\x7E]/g, '');
+  return s;
+}
+
+// URLは「ドメインだけ」に正規化する。
+// 末尾に /rest/v1 などのパスが付いていても、scheme://host だけ取り出して二重結合を防ぐ。
+function normalizeUrl(raw) {
+  let s = cleanEnv(raw);
+  if (!s) return '';
+  try {
+    const u = new URL(s);
+    return `${u.protocol}//${u.host}`;   // 例: https://xxx.supabase.co
+  } catch {
+    // URLとして解釈できない場合は、パス部分を素朴に切り落とす
+    return s.replace(/\/rest\/v1.*$/i, '').replace(/\/+$/, '');
+  }
+}
+
+const SUPABASE_URL = normalizeUrl(process.env.SUPABASE_URL);
+const SUPABASE_KEY = cleanEnv(process.env.SUPABASE_KEY);
 const USE_SUPABASE = !!(SUPABASE_URL && SUPABASE_KEY);
 
 const DATA_FILE = path.join(__dirname, 'data', 'db.json');
 
-let supabase = null;
 if (USE_SUPABASE) {
-  const { createClient } = require('@supabase/supabase-js');
-  supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { persistSession: false },
-  });
-  console.log('[db] Supabase mode');
+  // 起動時に、キーが正しい形式か軽くチェックして知らせる
+  const looksJwt = SUPABASE_KEY.startsWith('eyJ');
+  console.log(`[db] Supabase mode (REST) url=${SUPABASE_URL.slice(0, 30)}... key=${SUPABASE_KEY.slice(0, 6)}...(${SUPABASE_KEY.length}文字)${looksJwt ? '' : ' ⚠️キー形式が不正かも(eyJで始まるはず)'}`);
 } else {
   console.log('[db] File mode (data/db.json) — SUPABASE_URL/KEY 未設定');
 }
 
 const empty = () => ({ patients: [], users: [], sessions: {}, intakeCodes: {}, exercises: {} });
 
-/* ─────────── 差分検出のための前回スナップショット ───────────
-   loadDB() で読んだ内容を覚えておき、saveDB() で変わった分だけ保存する */
-let snapshot = {
-  patients: new Map(),   // id -> JSON文字列
-  users: new Map(),      // id -> JSON文字列
-  appData: new Map(),    // key -> JSON文字列（sessions/intakeCodes/exercises）
+/* ─── Supabase REST 共通ヘルパー ─── */
+const REST = SUPABASE_URL + '/rest/v1';
+const baseHeaders = {
+  apikey: SUPABASE_KEY,
+  Authorization: 'Bearer ' + SUPABASE_KEY,
+  'Content-Type': 'application/json',
 };
+
+async function sbSelect(table, columns) {
+  // columns（例 "id,data"）はカンマをそのまま渡す（encodeすると404になる）
+  const url = `${REST}/${table}?select=${columns}`;
+  const res = await fetch(url, { headers: baseHeaders });
+  if (!res.ok) throw new Error(`${table} 読み込み失敗: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+async function sbUpsert(table, rows) {
+  if (!rows.length) return;
+  const url = `${REST}/${table}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { ...baseHeaders, Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify(rows),
+  });
+  if (!res.ok) throw new Error(`${table} 保存失敗: ${res.status} ${await res.text()}`);
+}
+
+async function sbDeleteIn(table, column, values) {
+  if (!values.length) return;
+  // ?column=in.("v1","v2",...) — 値を個別にエンコードしてからカンマ・括弧で組む
+  const list = values.map(v => `"${encodeURIComponent(String(v))}"`).join(',');
+  const url = `${REST}/${table}?${column}=in.(${list})`;
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: { ...baseHeaders, Prefer: 'return=minimal' },
+  });
+  if (!res.ok) throw new Error(`${table} 削除失敗: ${res.status} ${await res.text()}`);
+}
+
+/* ─── 差分検出のための前回スナップショット ─── */
+let snapshot = { patients: new Map(), users: new Map(), appData: new Map() };
 
 /* ═══════════ Supabaseモード ═══════════ */
 
@@ -49,25 +109,19 @@ async function loadDB_supabase() {
   const db = empty();
   snapshot = { patients: new Map(), users: new Map(), appData: new Map() };
 
-  // patients
-  const { data: pats, error: e1 } = await supabase.from('patients').select('id,data');
-  if (e1) throw new Error('patients読み込み失敗: ' + e1.message);
+  const pats = await sbSelect('patients', 'id,data');
   for (const row of pats || []) {
     db.patients.push(row.data);
     snapshot.patients.set(row.id, JSON.stringify(row.data));
   }
 
-  // users
-  const { data: usrs, error: e2 } = await supabase.from('users').select('id,data');
-  if (e2) throw new Error('users読み込み失敗: ' + e2.message);
+  const usrs = await sbSelect('users', 'id,data');
   for (const row of usrs || []) {
     db.users.push(row.data);
     snapshot.users.set(row.id, JSON.stringify(row.data));
   }
 
-  // app_data（sessions / intakeCodes / exercises）
-  const { data: app, error: e3 } = await supabase.from('app_data').select('key,data');
-  if (e3) throw new Error('app_data読み込み失敗: ' + e3.message);
+  const app = await sbSelect('app_data', 'key,data');
   for (const row of app || []) {
     if (row.key === 'sessions') db.sessions = row.data || {};
     else if (row.key === 'intakeCodes') db.intakeCodes = row.data || {};
@@ -81,48 +135,33 @@ async function loadDB_supabase() {
 async function saveDB_supabase(db) {
   // ── patients：変更/新規だけ upsert、消えたものは delete ──
   const seenP = new Set();
-  const upserts = [];
+  const upP = [];
   for (const p of db.patients || []) {
     if (!p || !p.id) continue;
     seenP.add(p.id);
-    const json = JSON.stringify(p);
-    if (snapshot.patients.get(p.id) !== json) {
-      upserts.push({ id: p.id, owner_id: p.ownerId || 'admin', data: p });
+    if (snapshot.patients.get(p.id) !== JSON.stringify(p)) {
+      upP.push({ id: p.id, owner_id: p.ownerId || 'admin', data: p });
     }
   }
-  if (upserts.length) {
-    const { error } = await supabase.from('patients').upsert(upserts);
-    if (error) throw new Error('patients保存失敗: ' + error.message);
-  }
-  // 消えた患者を削除
+  await sbUpsert('patients', upP);
   const delP = [];
   for (const id of snapshot.patients.keys()) if (!seenP.has(id)) delP.push(id);
-  if (delP.length) {
-    const { error } = await supabase.from('patients').delete().in('id', delP);
-    if (error) throw new Error('patients削除失敗: ' + error.message);
-  }
+  await sbDeleteIn('patients', 'id', delP);
 
-  // ── users：変更/新規だけ upsert ──
+  // ── users ──
   const seenU = new Set();
   const upU = [];
   for (const u of db.users || []) {
     if (!u || !u.id) continue;
     seenU.add(u.id);
-    const json = JSON.stringify(u);
-    if (snapshot.users.get(u.id) !== json) {
+    if (snapshot.users.get(u.id) !== JSON.stringify(u)) {
       upU.push({ id: u.id, username: u.username, data: u });
     }
   }
-  if (upU.length) {
-    const { error } = await supabase.from('users').upsert(upU);
-    if (error) throw new Error('users保存失敗: ' + error.message);
-  }
+  await sbUpsert('users', upU);
   const delU = [];
   for (const id of snapshot.users.keys()) if (!seenU.has(id)) delU.push(id);
-  if (delU.length) {
-    const { error } = await supabase.from('users').delete().in('id', delU);
-    if (error) throw new Error('users削除失敗: ' + error.message);
-  }
+  await sbDeleteIn('users', 'id', delU);
 
   // ── app_data：sessions / intakeCodes / exercises を変わったものだけ ──
   const appPairs = [
@@ -132,17 +171,13 @@ async function saveDB_supabase(db) {
   ];
   const upA = [];
   for (const [key, val] of appPairs) {
-    const json = JSON.stringify(val);
-    if (snapshot.appData.get(key) !== json) {
+    if (snapshot.appData.get(key) !== JSON.stringify(val)) {
       upA.push({ key, data: val });
     }
   }
-  if (upA.length) {
-    const { error } = await supabase.from('app_data').upsert(upA);
-    if (error) throw new Error('app_data保存失敗: ' + error.message);
-  }
+  await sbUpsert('app_data', upA);
 
-  // スナップショット更新（次回の差分計算用）
+  // スナップショット更新
   snapshot.patients = new Map((db.patients || []).filter(p => p && p.id).map(p => [p.id, JSON.stringify(p)]));
   snapshot.users = new Map((db.users || []).filter(u => u && u.id).map(u => [u.id, JSON.stringify(u)]));
   snapshot.appData = new Map(appPairs.map(([k, v]) => [k, JSON.stringify(v)]));
@@ -174,7 +209,6 @@ function saveDB_file(db) {
 async function loadDB() {
   return USE_SUPABASE ? loadDB_supabase() : loadDB_file();
 }
-
 async function saveDB(db) {
   return USE_SUPABASE ? saveDB_supabase(db) : saveDB_file(db);
 }
