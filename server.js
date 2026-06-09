@@ -1,9 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
-const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
+const { loadDB, saveDB } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,20 +27,7 @@ const DEFAULT_EXERCISES = [
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '12mb' }));
 
-/* ─── DB helpers ─── */
-function readDB() {
-  if (!fs.existsSync(DATA_FILE)) return { patients: [], sessions: {}, users: [], intakeCodes: {} };
-  try {
-    const db = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    if (!db.sessions) db.sessions = {};
-    if (!db.patients) db.patients = [];
-    if (!db.users) db.users = [];
-    if (!db.intakeCodes) db.intakeCodes = {};
-    if (!db.exercises) db.exercises = {};
-    return db;
-  }
-  catch { return { patients: [], sessions: {}, users: [], intakeCodes: {}, exercises: {} }; }
-}
+/* ─── DB helpers は db.js に移動（loadDB / saveDB を使用） ─── */
 
 /* ─── パスワードハッシュ（ソルト付き） ─── */
 function hashPassword(password, salt) {
@@ -52,12 +39,6 @@ function verifyPassword(password, salt, hash) {
   const h = crypto.scryptSync(password, salt, 64).toString('hex');
   return crypto.timingSafeEqual(Buffer.from(h), Buffer.from(hash));
 }
-function writeDB(db) {
-  const dir = path.dirname(DATA_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2));
-}
-
 /* ─── 認証（Bearerトークン方式・PCとスマホで同じトークンで共有可） ─── */
 function makeToken() {
   return crypto.randomBytes(24).toString('hex');
@@ -69,16 +50,16 @@ function getToken(req) {
   return req.query.token || null;
 }
 
-function requireAdmin(req, res, next) {
+async function requireAdmin(req, res, next) {
   const token = getToken(req);
   if (!token) return res.status(401).json({ error: 'No token' });
-  const db = readDB();
+  const db = await loadDB();
   const sess = db.sessions[token];
   if (!sess || sess.role !== 'admin') return res.status(401).json({ error: 'Invalid token' });
   // 30日有効
   if (Date.now() - new Date(sess.createdAt).getTime() > 30 * 24 * 3600 * 1000) {
     delete db.sessions[token];
-    writeDB(db);
+    await saveDB(db);
     return res.status(401).json({ error: 'Token expired' });
   }
   req.session = sess;
@@ -88,12 +69,12 @@ function requireAdmin(req, res, next) {
 }
 
 /* ─── 新規登録API ─── */
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   const username = (req.body?.username || '').trim();
   const password = req.body?.password || '';
   if (username.length < 3) return res.status(400).json({ error: 'ユーザー名は3文字以上にしてください' });
   if (password.length < 6) return res.status(400).json({ error: 'パスワードは6文字以上にしてください' });
-  const db = readDB();
+  const db = await loadDB();
   // adminは予約名 + 既存ユーザーと重複不可（大文字小文字無視）
   const lower = username.toLowerCase();
   if (lower === ADMIN_USER.toLowerCase()) return res.status(409).json({ error: 'このユーザー名は使用できません' });
@@ -101,19 +82,19 @@ app.post('/api/auth/register', (req, res) => {
     return res.status(409).json({ error: 'このユーザー名は既に使われています' });
   }
   const { salt, hash } = hashPassword(password);
-  const user = { id: uuidv4(), username, salt, hash, createdAt: new Date().toISOString() };
+  const user = { id: crypto.randomUUID(), username, salt, hash, createdAt: new Date().toISOString() };
   db.users.push(user);
   // 登録と同時にログイン状態にする
   const token = makeToken();
   db.sessions[token] = { token, role: 'admin', username, createdAt: new Date().toISOString() };
-  writeDB(db);
+  await saveDB(db);
   res.json({ token, role: 'admin', username });
 });
 
 /* ─── 認証API ─── */
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body || {};
-  const db = readDB();
+  const db = await loadDB();
   let ok = false;
   let authUser = username;
   // 1) デフォルト管理者アカウント
@@ -140,30 +121,30 @@ app.post('/api/auth/login', (req, res) => {
     const s = db.sessions[t];
     if (Date.now() - new Date(s.createdAt).getTime() > 30 * 24 * 3600 * 1000) delete db.sessions[t];
   });
-  writeDB(db);
+  await saveDB(db);
   res.json({ token, role: 'admin', username: authUser });
 });
 
-app.get('/api/auth/check', (req, res) => {
+app.get('/api/auth/check', async (req, res) => {
   const token = getToken(req);
   if (!token) return res.json({ authenticated: false });
-  const db = readDB();
+  const db = await loadDB();
   const sess = db.sessions[token];
   if (!sess) return res.json({ authenticated: false });
   if (Date.now() - new Date(sess.createdAt).getTime() > 30 * 24 * 3600 * 1000) {
     delete db.sessions[token];
-    writeDB(db);
+    await saveDB(db);
     return res.json({ authenticated: false });
   }
   res.json({ authenticated: true, role: sess.role, username: sess.username });
 });
 
-app.post('/api/auth/logout', (req, res) => {
+app.post('/api/auth/logout', async (req, res) => {
   const token = getToken(req);
   if (token) {
-    const db = readDB();
+    const db = await loadDB();
     delete db.sessions[token];
-    writeDB(db);
+    await saveDB(db);
   }
   res.json({ ok: true });
 });
@@ -171,10 +152,10 @@ app.post('/api/auth/logout', (req, res) => {
 /* ─── 全体バックアップ（運営者専用・秘密キー必須） ───
    使い方：/api/backup?key=（BACKUP_KEYの値）
    db.json全体をJSONで返す。移行前のフルバックアップ用。 */
-app.get('/api/backup', (req, res) => {
+app.get('/api/backup', async (req, res) => {
   if (!BACKUP_KEY) return res.status(403).json({ error: 'バックアップ機能は無効です（BACKUP_KEY未設定）' });
   if (req.query.key !== BACKUP_KEY) return res.status(401).json({ error: 'キーが正しくありません' });
-  const db = readDB();
+  const db = await loadDB();
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   res.setHeader('Content-Disposition', `attachment; filename="bodylog-backup-${stamp}.json"`);
   res.setHeader('Content-Type', 'application/json');
@@ -185,9 +166,9 @@ app.get('/api/backup', (req, res) => {
 app.get('/', (req, res) => res.redirect('/admin.html'));
 
 /* ─── 写真ファイル配信（token認証・staticより前に置く） ─── */
-app.get('/data/photos/:file', (req, res) => {
+app.get('/data/photos/:file', async (req, res) => {
   const token = getToken(req);
-  const db = readDB();
+  const db = await loadDB();
   const sess = token && db.sessions[token];
   if (!sess || sess.role !== 'admin') return res.status(401).end();
   const filePath = path.join(__dirname, 'data', 'photos', path.basename(req.params.file));
@@ -225,8 +206,8 @@ function normalizeExercises(input) {
 }
 
 /* ─── 患者一覧取得（自分の患者のみ） ─── */
-app.get('/api/patients', requireAdmin, (req, res) => {
-  const db = readDB();
+app.get('/api/patients', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const { q } = req.query;
   let list = db.patients.filter(p => ownsPatient(p, req.ownerId));
   if (q) {
@@ -253,10 +234,10 @@ app.get('/api/patients', requireAdmin, (req, res) => {
 });
 
 /* ─── 患者作成 ─── */
-app.post('/api/patients', requireAdmin, (req, res) => {
-  const db = readDB();
+app.post('/api/patients', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = {
-    id: uuidv4(),
+    id: crypto.randomUUID(),
     ownerId: req.ownerId,
     name: req.body.name,
     kana: req.body.kana || '',
@@ -279,52 +260,52 @@ app.post('/api/patients', requireAdmin, (req, res) => {
     patientRecords: []
   };
   db.patients.push(p);
-  writeDB(db);
+  await saveDB(db);
   res.json(p);
 });
 
 /* ─── 患者1件取得 ───
    注意：患者用URL(patient.html)からも認証なしで呼ばれるため、ここは所有チェックしない。
    患者IDはランダムなUUIDなので推測困難。 */
-app.get('/api/patients/:id', (req, res) => {
-  const db = readDB();
+app.get('/api/patients/:id', async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   res.json(p);
 });
 
 /* ─── 患者更新 ─── */
-app.put('/api/patients/:id', requireAdmin, (req, res) => {
-  const db = readDB();
+app.put('/api/patients/:id', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const idx = db.patients.findIndex(p => p.id === req.params.id);
   if (idx < 0) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(db.patients[idx], req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   // ownerId は上書きさせない
   const { ownerId, ...body } = req.body || {};
   db.patients[idx] = { ...db.patients[idx], ...body, id: req.params.id };
-  writeDB(db);
+  await saveDB(db);
   res.json(db.patients[idx]);
 });
 
 /* ─── 患者削除 ─── */
-app.delete('/api/patients/:id', requireAdmin, (req, res) => {
-  const db = readDB();
+app.delete('/api/patients/:id', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   db.patients = db.patients.filter(p => p.id !== req.params.id);
-  writeDB(db);
+  await saveDB(db);
   res.json({ ok: true });
 });
 
 /* ─── 体重・状態レコード追加 ─── */
-app.post('/api/patients/:id/records', requireAdmin, (req, res) => {
-  const db = readDB();
+app.post('/api/patients/:id/records', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   const rec = {
-    id: uuidv4(),
+    id: crypto.randomUUID(),
     date: req.body.date || new Date().toISOString().slice(0,10),
     weight: req.body.weight != null ? parseFloat(req.body.weight) : null,
     moti: req.body.moti != null ? parseInt(req.body.moti) : null,
@@ -339,13 +320,13 @@ app.post('/api/patients/:id/records', requireAdmin, (req, res) => {
   if (ei >= 0) p.records[ei] = { ...p.records[ei], ...rec };
   else p.records.push(rec);
   p.records.sort((a,b) => a.date.localeCompare(b.date));
-  writeDB(db);
+  await saveDB(db);
   res.json(rec);
 });
 
 /* ─── レコード更新 ─── */
-app.put('/api/patients/:id/records/:rid', requireAdmin, (req, res) => {
-  const db = readDB();
+app.put('/api/patients/:id/records/:rid', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
@@ -353,29 +334,29 @@ app.put('/api/patients/:id/records/:rid', requireAdmin, (req, res) => {
   if (idx < 0) return res.status(404).json({ error: 'Record not found' });
   p.records[idx] = { ...p.records[idx], ...req.body, id: req.params.rid };
   p.records.sort((a,b) => a.date.localeCompare(b.date));
-  writeDB(db);
+  await saveDB(db);
   res.json(p.records[idx]);
 });
 
 /* ─── レコード削除 ─── */
-app.delete('/api/patients/:id/records/:rid', requireAdmin, (req, res) => {
-  const db = readDB();
+app.delete('/api/patients/:id/records/:rid', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   p.records = (p.records || []).filter(r => r.id !== req.params.rid);
-  writeDB(db);
+  await saveDB(db);
   res.json({ ok: true });
 });
 
 /* ─── セッション記録追加 ─── */
-app.post('/api/patients/:id/sessions', requireAdmin, (req, res) => {
-  const db = readDB();
+app.post('/api/patients/:id/sessions', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   const session = {
-    id: uuidv4(),
+    id: crypto.randomUUID(),
     date: req.body.date || new Date().toISOString().slice(0,10),
     weight: req.body.weight != null ? parseFloat(req.body.weight) : null,
     pain: req.body.pain != null ? parseInt(req.body.pain) : null,
@@ -392,13 +373,13 @@ app.post('/api/patients/:id/sessions', requireAdmin, (req, res) => {
   if (!p.sessions) p.sessions = [];
   p.sessions.push(session);
   p.sessions.sort((a,b) => b.date.localeCompare(a.date));
-  writeDB(db);
+  await saveDB(db);
   res.json(session);
 });
 
 /* ─── セッション更新 ─── */
-app.put('/api/patients/:id/sessions/:sid', requireAdmin, (req, res) => {
-  const db = readDB();
+app.put('/api/patients/:id/sessions/:sid', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
@@ -408,18 +389,18 @@ app.put('/api/patients/:id/sessions/:sid', requireAdmin, (req, res) => {
   if ('exercises' in body) body.exercises = normalizeExercises(body.exercises);
   p.sessions[idx] = { ...p.sessions[idx], ...body, id: req.params.sid };
   p.sessions.sort((a,b) => b.date.localeCompare(a.date));
-  writeDB(db);
+  await saveDB(db);
   res.json(p.sessions[idx]);
 });
 
 /* ─── セッション削除 ─── */
-app.delete('/api/patients/:id/sessions/:sid', requireAdmin, (req, res) => {
-  const db = readDB();
+app.delete('/api/patients/:id/sessions/:sid', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   p.sessions = (p.sessions || []).filter(s => s.id !== req.params.sid);
-  writeDB(db);
+  await saveDB(db);
   res.json({ ok: true });
 });
 
@@ -427,8 +408,8 @@ app.delete('/api/patients/:id/sessions/:sid', requireAdmin, (req, res) => {
    案A（追記式）対応：同じ日に複数回送れる。
    送られてきた項目だけ更新し、送られなかった項目は既存値を維持する（マージ方式）。
    例：朝に体重だけ送る→夜にトレーニングだけ送っても、朝の体重は消えない。 */
-app.post('/api/patients/:id/self-record', (req, res) => {
-  const db = readDB();
+app.post('/api/patients/:id/self-record', async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   const now = new Date().toISOString();
@@ -449,7 +430,7 @@ app.post('/api/patients/:id/self-record', (req, res) => {
   // 送られてきたフィールドだけ取り込む（未送信は既存値を維持）
   const has = (k) => Object.prototype.hasOwnProperty.call(req.body, k);
   const rec = {
-    id: existing ? existing.id : uuidv4(),
+    id: existing ? existing.id : crypto.randomUUID(),
     date: today,
     weight: has('weight') && req.body.weight != null ? parseFloat(req.body.weight)
             : (existing ? existing.weight : null),
@@ -487,11 +468,11 @@ app.post('/api/patients/:id/self-record', (req, res) => {
     // 既存記録に上書きマージ（id等は保持）
     p.records[ri] = { ...p.records[ri], ...autoRec };
   } else {
-    p.records.push({ id: uuidv4(), createdAt: now, ...autoRec });
+    p.records.push({ id: crypto.randomUUID(), createdAt: now, ...autoRec });
   }
   p.records.sort((a, b) => a.date.localeCompare(b.date));
 
-  writeDB(db);
+  await saveDB(db);
 
   // SSEでadminに通知（過去日の投入時は通知しない）
   if (today === realToday) {
@@ -506,8 +487,8 @@ app.post('/api/patients/:id/self-record', (req, res) => {
 });
 
 /* ─── 患者セルフ記録一覧取得 ─── */
-app.get('/api/patients/:id/self-records', requireAdmin, (req, res) => {
-  const db = readDB();
+app.get('/api/patients/:id/self-records', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
@@ -515,15 +496,15 @@ app.get('/api/patients/:id/self-records', requireAdmin, (req, res) => {
 });
 
 /* ─── 患者セルフ記録をインポート ─── */
-app.post('/api/patients/:id/import-self', requireAdmin, (req, res) => {
-  const db = readDB();
+app.post('/api/patients/:id/import-self', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   const unimported = (p.patientRecords || []).filter(r => !r.imported);
   unimported.forEach(pr => {
     const rec = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       date: pr.date, weight: pr.weight, moti: pr.moti,
       checkResults: pr.checkResults || {}, reflection: pr.reflection || '',
       memo: pr.memo || '', source: 'patient',
@@ -536,13 +517,13 @@ app.post('/api/patients/:id/import-self', requireAdmin, (req, res) => {
     if (pi >= 0) p.patientRecords[pi].imported = true;
   });
   p.records.sort((a,b) => a.date.localeCompare(b.date));
-  writeDB(db);
+  await saveDB(db);
   res.json({ imported: unimported.length });
 });
 
 /* ─── ダッシュボード統計API ─── */
-app.get('/api/stats', requireAdmin, (req, res) => {
-  const db = readDB();
+app.get('/api/stats', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const patients = db.patients.filter(p => ownsPatient(p, req.ownerId));
   const totalRecords = patients.reduce((s,p) => s + (p.records?.length||0), 0);
   const totalSessions = patients.reduce((s,p) => s + (p.sessions?.length||0), 0);
@@ -570,27 +551,27 @@ app.get('/api/stats', requireAdmin, (req, res) => {
 ════════════════════════════════ */
 
 /* ─── トレーナーの問診リンク用コードを取得（無ければ発行） ─── */
-app.get('/api/intake/code', requireAdmin, (req, res) => {
-  const db = readDB();
+app.get('/api/intake/code', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   // 既にこのトレーナーのコードがあれば再利用
   let code = Object.keys(db.intakeCodes).find(c => db.intakeCodes[c] === req.ownerId);
   if (!code) {
     code = crypto.randomBytes(6).toString('hex'); // 12文字のランダムコード
     db.intakeCodes[code] = req.ownerId;
-    writeDB(db);
+    await saveDB(db);
   }
   res.json({ code });
 });
 
 /* ─── 問診コードの有効性チェック（顧客ページ用・認証不要） ─── */
-app.get('/api/intake/:code/valid', (req, res) => {
-  const db = readDB();
+app.get('/api/intake/:code/valid', async (req, res) => {
+  const db = await loadDB();
   res.json({ valid: !!db.intakeCodes[req.params.code] });
 });
 
 /* ─── 問診票の送信（認証不要・顧客が記入）→ 顧客を自動新規登録 ─── */
-app.post('/api/intake/:code', (req, res) => {
-  const db = readDB();
+app.post('/api/intake/:code', async (req, res) => {
+  const db = await loadDB();
   const owner = db.intakeCodes[req.params.code];
   if (!owner) return res.status(404).json({ error: '無効なリンクです' });
 
@@ -617,7 +598,7 @@ app.post('/api/intake/:code', (req, res) => {
   }
 
   const p = {
-    id: uuidv4(),
+    id: crypto.randomUUID(),
     ownerId: owner,
     name,
     kana: b.kana || '',
@@ -647,7 +628,7 @@ app.post('/api/intake/:code', (req, res) => {
     photos: []
   };
   db.patients.push(p);
-  writeDB(db);
+  await saveDB(db);
   res.json({ ok: true, name: p.name });
 });
 
@@ -656,50 +637,50 @@ app.post('/api/intake/:code', (req, res) => {
 ════════════════════════════════ */
 
 /* ─── マイ種目リスト取得（無ければ初期種目を保存して返す） ─── */
-app.get('/api/exercises', requireAdmin, (req, res) => {
-  const db = readDB();
+app.get('/api/exercises', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   if (!Array.isArray(db.exercises[req.ownerId])) {
     db.exercises[req.ownerId] = [...DEFAULT_EXERCISES];
-    writeDB(db);
+    await saveDB(db);
   }
   res.json(db.exercises[req.ownerId]);
 });
 
 /* ─── マイ種目を追加 ─── */
-app.post('/api/exercises', requireAdmin, (req, res) => {
+app.post('/api/exercises', requireAdmin, async (req, res) => {
   const name = (req.body?.name || '').trim();
   if (!name) return res.status(400).json({ error: '種目名を入力してください' });
-  const db = readDB();
+  const db = await loadDB();
   if (!Array.isArray(db.exercises[req.ownerId])) db.exercises[req.ownerId] = [...DEFAULT_EXERCISES];
   // 重複（大文字小文字・前後空白無視）は追加しない
   const exists = db.exercises[req.ownerId].some(e => e.toLowerCase() === name.toLowerCase());
   if (!exists) {
     db.exercises[req.ownerId].push(name);
-    writeDB(db);
+    await saveDB(db);
   }
   res.json(db.exercises[req.ownerId]);
 });
 
 /* ─── マイ種目を削除 ─── */
-app.delete('/api/exercises', requireAdmin, (req, res) => {
+app.delete('/api/exercises', requireAdmin, async (req, res) => {
   const name = (req.body?.name || '').trim();
-  const db = readDB();
+  const db = await loadDB();
   if (Array.isArray(db.exercises[req.ownerId])) {
     db.exercises[req.ownerId] = db.exercises[req.ownerId].filter(e => e !== name);
-    writeDB(db);
+    await saveDB(db);
   }
   res.json(db.exercises[req.ownerId] || []);
 });
 
 /* ─── 写真アップロード（ビフォーアフター） ─── */
-app.post('/api/patients/:id/photos', requireAdmin, (req, res) => {
-  const db = readDB();
+app.post('/api/patients/:id/photos', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   const { dataUrl, label, date } = req.body;
   if (!dataUrl) return res.status(400).json({ error: 'No image' });
-  const photoId = uuidv4();
+  const photoId = crypto.randomUUID();
   const ext = (dataUrl.match(/^data:image\/(\w+);/) || [])[1] || 'jpg';
   const filename = `${photoId}.${ext}`;
   const photoDir = path.join(__dirname, 'data', 'photos');
@@ -715,20 +696,20 @@ app.post('/api/patients/:id/photos', requireAdmin, (req, res) => {
   };
   if (!p.photos) p.photos = [];
   p.photos.push(photo);
-  writeDB(db);
+  await saveDB(db);
   res.json(photo);
 });
 
-app.get('/api/patients/:id/photos', requireAdmin, (req, res) => {
-  const db = readDB();
+app.get('/api/patients/:id/photos', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   res.json(p.photos || []);
 });
 
-app.delete('/api/patients/:id/photos/:pid', requireAdmin, (req, res) => {
-  const db = readDB();
+app.delete('/api/patients/:id/photos/:pid', requireAdmin, async (req, res) => {
+  const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
@@ -737,17 +718,17 @@ app.delete('/api/patients/:id/photos/:pid', requireAdmin, (req, res) => {
     try { fs.unlinkSync(path.join(__dirname, 'data', 'photos', photo.filename)); } catch {}
   }
   p.photos = (p.photos || []).filter(ph => ph.id !== req.params.pid);
-  writeDB(db);
+  await saveDB(db);
   res.json({ ok: true });
 });
 
 /* ─── SSE: リアルタイム通知ストリーム ─── */
 const sseClients = new Map(); // patientId → Set of res
 
-app.get('/api/patients/:id/stream', (req, res) => {
+app.get('/api/patients/:id/stream', async (req, res) => {
   // SSE\u306f\u30af\u30a8\u30ea\u6587\u5b57\u5217token\u3067\u8a8d\u8a3c\uff08EventSource\u306fheader\u3092\u9001\u308c\u306a\u3044\u305f\u3081\uff09
   const token = req.query.token;
-  const db = readDB();
+  const db = await loadDB();
   if (!token || !db.sessions[token] || db.sessions[token].role !== 'admin') {
     return res.status(401).end();
   }
