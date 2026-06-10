@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bodylog",
+      "runtimeExecutable": "/tmp/node-v20.18.0-darwin-arm64/bin/node",
+      "runtimeArgs": ["server.js"],
+      "port": 3999
+    }
+  ]
+}
