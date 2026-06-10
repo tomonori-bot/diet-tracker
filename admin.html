@@ -73,6 +73,10 @@ button{font-family:inherit;cursor:pointer}
 .nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
 .nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center}
 .sb-footer{padding:14px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+.sb-pt-item{display:flex;align-items:center;padding:6px 12px 6px 20px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;color:var(--text2);transition:all .15s;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-pt-item:hover{background:var(--surface2);color:var(--text)}
+.sb-pt-item.active{color:var(--accent);font-weight:700}
+.sb-pt-item::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;margin-right:8px;flex-shrink:0;opacity:.5}
 
 /* ═══ TOP BAR ═══ */
 .topbar{
@@ -454,10 +458,11 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
       ダッシュボード
     </div>
-    <div class="nav-item" id="nav-patients" onclick="showPage('patients')">
+    <div class="nav-item" id="nav-patients" onclick="togglePatientList()">
       患者一覧
       <span class="nav-badge" id="nav-badge" style="display:none">0</span>
     </div>
+    <div id="sb-patient-list" style="display:none"></div>
     <div class="nav-section-label">詳細</div>
     <div class="nav-item" id="nav-detail" onclick="showPage('detail')" style="display:none">
       <span id="navDetailName" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">患者詳細</span>
@@ -1046,7 +1051,12 @@ function showPage(name) {
   document.getElementById('page-' + name).classList.add('active');
   document.getElementById('nav-' + name)?.classList.add('active');
   document.getElementById('topbarTitle').textContent = pageTitles[name] || name;
-  if (name === 'dashboard') loadDashboard();
+  if (name === 'dashboard') {
+    const list = document.getElementById('sb-patient-list');
+    const arrow = document.getElementById('sb-pt-arrow');
+    if (list) list.style.display = 'none';
+    loadDashboard();
+  }
   if (name === 'patients') loadPatients();
 }
 
@@ -1124,9 +1134,27 @@ async function loadDashboard() {
 /* ════════════════════════════════
    PATIENT LIST
 ════════════════════════════════ */
+function updateSidebarPatientList(patients) {
+  const el = document.getElementById('sb-patient-list');
+  if (!el) return;
+  if (!patients.length) { el.innerHTML = ''; return; }
+  el.innerHTML = patients.map(p =>
+    `<div class="sb-pt-item${currentPatientId === p.id ? ' active' : ''}" id="sb-pt-${p.id}" onclick="openPatient('${p.id}')">${p.name}</div>`
+  ).join('');
+}
+
+function togglePatientList() {
+  showPage('patients');
+  const list = document.getElementById('sb-patient-list');
+  if (!list) return;
+  const open = list.style.display !== 'none';
+  list.style.display = open ? 'none' : 'block';
+}
+
 async function loadPatients(query='') {
   const url = query ? `/api/patients?q=${encodeURIComponent(query)}` : '/api/patients';
   const patients = await api('GET', url);
+  if (!query) updateSidebarPatientList(patients);
   const grid = document.getElementById('patientGrid');
   if (!patients.length) {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-msg">患者が見つかりません</div></div>';
@@ -1240,6 +1268,9 @@ async function openPatient(id) {
     document.getElementById('nav-detail').style.display = 'flex';
     document.getElementById('navDetailName').textContent = currentPatient.name;
     document.getElementById('breadcrumbName').textContent = currentPatient.name;
+    document.querySelectorAll('.sb-pt-item').forEach(el => {
+      el.classList.toggle('active', el.id === 'sb-pt-' + id);
+    });
     showPage('detail');
     renderDetail();
     switchTab('overview');
@@ -2257,6 +2288,7 @@ window.addEventListener('beforeunload', () => {
     // ヘッダにユーザー名/ログアウトボタンを差し込み
     setupHeaderUser(j.username);
     loadDashboard();
+    api('GET', '/api/patients').then(pts => updateSidebarPatientList(pts || [])).catch(() => {});
     requestNotificationPermission();
   } catch {
     gotoLogin();
