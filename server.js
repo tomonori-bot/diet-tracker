@@ -162,6 +162,62 @@ app.get('/api/backup', async (req, res) => {
   res.send(JSON.stringify(db, null, 2));
 });
 
+/* ═══════════════════════════════════════════════════════
+   OWNER API（運営者専用・ADMIN_USERのみアクセス可）
+═══════════════════════════════════════════════════════ */
+async function requireOwner(req, res, next) {
+  const token = getToken(req);
+  if (!token) return res.status(401).json({ error: 'No token' });
+  const db = await loadDB();
+  const sess = db.sessions[token];
+  if (!sess || sess.username !== ADMIN_USER) return res.status(403).json({ error: 'Owner only' });
+  next();
+}
+
+// トレーナー一覧（顧客数・最終ログイン付き）
+app.get('/api/owner/trainers', requireOwner, async (req, res) => {
+  const db = await loadDB();
+  // 各トレーナーの顧客数を集計
+  const patientCounts = {};
+  for (const p of db.patients || []) {
+    const owner = p.ownerId || ADMIN_USER;
+    patientCounts[owner] = (patientCounts[owner] || 0) + 1;
+  }
+  // 各トレーナーの最終ログインをセッションから取得
+  const lastLogins = {};
+  for (const sess of Object.values(db.sessions || {})) {
+    const u = sess.username;
+    if (!lastLogins[u] || sess.createdAt > lastLogins[u]) {
+      lastLogins[u] = sess.createdAt;
+    }
+  }
+  const trainers = (db.users || []).map(u => ({
+    id: u.id,
+    username: u.username,
+    createdAt: u.createdAt,
+    patientCount: patientCounts[u.username] || 0,
+    lastLogin: lastLogins[u.username] || null,
+  }));
+  res.json(trainers);
+});
+
+// トレーナー削除（そのトレーナーの患者・セッションも削除）
+app.delete('/api/owner/trainers/:username', requireOwner, async (req, res) => {
+  const { username } = req.params;
+  if (username === ADMIN_USER) return res.status(400).json({ error: 'オーナーアカウントは削除できません' });
+  const db = await loadDB();
+  // ユーザー削除
+  db.users = (db.users || []).filter(u => u.username !== username);
+  // そのユーザーのセッション削除
+  for (const [token, sess] of Object.entries(db.sessions || {})) {
+    if (sess.username === username) delete db.sessions[token];
+  }
+  // そのユーザーの患者削除
+  db.patients = (db.patients || []).filter(p => (p.ownerId || ADMIN_USER) !== username);
+  await saveDB(db);
+  res.json({ ok: true });
+});
+
 /* ─── ルート(/) は admin に飛ばす（admin内で未認証ならlogin.htmlへリダイレクト） ─── */
 app.get('/', (req, res) => res.redirect('/admin.html'));
 

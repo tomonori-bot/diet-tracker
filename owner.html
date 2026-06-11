@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BodyLog 運営管理</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hiragino Sans','Yu Gothic',sans-serif;background:#f0f4f8;color:#1e293b;font-size:14px}
+
+  .header{background:#0f172a;color:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+  .header-logo{font-size:18px;font-weight:800}
+  .header-logo span{color:#38bdf8}
+  .header-sub{font-size:11px;color:#94a3b8;margin-top:2px}
+  .header-right{display:flex;align-items:center;gap:12px;font-size:13px;color:#94a3b8}
+  .badge-owner{background:#7c3aed;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px}
+
+  .container{max-width:1000px;margin:0 auto;padding:28px 24px}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+  .stat-card{background:#fff;border-radius:12px;padding:20px 24px;border-top:4px solid #38bdf8}
+  .stat-card.green{border-top-color:#22c55e}
+  .stat-card.purple{border-top-color:#7c3aed}
+  .stat-label{font-size:11px;font-weight:700;color:#64748b;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+  .stat-num{font-size:32px;font-weight:800;color:#0f172a}
+  .stat-sub{font-size:11px;color:#94a3b8;margin-top:4px}
+
+  .card{background:#fff;border-radius:12px;padding:20px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .section-title{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:16px}
+
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.05em;padding:8px 12px;border-bottom:2px solid #f1f5f9}
+  td{padding:14px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#f8fafc}
+
+  .trainer-name{font-weight:700;color:#0f172a;font-size:15px}
+  .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700}
+  .badge-active{background:#dcfce7;color:#16a34a}
+  .badge-old{background:#f1f5f9;color:#94a3b8}
+
+  .patient-num{font-weight:700;font-size:16px}
+  .last-login-recent{color:#16a34a;font-weight:600;font-size:12px}
+  .last-login-normal{color:#64748b;font-size:12px}
+  .last-login-none{color:#cbd5e1;font-size:12px}
+
+  .btn{display:inline-flex;align-items:center;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+  .btn-danger{background:#fee2e2;color:#dc2626}
+  .btn-danger:hover{background:#fecaca}
+
+  .notice{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:24px;font-size:12px;color:#92400e}
+
+  .empty{text-align:center;padding:40px;color:#94a3b8}
+  .loading{text-align:center;padding:40px;color:#94a3b8}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+  .toast.show{opacity:1}
+
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+  .modal-bg.show{display:flex}
+  .modal{background:#fff;border-radius:14px;padding:28px;width:360px;text-align:center}
+  .modal h3{font-size:16px;font-weight:700;margin-bottom:10px;color:#0f172a}
+  .modal p{font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.6}
+  .modal-btns{display:flex;gap:10px;justify-content:center}
+  .btn-cancel{background:#f1f5f9;color:#64748b;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none}
+  .btn-confirm-del{background:#dc2626;color:#fff;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none}
+
+  @media(max-width:640px){
+    .stats{grid-template-columns:1fr}
+    .header{padding:12px 16px}
+    .container{padding:16px}
+    td,th{padding:10px 8px}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-logo">Body<span>Log</span></div>
+    <div class="header-sub">運営者管理ダッシュボード</div>
+  </div>
+  <div class="header-right">
+    <span class="badge-owner">OWNER</span>
+    <span id="ownerName">—</span>
+    <span style="color:#475569;cursor:pointer" onclick="doLogout()">ログアウト</span>
+  </div>
+</div>
+
+<div class="container">
+  <div class="notice">⚠️ このページはあなた（運営者）専用です。adminアカウント以外はアクセスできません。</div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">登録トレーナー数</div>
+      <div class="stat-num" id="statTrainers">—</div>
+      <div class="stat-sub" id="statTrainersSub"></div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">総顧客数（全トレーナー合計）</div>
+      <div class="stat-num" id="statPatients">—</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-label">アクティブ率（30日以内ログイン）</div>
+      <div class="stat-num" id="statActive">—</div>
+    </div>
+  </div>
+
+  <!-- TRAINER LIST -->
+  <div class="card">
+    <div class="section-title">トレーナー一覧</div>
+    <div id="trainerTable"><div class="loading">読み込み中...</div></div>
+  </div>
+</div>
+
+<!-- 削除確認モーダル -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>アカウントを削除しますか？</h3>
+    <p id="modalMsg"></p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-confirm-del" onclick="confirmDelete()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TOKEN_KEY = 'bodylog_token';
+let deleteTarget = null;
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function gotoLogin() { location.href = '/login.html'; }
+
+async function api(method, path, body) {
+  const res = await fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 401 || res.status === 403) { gotoLogin(); return null; }
+  return res.json();
+}
+
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = type === 'error' ? '#dc2626' : '#1e293b';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function relativeTime(isoStr) {
+  if (!isoStr) return null;
+  const diff = Date.now() - new Date(isoStr).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return '本日';
+  if (days === 1) return '昨日';
+  if (days < 7) return `${days}日前`;
+  if (days < 30) return `${Math.floor(days / 7)}週間前`;
+  return `${Math.floor(days / 30)}ヶ月前`;
+}
+
+function formatDate(isoStr) {
+  if (!isoStr) return '—';
+  return isoStr.slice(0, 10);
+}
+
+function openModal(username, patientCount) {
+  deleteTarget = username;
+  document.getElementById('modalMsg').textContent =
+    `「${username}」のアカウントを削除します。\n登録中の顧客 ${patientCount}人のデータも一緒に削除されます。この操作は取り消せません。`;
+  document.getElementById('modalBg').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('show');
+  deleteTarget = null;
+}
+
+async function confirmDelete() {
+  if (!deleteTarget) return;
+  closeModal();
+  const res = await api('DELETE', `/api/owner/trainers/${encodeURIComponent(deleteTarget)}`);
+  if (res?.ok) {
+    toast(`「${deleteTarget}」を削除しました`);
+    loadTrainers();
+  } else {
+    toast('削除に失敗しました', 'error');
+  }
+}
+
+async function loadTrainers() {
+  const trainers = await api('GET', '/api/owner/trainers');
+  if (!trainers) return;
+
+  // サマリー更新
+  const totalPatients = trainers.reduce((s, t) => s + t.patientCount, 0);
+  const now = Date.now();
+  const activeCount = trainers.filter(t =>
+    t.lastLogin && (now - new Date(t.lastLogin).getTime()) < 30 * 86400000
+  ).length;
+
+  document.getElementById('statTrainers').textContent = trainers.length;
+  document.getElementById('statPatients').textContent = totalPatients;
+  document.getElementById('statActive').textContent =
+    trainers.length ? Math.round(activeCount / trainers.length * 100) + '%' : '—';
+
+  if (!trainers.length) {
+    document.getElementById('trainerTable').innerHTML =
+      '<div class="empty">まだトレーナーが登録されていません</div>';
+    return;
+  }
+
+  const rows = trainers.map(t => {
+    const lastLoginStr = relativeTime(t.lastLogin);
+    const isRecent = t.lastLogin && (now - new Date(t.lastLogin).getTime()) < 7 * 86400000;
+    const loginClass = !t.lastLogin ? 'last-login-none' : isRecent ? 'last-login-recent' : 'last-login-normal';
+    const loginText = lastLoginStr || 'ログイン記録なし';
+    const isOld = t.lastLogin && (now - new Date(t.lastLogin).getTime()) > 30 * 86400000;
+    const badge = isOld
+      ? `<span class="badge badge-old">未活動</span>`
+      : `<span class="badge badge-active">アクティブ</span>`;
+
+    return `<tr>
+      <td><div class="trainer-name">${t.username}</div></td>
+      <td>${badge}</td>
+      <td><span class="patient-num">${t.patientCount}</span> 人</td>
+      <td style="color:#64748b;font-size:12px">${formatDate(t.createdAt)}</td>
+      <td><span class="${loginClass}">${loginText}</span></td>
+      <td><button class="btn btn-danger" onclick="openModal('${t.username}', ${t.patientCount})">削除</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('trainerTable').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>トレーナー名</th>
+        <th>ステータス</th>
+        <th>顧客数</th>
+        <th>登録日</th>
+        <th>最終ログイン</th>
+        <th>操作</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+async function doLogout() {
+  await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+  localStorage.removeItem(TOKEN_KEY);
+  gotoLogin();
+}
+
+// 初期化
+(async function init() {
+  const token = getToken();
+  if (!token) { gotoLogin(); return; }
+  const check = await fetch('/api/auth/check', { headers: { Authorization: 'Bearer ' + token } });
+  const j = await check.json();
+  if (!j.authenticated) { gotoLogin(); return; }
+  // ownerでなければadmin.htmlへ
+  const res = await fetch('/api/owner/trainers', { headers: { Authorization: 'Bearer ' + token } });
+  if (res.status === 403) { location.href = '/admin.html'; return; }
+  document.getElementById('ownerName').textContent = j.username;
+  loadTrainers();
+})();
+</script>
+</body>
+</html>
