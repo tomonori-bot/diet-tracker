@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bodylog-v4';
+const CACHE_NAME = 'bodylog-v5';
 const STATIC_ASSETS = [
   '/patient.html',
   '/manifest.json',
@@ -49,7 +49,21 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 静的ファイル：キャッシュ優先、なければネットワーク→キャッシュ保存
+  // HTMLファイル：ネットワーク優先（常に最新を取得）、失敗時のみキャッシュ
+  if (url.pathname.endsWith('.html') || url.pathname === '/' ) {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // 画像・アイコン等：キャッシュ優先、なければネットワーク→キャッシュ保存
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
