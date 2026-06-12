@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GymNavi（仮）— ジムの前で、もう迷わない。</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#243042;--ink-soft:#5b6878;--bg:#fbfcfe;--bg-card:#fff;
+    --blue:#4a7ab0;--blue-deep:#36608f;--blue-soft:#e4eef8;
+    --accent:#e8825a;--line:#e3e9f0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'Zen Kaku Gothic New',sans-serif;color:var(--ink);background:var(--bg);line-height:1.9;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px;}
+  .narrow{max-width:760px;margin:0 auto;padding:0 28px;}
+  h1,h2,h3,.brand{font-family:'Zen Maru Gothic',sans-serif;}
+
+  nav{position:sticky;top:0;z-index:50;background:rgba(251,252,254,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;}
+  .brand{font-weight:700;font-size:19px;letter-spacing:.02em;color:var(--blue-deep);}
+  .brand small{font-size:11px;color:var(--ink-soft);font-weight:500;margin-left:6px;}
+  .right{display:flex;align-items:center;gap:20px;}
+  .back{font-size:13px;text-decoration:none;color:var(--ink-soft);}
+  .back:hover{color:var(--ink);}
+  nav a.cta{font-size:14px;text-decoration:none;color:#fff;background:var(--blue);padding:9px 18px;border-radius:999px;font-weight:500;transition:.2s;}
+  nav a.cta:hover{background:var(--blue-deep);}
+
+  .ribbon{background:var(--blue-soft);color:var(--blue-deep);text-align:center;font-size:13px;padding:8px;letter-spacing:.04em;}
+
+  .hero{padding:104px 0 96px;text-align:center;position:relative;overflow:hidden;}
+  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%, var(--blue-soft) 0%, transparent 62%);}
+  .hero .wrap{position:relative;z-index:1;}
+  .hero .tag{display:inline-block;font-size:13px;letter-spacing:.16em;color:var(--blue-deep);border:1px solid #cfe0f0;background:#fff;padding:6px 16px;border-radius:999px;margin-bottom:30px;}
+  .hero h1{font-size:clamp(28px,5.6vw,52px);line-height:1.45;font-weight:700;margin-bottom:24px;}
+  .hero h1 em{font-style:normal;color:var(--blue-deep);}
+  .hero p{font-size:clamp(15px,2.4vw,18px);color:var(--ink-soft);max-width:560px;margin:0 auto 38px;}
+  .btn{display:inline-block;background:var(--blue);color:#fff;text-decoration:none;font-family:'Zen Maru Gothic';font-weight:700;font-size:16px;padding:15px 40px;border-radius:999px;transition:.2s;}
+  .btn:hover{background:var(--blue-deep);transform:translateY(-2px);}
+  .free-note{display:block;margin-top:16px;font-size:13px;color:var(--ink-soft);}
+
+  section{padding:90px 0;}
+  .eyebrow{font-size:13px;letter-spacing:.2em;color:var(--blue-deep);text-align:center;margin-bottom:16px;font-weight:500;}
+  .sec-title{font-size:clamp(23px,4vw,34px);text-align:center;line-height:1.5;margin-bottom:16px;font-weight:700;}
+  .sec-lead{text-align:center;color:var(--ink-soft);max-width:600px;margin:0 auto 50px;}
+
+  .empathy{background:#eef2f7;}
+  .bubble{max-width:640px;margin:0 auto;}
+  .bubble .b{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 24px;margin-bottom:16px;font-size:16px;position:relative;box-shadow:0 6px 20px rgba(60,90,140,.05);}
+  .bubble .b::after{content:"";position:absolute;left:36px;bottom:-9px;width:18px;height:18px;background:#fff;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg);}
+  .bubble .me{color:var(--ink-soft);font-size:14px;text-align:right;margin-top:10px;}
+  .reveal{text-align:center;font-family:'Zen Maru Gothic';font-size:clamp(19px,3.2vw,26px);font-weight:700;line-height:1.7;margin-top:40px;}
+  .reveal em{font-style:normal;color:var(--accent);}
+
+  .flow{background:var(--blue-deep);color:#fff;}
+  .flow .eyebrow{color:#bcd4ec;}
+  .flow .sec-title{color:#fff;}
+  .flow .sec-lead{color:#c6d6e8;}
+  .steps3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .stp{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:34px 26px;text-align:center;}
+  .stp .n{font-family:'Zen Maru Gothic';font-size:34px;color:#bcd4ec;line-height:1;}
+  .stp h3{font-size:19px;margin:14px 0 8px;}
+  .stp p{font-size:14px;color:#c6d6e8;}
+  .flow .tagline{text-align:center;margin-top:34px;font-family:'Zen Maru Gothic';font-size:18px;}
+  .flow .tagline em{font-style:normal;color:#bcd4ec;}
+
+  .features{background:var(--bg);}
+  .feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;}
+  .feat{background:#fff;border:1px solid var(--line);border-radius:18px;padding:30px 26px;transition:.2s;}
+  .feat:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(60,90,140,.08);}
+  .feat .ic{width:44px;height:44px;border-radius:12px;background:var(--blue-soft);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px;}
+  .feat h3{font-size:17px;margin-bottom:8px;}
+  .feat p{font-size:14px;color:var(--ink-soft);}
+  .feat .free{display:inline-block;margin-top:12px;font-size:12px;color:var(--blue-deep);background:var(--blue-soft);padding:3px 10px;border-radius:999px;}
+
+  .pain{background:#f0f4f8;}
+  .pain .narrow{text-align:center;}
+  .pain .big{font-family:'Zen Maru Gothic';font-weight:700;font-size:clamp(20px,3.6vw,28px);line-height:1.7;}
+  .pain .big em{font-style:normal;color:var(--accent);}
+  .pain .merit{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px 18px;margin:6px;font-size:15px;}
+
+  .bridge{background:var(--bg);text-align:center;}
+  .bridge .card{background:linear-gradient(135deg,#36608f,#4a7ab0);color:#fff;border-radius:24px;padding:54px 40px;max-width:720px;margin:0 auto;}
+  .bridge h2{font-size:clamp(22px,4vw,30px);margin-bottom:18px;}
+  .bridge p{color:#d6e3f0;margin-bottom:8px;}
+  .bridge .ai{background:rgba(255,255,255,.12);border-radius:14px;padding:16px 22px;margin:24px auto 0;max-width:480px;font-size:15px;text-align:left;}
+  .bridge .ai b{color:#fff;}
+
+  .price{text-align:center;}
+  .price .free-card{background:#fff;border:2px solid var(--blue);border-radius:24px;padding:48px 40px;max-width:440px;margin:0 auto;box-shadow:0 14px 40px rgba(74,122,176,.12);}
+  .price .free-card .amount{font-family:'Zen Maru Gothic';font-size:54px;font-weight:700;color:var(--blue-deep);}
+  .price .free-card ul{list-style:none;text-align:left;margin:24px 0 30px;}
+  .price .free-card li{padding:9px 0 9px 26px;border-bottom:1px dashed var(--line);font-size:15px;position:relative;}
+  .price .free-card li::before{content:"✓";position:absolute;left:0;color:var(--blue);font-weight:700;}
+  .price .free-card li:last-child{border-bottom:none;}
+
+  .cta-sec{background:var(--ink);color:#fff;text-align:center;padding:100px 0;}
+  .cta-sec h2{font-size:clamp(24px,5vw,40px);line-height:1.5;margin-bottom:20px;font-weight:700;}
+  .cta-sec h2 em{font-style:normal;color:#9cc1e8;}
+  .cta-sec p{color:#aeb7c4;margin-bottom:38px;}
+
+  footer{background:var(--ink);color:#8a93a2;text-align:center;padding:36px 0;font-size:13px;border-top:1px solid #313e52;}
+  footer .brand{color:#fff;font-size:16px;margin-bottom:6px;}
+  footer a{color:#9cc1e8;text-decoration:none;}
+
+  @media(max-width:720px){section{padding:66px 0;}.steps3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="ribbon">※ サービス名「GymNavi」は仮称です（後で確定）</div>
+
+<nav>
+  <div class="wrap">
+    <div class="brand">GymNavi<small>仮</small></div>
+    <div class="right">
+      <a href="index.html" class="back">← ONE MORE STEP</a>
+      <a href="#price" class="cta">無料で使う</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap">
+    <span class="tag">FOR ジム初心者</span>
+    <h1>ジムのマシンの前で、<br><em>もう、迷わない。</em></h1>
+    <p>勇気を出して入会したのに、使い方が分からない。<br>誰にも聞けない。——大丈夫。その答え、ポケットに入れておきます。</p>
+    <a href="#price" class="btn">無料ではじめる</a>
+    <span class="free-note">ずっと無料 ・ 登録かんたん ・ 誰にも聞かなくていい</span>
+  </div>
+</header>
+
+<!-- EMPATHY -->
+<section class="empathy">
+  <div class="wrap">
+    <p class="eyebrow">こんな経験、ありませんか</p>
+    <h2 class="sec-title">「行ったけど、何もできなかった」</h2>
+    <div class="bubble">
+      <div class="b">マシンがずらっと並んでる。…これ、どうやって使うんだ？</div>
+      <div class="b">スタッフに聞きたいけど、初心者だと思われるのが恥ずかしい。</div>
+      <div class="b">結局ランニングマシンで15分歩いて、帰る。それが3回続いた。</div>
+      <p class="me">— ジムに入会した、多くの人のリアル</p>
+    </div>
+    <p class="reveal">続かなかったのは、あなたのせいじゃない。<br><em>「やり方」が、そばになかっただけ。</em></p>
+  </div>
+</section>
+
+<!-- CORE FLOW -->
+<section class="flow">
+  <div class="wrap">
+    <p class="eyebrow">HOW IT WORKS</p>
+    <h2 class="sec-title">マシンの前で、3ステップ。</h2>
+    <p class="sec-lead">スマホを開くだけ。誰にも聞かずに、その場で解決します。</p>
+    <div class="steps3">
+      <div class="stp">
+        <div class="n">1</div>
+        <h3>今日やること</h3>
+        <p>「今日はこの3つだけ」。迷わないメニューが最初に決まる。</p>
+      </div>
+      <div class="stp">
+        <div class="n">2</div>
+        <h3>1分ガイド</h3>
+        <p>部位や写真でマシンを探す。設定・フォーム・重量が1分で分かる。</p>
+      </div>
+      <div class="stp">
+        <div class="n">3</div>
+        <h3>記録する</h3>
+        <p>できたら記録。「ジムでちゃんとやれた」が積み上がる。</p>
+      </div>
+    </div>
+    <p class="tagline">迷わない <em>→</em> やれた <em>→</em> 残る。</p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="wrap">
+    <p class="eyebrow">FEATURES</p>
+    <h2 class="sec-title">ぜんぶ、無料で。</h2>
+    <p class="sec-lead">「教えること」は、お金の壁の向こうに置きません。</p>
+    <div class="feat-grid">
+      <div class="feat"><div class="ic">🔍</div><h3>部位・写真で検索</h3><p>マシンの名前を知らなくてOK。鍛えたい部位や写真から探せる。</p><span class="free">無料</span></div>
+      <div class="feat"><div class="ic">📖</div><h3>1分マシンガイド</h3><p>設定→フォーム→重量→よくある間違いまで、縦にスッと読める。</p><span class="free">無料</span></div>
+      <div class="feat"><div class="ic">🩺</div><h3>痛みがある人の注意・代替</h3><p>柔道整復師監修。「やっていいか」が分かる安心。</p><span class="free">無料</span></div>
+      <div class="feat"><div class="ic">📈</div><h3>記録</h3><p>やったことが残る。続けている自分が、目に見える。</p><span class="free">無料</span></div>
+      <div class="feat"><div class="ic">💬</div><h3>AI相談</h3><p>「疲れてるけど何できる？」恥ずかしさゼロで、いつでも聞ける。</p><span class="free">無料</span></div>
+      <div class="feat"><div class="ic">🤝</div><h3>信頼できるトレーナー</h3><p>「もっとちゃんとやりたい」と思ったら。選ばれた専門家と出会える。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN / MERIT -->
+<section class="pain">
+  <div class="narrow">
+    <p class="eyebrow">WHY FREE</p>
+    <p class="big">なぜ、無料なのか。</p>
+    <p style="color:var(--ink-soft);margin:20px 0 28px;">業界は「教えること」を売り物にして、無料では教えません。<br>でも私たちは、踏み出した人を、お金の有無でふるいにかけたくない。</p>
+    <p class="big"><em>まず、ひとりにしない。</em><br>その先で「もっと」と思ったとき、人と組めばいい。</p>
+  </div>
+</section>
+
+<!-- BRIDGE (AI種蒔き) -->
+<section class="bridge">
+  <div class="wrap">
+    <div class="card">
+      <h2>ひとりで、でも、ひとりじゃなく。</h2>
+      <p>AIが、あなたの記録にそっとコメントします。</p>
+      <p>普段は、励まし。続けているあなたを、ちゃんと見ています。</p>
+      <div class="ai">
+        <b>AIコメント例</b><br>
+        「3日続きましたね。フォームも安定してきています。」<br>
+        — そして節目には、こう言うかもしれません。<br>
+        <b>「あなたはもう、自分で動ける人。次はプロと組むと、一気に変わります。」</b>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICE -->
+<section class="price" id="price">
+  <div class="wrap">
+    <p class="eyebrow">PRICE</p>
+    <h2 class="sec-title">料金は、シンプルです。</h2>
+    <div class="free-card">
+      <div style="font-family:'Zen Maru Gothic';color:var(--blue-deep);font-weight:700;">ずっと無料</div>
+      <div class="amount">¥0</div>
+      <ul>
+        <li>マシンガイド（20種〜順次追加）</li>
+        <li>部位・写真検索</li>
+        <li>痛みがある人への注意・代替（柔整監修）</li>
+        <li>記録・AI相談・AIコメント</li>
+        <li>信頼できるトレーナーとの出会い</li>
+      </ul>
+      <a href="#" class="btn" style="width:100%;">無料ではじめる</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-sec">
+  <div class="narrow">
+    <h2>踏み出した勇気を、<br><em>無駄にしない。</em></h2>
+    <p>ジムに行く、その一歩を。今日から、ひとりにしません。</p>
+    <a href="#" class="btn" style="background:#4a7ab0;">無料ではじめる</a>
+  </div>
+</section>
+
+<footer>
+  <div class="brand">GymNavi（仮）</div>
+  <div>踏み出す勇気と、続ける自信を、ポケットの中に。</div>
+  <div style="margin-top:14px;"><a href="index.html">ONE MORE STEP について →</a></div>
+  <div style="margin-top:14px;color:#5b6878;">© 2026 ONE MORE STEP</div>
+</footer>
+
+</body>
+</html>

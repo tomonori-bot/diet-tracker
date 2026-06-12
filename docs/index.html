@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ONE MORE STEP — もう一歩を、ひとりにしない。</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#243042;
+    --ink-soft:#5b6878;
+    --bg:#fbf9f5;
+    --bg-card:#ffffff;
+    --accent:#e8825a;      /* あたたかいテラコッタ */
+    --accent-soft:#f6d9cb;
+    --green:#6fae84;       /* 続ける・成長 */
+    --blue:#4a7ab0;        /* 踏み出す */
+    --line:#ece6dc;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    color:var(--ink);
+    background:var(--bg);
+    line-height:1.9;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px;}
+  .narrow{max-width:760px;margin:0 auto;padding:0 28px;}
+  h1,h2,h3,.brand{font-family:'Zen Maru Gothic',sans-serif;}
+
+  /* nav */
+  nav{
+    position:sticky;top:0;z-index:50;
+    background:rgba(251,249,245,.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;}
+  .brand{font-weight:700;font-size:18px;letter-spacing:.04em;color:var(--ink);}
+  .brand span{color:var(--accent);}
+  nav a.cta{
+    font-size:14px;text-decoration:none;color:#fff;background:var(--accent);
+    padding:9px 18px;border-radius:999px;font-weight:500;transition:.2s;
+  }
+  nav a.cta:hover{background:#d96f45;}
+
+  /* hero */
+  .hero{padding:120px 0 110px;text-align:center;position:relative;overflow:hidden;}
+  .hero::before{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% -10%, #fdeee6 0%, transparent 60%);
+    z-index:0;
+  }
+  .hero .wrap{position:relative;z-index:1;}
+  .hero .tag{
+    display:inline-block;font-size:13px;letter-spacing:.18em;color:var(--accent);
+    border:1px solid var(--accent-soft);background:#fff;padding:6px 16px;border-radius:999px;margin-bottom:34px;
+  }
+  .hero h1{
+    font-size:clamp(30px,6vw,56px);line-height:1.45;font-weight:700;letter-spacing:.02em;
+    margin-bottom:28px;
+  }
+  .hero h1 em{font-style:normal;color:var(--accent);}
+  .hero p{font-size:clamp(15px,2.4vw,18px);color:var(--ink-soft);max-width:540px;margin:0 auto;}
+  .steps{
+    display:flex;gap:10px;justify-content:center;align-items:center;margin-top:56px;flex-wrap:wrap;
+    font-family:'Zen Maru Gothic';color:var(--ink-soft);font-size:14px;
+  }
+  .steps b{color:var(--ink);}
+  .steps .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);}
+
+  /* section common */
+  section{padding:96px 0;}
+  .eyebrow{font-size:13px;letter-spacing:.2em;color:var(--accent);text-align:center;margin-bottom:18px;font-weight:500;}
+  .sec-title{font-size:clamp(24px,4vw,36px);text-align:center;line-height:1.5;margin-bottom:18px;font-weight:700;}
+  .sec-lead{text-align:center;color:var(--ink-soft);max-width:600px;margin:0 auto 56px;}
+
+  /* problem */
+  .problem{background:#f4efe7;}
+  .quote-box{
+    background:#fff;border-radius:20px;padding:40px 36px;border:1px solid var(--line);
+    max-width:680px;margin:0 auto 40px;box-shadow:0 8px 30px rgba(120,100,70,.06);
+  }
+  .quote-box p{font-size:17px;color:var(--ink);margin-bottom:14px;}
+  .quote-box p:last-child{margin-bottom:0;}
+  .quote-box .who{color:var(--ink-soft);font-size:14px;}
+  .reveal{
+    text-align:center;font-family:'Zen Maru Gothic';font-size:clamp(20px,3.4vw,28px);
+    font-weight:700;line-height:1.7;color:var(--ink);
+  }
+  .reveal em{font-style:normal;color:var(--accent);}
+  .unknowns{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;max-width:760px;margin:46px auto 0;}
+  .unknowns div{
+    background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 16px;text-align:center;
+    font-size:14px;color:var(--ink-soft);
+  }
+  .unknowns div b{display:block;color:var(--ink);font-family:'Zen Maru Gothic';margin-bottom:4px;font-size:15px;}
+
+  /* mission */
+  .mission{text-align:center;}
+  .mission .big{
+    font-family:'Zen Maru Gothic';font-weight:700;
+    font-size:clamp(28px,6vw,52px);line-height:1.5;letter-spacing:.02em;margin:10px 0 30px;
+  }
+  .mission .big em{font-style:normal;color:var(--accent);}
+  .mission .sub{color:var(--ink-soft);max-width:560px;margin:0 auto;font-size:16px;}
+
+  /* services */
+  .services{background:var(--ink);color:#fff;}
+  .services .eyebrow{color:var(--accent-soft);}
+  .services .sec-title{color:#fff;}
+  .services .sec-lead{color:#aeb7c4;}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:20px;}
+  .card{
+    background:#2f3c4f;border-radius:22px;padding:40px 34px;position:relative;overflow:hidden;
+    border:1px solid #3a4860;
+  }
+  .card .badge{
+    display:inline-block;font-size:12px;letter-spacing:.14em;padding:5px 13px;border-radius:999px;margin-bottom:22px;font-weight:500;
+  }
+  a.card{transition:transform .2s,box-shadow .2s;}
+  a.card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.25);border-color:var(--green);}
+  .card.step1 .badge{background:rgba(74,122,176,.25);color:#9cc1e8;}
+  .card.step2 .badge{background:rgba(111,174,132,.22);color:#a6dcb9;}
+  .card h3{font-size:24px;margin-bottom:6px;}
+  .card .role{font-size:14px;color:#aeb7c4;margin-bottom:20px;}
+  .card p{color:#c8cfd9;font-size:15px;}
+  .card .phase{font-size:13px;color:#8a93a2;margin-top:22px;padding-top:18px;border-top:1px solid #3a4860;}
+  .arrow-line{text-align:center;color:#8a93a2;margin:30px 0 0;font-size:14px;font-family:'Zen Maru Gothic';}
+
+  /* vision */
+  .vision{background:linear-gradient(180deg,#fdeee6,#fbf9f5);}
+  .vision .list{max-width:600px;margin:30px auto 0;}
+  .vision .list div{
+    display:flex;gap:14px;align-items:flex-start;padding:16px 0;border-bottom:1px dashed var(--line);font-size:16px;
+  }
+  .vision .list div:last-child{border-bottom:none;}
+  .vision .list .ic{color:var(--green);font-weight:700;font-family:'Zen Maru Gothic';flex-shrink:0;}
+
+  /* story */
+  .story .narrow{background:#fff;border:1px solid var(--line);border-radius:24px;padding:56px 48px;box-shadow:0 10px 40px rgba(120,100,70,.07);}
+  .story h3{font-size:22px;text-align:center;margin-bottom:30px;}
+  .story p{font-size:16px;color:var(--ink);margin-bottom:18px;}
+  .story .punch{
+    font-family:'Zen Maru Gothic';font-weight:700;font-size:22px;text-align:center;
+    color:var(--accent);margin:34px 0 10px;line-height:1.6;
+  }
+
+  /* cta */
+  .cta-sec{text-align:center;padding:110px 0;}
+  .cta-sec h2{font-size:clamp(26px,5vw,42px);line-height:1.5;margin-bottom:24px;font-weight:700;}
+  .cta-sec h2 em{font-style:normal;color:var(--accent);}
+  .cta-sec p{color:var(--ink-soft);margin-bottom:40px;}
+  .btn{
+    display:inline-block;background:var(--accent);color:#fff;text-decoration:none;
+    font-family:'Zen Maru Gothic';font-weight:700;font-size:17px;padding:16px 44px;border-radius:999px;transition:.2s;
+  }
+  .btn:hover{background:#d96f45;transform:translateY(-2px);}
+
+  footer{background:var(--ink);color:#8a93a2;text-align:center;padding:40px 0;font-size:13px;}
+  footer .brand{color:#fff;font-size:16px;margin-bottom:8px;}
+
+  @media(max-width:720px){
+    .cards{grid-template-columns:1fr;}
+    section{padding:72px 0;}
+    .story .narrow{padding:40px 26px;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand">ONE MORE <span>STEP</span></div>
+    <a href="#cta" class="cta">お問い合わせ</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap">
+    <span class="tag">PHILOSOPHY</span>
+    <h1>「もう一歩」を、<br><em>ひとりにしない。</em></h1>
+    <p>体を変えたいと思って踏み出した人を、続けたいと願う人を、<br>ひとりにしないために。</p>
+    <div class="steps">
+      <span><b>踏み出す</b></span><span class="dot"></span>
+      <span><b>続ける</b></span><span class="dot"></span>
+      <span><b>自分を信じられるようになる</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- PROBLEM -->
+<section class="problem">
+  <div class="wrap">
+    <p class="eyebrow">THE PROBLEM</p>
+    <h2 class="sec-title">なぜ、人は途中で止まるのか。</h2>
+    <p class="sec-lead">体を変えたいと思う人は、世の中にたくさんいる。<br>でも多くの人が、ある瞬間に止まってしまう。</p>
+
+    <div class="quote-box">
+      <p>「ジムに行っても、何をすればいいか分からなくて。」</p>
+      <p>「やり方を聞いたら、有料コースじゃないと教えられないと言われた。」</p>
+      <p>「先生と頑張った日はいい。でも、家に帰ると元に戻ってしまう。」</p>
+      <p class="who">— 踏み出した人たちの、本当の声</p>
+    </div>
+
+    <p class="reveal">それは、意志の問題ではない。<br><em>ひとりになったとき、次の一手がなかっただけだ。</em></p>
+
+    <div class="unknowns">
+      <div><b>やり方</b>が分からない</div>
+      <div><b>自分の体の状態</b>が分からない</div>
+      <div><b>どう変わるか</b>が分からない</div>
+      <div><b>予防の大切さ</b>が分からない</div>
+      <div><b>誰を信じれば</b>いいか分からない</div>
+    </div>
+  </div>
+</section>
+
+<!-- MISSION -->
+<section class="mission">
+  <div class="narrow">
+    <p class="eyebrow">OUR MISSION</p>
+    <p class="sec-lead" style="margin-bottom:6px;">私たちが果たす役割は、ひとつ。</p>
+    <p class="big">ひとりになる瞬間を、<br><em>なくす。</em></p>
+    <p class="sub">身体に向き合うすべての人に、ひとりになった瞬間でも<br>「次の一手」がある状態を届けます。</p>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section class="services">
+  <div class="wrap">
+    <p class="eyebrow">OUR SERVICES</p>
+    <h2 class="sec-title">ひとつの理念から、ふたつのサービス。</h2>
+    <p class="sec-lead">「踏み出す」から「続ける」まで。<br>それぞれの瞬間に、私たちは寄り添います。</p>
+
+    <div class="cards">
+      <a href="newapp.html" class="card step1" style="text-decoration:none;color:inherit;display:block;">
+        <span class="badge">踏み出した後のひとりをなくす</span>
+        <h3>新アプリ <span style="font-size:13px;color:#9cc1e8;">（GymNavi・仮）</span></h3>
+        <p class="role">For 踏み出した人</p>
+        <p>ジムのマシンの前で立ち尽くす瞬間に。「これをこうやればいい」を、誰にも聞かずにその場で。踏み出す勇気と、続ける自信をポケットの中に。</p>
+        <p class="phase">マシンガイド ／ 記録 ／ AI相談 ／ 信頼できるトレーナーとの出会い</p>
+        <p style="margin-top:18px;color:#9cc1e8;font-family:'Zen Maru Gothic';font-size:14px;">サービスサイトを見る →</p>
+      </a>
+      <a href="bodylog.html" class="card step2" style="text-decoration:none;color:inherit;display:block;">
+        <span class="badge">続けていく166時間のひとりをなくす</span>
+        <h3>BodyLog</h3>
+        <p class="role">For 続ける人とそのトレーナー</p>
+        <p>セッションは週1〜2時間。残りの166時間こそ、体が変わる時間。トレーナーと患者が二人三脚で歩める仕組みを届けます。</p>
+        <p class="phase">問診票 ／ セッション記録 ／ セルフトレーニング管理 ／ 継続の可視化</p>
+        <p style="margin-top:18px;color:#a6dcb9;font-family:'Zen Maru Gothic';font-size:14px;">サービスサイトを見る →</p>
+      </a>
+    </div>
+    <p class="arrow-line">— 新アプリで出会い、BodyLogで続ける。データも想いも、途切れない。 —</p>
+  </div>
+</section>
+
+<!-- HOW THE NEW APP WORKS -->
+<section style="background:#eef3f9;">
+  <div class="wrap">
+    <p class="eyebrow" style="color:#36608f;">STEP 1 ｜ 踏み出す</p>
+    <h2 class="sec-title">ジムのマシンの前で、もう迷わない。</h2>
+    <p class="sec-lead">勇気を出して入会したのに、使い方が分からない。誰にも聞けない。<br>新アプリは、その瞬間にそっと寄り添います。</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:840px;margin:0 auto;">
+      <div style="background:#fff;border:1px solid #dde6f0;border-radius:18px;padding:30px 22px;text-align:center;">
+        <div style="font-family:'Zen Maru Gothic';font-size:32px;color:#4a7ab0;line-height:1;">1</div>
+        <h3 style="font-size:18px;margin:12px 0 6px;">今日やること</h3>
+        <p style="font-size:14px;color:var(--ink-soft);">「今日はこの3つだけ」。迷わないメニューが先に決まる。</p>
+      </div>
+      <div style="background:#fff;border:1px solid #dde6f0;border-radius:18px;padding:30px 22px;text-align:center;">
+        <div style="font-family:'Zen Maru Gothic';font-size:32px;color:#4a7ab0;line-height:1;">2</div>
+        <h3 style="font-size:18px;margin:12px 0 6px;">1分ガイド</h3>
+        <p style="font-size:14px;color:var(--ink-soft);">部位や写真で探して、設定・フォーム・重量が1分で分かる。</p>
+      </div>
+      <div style="background:#fff;border:1px solid #dde6f0;border-radius:18px;padding:30px 22px;text-align:center;">
+        <div style="font-family:'Zen Maru Gothic';font-size:32px;color:#4a7ab0;line-height:1;">3</div>
+        <h3 style="font-size:18px;margin:12px 0 6px;">記録する</h3>
+        <p style="font-size:14px;color:var(--ink-soft);">できたら記録。「ジムでちゃんとやれた」が積み上がる。</p>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:30px;font-family:'Zen Maru Gothic';font-size:18px;color:var(--ink);">迷わない <span style="color:#4a7ab0;">→</span> やれた <span style="color:#4a7ab0;">→</span> 残る。</p>
+
+    <div style="background:linear-gradient(135deg,#36608f,#4a7ab0);color:#fff;border-radius:22px;padding:40px 36px;max-width:680px;margin:46px auto 0;text-align:center;">
+      <h3 style="font-size:21px;margin-bottom:14px;">ひとりで、でも、ひとりじゃなく。</h3>
+      <p style="color:#d6e3f0;font-size:15px;">AIが記録にそっとコメント。普段は励まし、節目にはそっと背中を押します。</p>
+      <div style="background:rgba(255,255,255,.12);border-radius:14px;padding:16px 20px;margin-top:22px;text-align:left;font-size:14px;color:#eaf1f8;">
+        「3日続きましたね。フォームも安定してきています。」<br>
+        — そして節目には。<br>
+        <b style="color:#fff;">「あなたはもう、自分で動ける人。次はプロと組むと一気に変わります。」</b>
+      </div>
+      <p style="color:#bcd4ec;font-size:13px;margin-top:18px;">そうして、信頼できるトレーナー（BodyLog）へ。すべて無料からはじまります。</p>
+    </div>
+
+    <p style="text-align:center;margin-top:34px;">
+      <a href="newapp.html" style="display:inline-block;background:#4a7ab0;color:#fff;text-decoration:none;font-family:'Zen Maru Gothic';font-weight:700;padding:13px 32px;border-radius:999px;">新アプリの詳細を見る →</a>
+    </p>
+  </div>
+</section>
+
+<!-- HOW BODYLOG WORKS -->
+<section style="background:#eef4ee;">
+  <div class="wrap">
+    <p class="eyebrow" style="color:#4f8a66;">STEP 2 ｜ 続ける</p>
+    <h2 class="sec-title">セッションは1時間。<br>変化は、残りの166時間で起きる。</h2>
+    <p class="sec-lead">トレーナーが見られるのは、週に1〜2時間。<br>BodyLogは、その先の166時間をトレーナーと患者が共に歩む時間に変えます。</p>
+
+    <div style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:44px;">
+      <div style="background:#fff;border:1px solid #d6e6db;border-radius:16px;padding:24px 30px;text-align:center;min-width:150px;">
+        <div style="font-family:'Zen Maru Gothic';font-size:34px;color:#4f8a66;line-height:1.2;">168<small style="font-size:16px;">h</small></div>
+        <span style="font-size:13px;color:var(--ink-soft);">1週間</span>
+      </div>
+      <div style="background:#fff;border:1px solid #d6e6db;border-radius:16px;padding:24px 30px;text-align:center;min-width:150px;">
+        <div style="font-family:'Zen Maru Gothic';font-size:34px;color:#4f8a66;line-height:1.2;">1–2<small style="font-size:16px;">h</small></div>
+        <span style="font-size:13px;color:var(--ink-soft);">セッション</span>
+      </div>
+      <div style="background:#fff;border:2px solid #6fae84;border-radius:16px;padding:24px 30px;text-align:center;min-width:150px;">
+        <div style="font-family:'Zen Maru Gothic';font-size:34px;color:#e8825a;line-height:1.2;">166<small style="font-size:16px;">h</small></div>
+        <span style="font-size:13px;color:var(--ink-soft);">ひとりの時間</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;max-width:860px;margin:0 auto;">
+      <div style="background:#fff;border:1px solid #d6e6db;border-radius:14px;padding:20px 16px;text-align:center;"><div style="font-size:22px;">📋</div><b style="font-family:'Zen Maru Gothic';font-size:14px;">問診票QR</b><p style="font-size:13px;color:var(--ink-soft);margin-top:4px;">初回がスムーズに</p></div>
+      <div style="background:#fff;border:1px solid #d6e6db;border-radius:14px;padding:20px 16px;text-align:center;"><div style="font-size:22px;">📝</div><b style="font-family:'Zen Maru Gothic';font-size:14px;">セッション記録</b><p style="font-size:13px;color:var(--ink-soft);margin-top:4px;">宿題・次回プラン</p></div>
+      <div style="background:#fff;border:1px solid #d6e6db;border-radius:14px;padding:20px 16px;text-align:center;"><div style="font-size:22px;">🏃</div><b style="font-family:'Zen Maru Gothic';font-size:14px;">セルフトレ管理</b><p style="font-size:13px;color:var(--ink-soft);margin-top:4px;">166時間を可視化</p></div>
+      <div style="background:#fff;border:1px solid #d6e6db;border-radius:14px;padding:20px 16px;text-align:center;"><div style="font-size:22px;">📈</div><b style="font-family:'Zen Maru Gothic';font-size:14px;">グラフで可視化</b><p style="font-size:13px;color:var(--ink-soft);margin-top:4px;">頑張りが見える</p></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #d6e6db;border-radius:22px;padding:36px;max-width:680px;margin:46px auto 0;text-align:center;">
+      <p style="font-family:'Zen Maru Gothic';font-weight:700;font-size:clamp(18px,3vw,24px);color:var(--ink);line-height:1.6;">「見てくれている人がいる」</p>
+      <p style="color:var(--ink-soft);margin-top:10px;">記録が残る → 頑張りが見える → 続けられる → 体が変わる → 自信が生まれる。<br>その安心が、患者が続けられる本当の理由になります。</p>
+    </div>
+
+    <p style="text-align:center;margin-top:34px;">
+      <a href="bodylog.html" style="display:inline-block;background:#4f8a66;color:#fff;text-decoration:none;font-family:'Zen Maru Gothic';font-weight:700;padding:13px 32px;border-radius:999px;">BodyLogの詳細を見る →</a>
+    </p>
+  </div>
+</section>
+
+<!-- VISION -->
+<section class="vision">
+  <div class="narrow">
+    <p class="eyebrow">OUR VISION</p>
+    <h2 class="sec-title">目指すのは、こんな社会です。</h2>
+    <div class="list">
+      <div><span class="ic">○</span><span>「どうすればいいか分からない」で、諦める人がいなくなる。</span></div>
+      <div><span class="ic">○</span><span>痛くなる前に動ける。迷わず、踏み出せる。</span></div>
+      <div><span class="ic">○</span><span>専門家に「任せきり」ではなく、「二人三脚」になれる。</span></div>
+      <div><span class="ic">○</span><span>自分の体を、自分で扱える人が増えていく。</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- STORY -->
+<section class="story">
+  <div class="narrow">
+    <h3>ある日、彼女は気づいた。</h3>
+    <p>出産から8年。何度ダイエットに挑戦しても、続かなかった。「私は意志が弱いんだ」と、自分を責めてきた。</p>
+    <p>最後にもう一度だけ、と勇気を出してパーソナルを申し込んだ。セッションはいい。でも家に帰ると、また何をすればいいか分からなくなる。</p>
+    <p>そんなとき、トレーナーと一緒に記録を始めた。今日やることが届く。できたら記録する。グラフが動く。次のセッションで「先週、続いてましたね」と言われた。</p>
+    <p>——見てくれている人がいた。ひとりじゃなかった。</p>
+    <p class="punch">ある朝、子どもを抱き上げて気づいた。<br>「あれ、軽い。前より楽だ。」</p>
+    <p style="text-align:center;color:var(--ink-soft);">数字より先に、生活が変わっていた。<br>そして何より——「私にもできた」と、思えるようになっていた。</p>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-sec" id="cta">
+  <div class="narrow">
+    <h2>あなたの「もう一歩」を、<br><em>一緒に。</em></h2>
+    <p>トレーナーの方も、これから始めたい方も、想いに共感してくださる方も。<br>ONE MORE STEP は、踏み出すあなたの隣にいます。</p>
+    <a href="#" class="btn">お問い合わせ</a>
+  </div>
+</section>
+
+<footer>
+  <div class="brand">ONE MORE STEP</div>
+  <div>「もう一歩」を、ひとりにしない。</div>
+  <div style="margin-top:14px;">© 2026 ONE MORE STEP</div>
+</footer>
+
+</body>
+</html>
