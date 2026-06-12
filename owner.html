@@ -47,6 +47,8 @@
   .btn{display:inline-flex;align-items:center;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
   .btn-danger{background:#fee2e2;color:#dc2626}
   .btn-danger:hover{background:#fecaca}
+  .btn-reset{background:#e0f2fe;color:#0284c7;margin-right:6px}
+  .btn-reset:hover{background:#bae6fd}
 
   .notice{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:24px;font-size:12px;color:#92400e}
 
@@ -64,6 +66,7 @@
   .modal-btns{display:flex;gap:10px;justify-content:center}
   .btn-cancel{background:#f1f5f9;color:#64748b;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none}
   .btn-confirm-del{background:#dc2626;color:#fff;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none}
+  .btn-confirm-reset{background:#0284c7;color:#fff;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none}
 
   @media(max-width:640px){
     .stats{grid-template-columns:1fr}
@@ -126,11 +129,30 @@
   </div>
 </div>
 
+<!-- パスワード再設定モーダル -->
+<div class="modal-bg" id="resetModalBg">
+  <div class="modal">
+    <h3>パスワードを再設定</h3>
+    <p id="resetModalMsg" style="margin-bottom:14px"></p>
+    <input type="text" id="newPasswordInput" placeholder="新しいパスワード（6文字以上）"
+      style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;margin-bottom:8px;box-sizing:border-box">
+    <p style="font-size:11px;color:#94a3b8;margin-bottom:18px;text-align:left">
+      ※ 再設定後、このパスワードを本人に伝えてください。<br>
+      ※ そのトレーナーの現在のログインは一旦切れます。
+    </p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeResetModal()">キャンセル</button>
+      <button class="btn-confirm-reset" onclick="confirmReset()">再設定する</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const TOKEN_KEY = 'bodylog_token';
 let deleteTarget = null;
+let resetTarget = null;
 
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
 function gotoLogin() { location.href = '/login.html'; }
@@ -193,6 +215,36 @@ async function confirmDelete() {
   }
 }
 
+function openResetModal(username) {
+  resetTarget = username;
+  document.getElementById('resetModalMsg').textContent = `「${username}」の新しいパスワードを入力してください。`;
+  document.getElementById('newPasswordInput').value = '';
+  document.getElementById('resetModalBg').classList.add('show');
+  setTimeout(() => document.getElementById('newPasswordInput').focus(), 100);
+}
+
+function closeResetModal() {
+  document.getElementById('resetModalBg').classList.remove('show');
+  resetTarget = null;
+}
+
+async function confirmReset() {
+  if (!resetTarget) return;
+  const newPassword = document.getElementById('newPasswordInput').value;
+  if (newPassword.length < 6) {
+    toast('パスワードは6文字以上にしてください', 'error');
+    return;
+  }
+  const target = resetTarget;
+  closeResetModal();
+  const res = await api('POST', `/api/owner/trainers/${encodeURIComponent(target)}/reset-password`, { newPassword });
+  if (res?.ok) {
+    toast(`「${target}」のパスワードを再設定しました`);
+  } else {
+    toast(res?.error || '再設定に失敗しました', 'error');
+  }
+}
+
 async function loadTrainers() {
   const trainers = await api('GET', '/api/owner/trainers');
   if (!trainers) return;
@@ -231,7 +283,10 @@ async function loadTrainers() {
       <td><span class="patient-num">${t.patientCount}</span> 人</td>
       <td style="color:#64748b;font-size:12px">${formatDate(t.createdAt)}</td>
       <td><span class="${loginClass}">${loginText}</span></td>
-      <td><button class="btn btn-danger" onclick="openModal('${t.username}', ${t.patientCount})">削除</button></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-reset" onclick="openResetModal('${t.username}')">PW再設定</button>
+        <button class="btn btn-danger" onclick="openModal('${t.username}', ${t.patientCount})">削除</button>
+      </td>
     </tr>`;
   }).join('');
 

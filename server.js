@@ -201,6 +201,26 @@ app.get('/api/owner/trainers', requireOwner, async (req, res) => {
   res.json(trainers);
 });
 
+// トレーナーのパスワードを再設定（運営者のみ）
+app.post('/api/owner/trainers/:username/reset-password', requireOwner, async (req, res) => {
+  const { username } = req.params;
+  const newPassword = req.body?.newPassword || '';
+  if (newPassword.length < 6) return res.status(400).json({ error: 'パスワードは6文字以上にしてください' });
+  if (username === ADMIN_USER) return res.status(400).json({ error: 'adminのパスワードはRenderの環境変数で変更してください' });
+  const db = await loadDB();
+  const user = (db.users || []).find(u => u.username === username);
+  if (!user) return res.status(404).json({ error: 'トレーナーが見つかりません' });
+  const { salt, hash } = hashPassword(newPassword);
+  user.salt = salt;
+  user.hash = hash;
+  // そのユーザーの既存ログインセッションは無効化（安全のため）
+  for (const [token, sess] of Object.entries(db.sessions || {})) {
+    if (sess.username === username) delete db.sessions[token];
+  }
+  await saveDB(db);
+  res.json({ ok: true });
+});
+
 // トレーナー削除（そのトレーナーの患者・セッションも削除）
 app.delete('/api/owner/trainers/:username', requireOwner, async (req, res) => {
   const { username } = req.params;
