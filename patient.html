@@ -1014,9 +1014,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateOfflineQueueNotice();
 
   const params = new URLSearchParams(location.search);
-  const id = params.get('id');
+  let id = params.get('id');
 
+  // ホーム画面アイコンから開くと start_url(/patient.html) が使われIDが無い。
+  // その場合は前回保存したIDに自動で復帰させる。
   if (!id) {
+    const savedId = localStorage.getItem('bl_patient_id');
+    if (savedId) {
+      location.replace(`/patient.html?id=${encodeURIComponent(savedId)}`);
+      return;
+    }
     showScreen('screenError');
     document.getElementById('errorMsg').textContent =
       'URLに患者IDが含まれていません。\n担当スタッフにお問い合わせください。';
@@ -1027,6 +1034,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const res = await fetch(`/api/patients/${id}`);
     if (!res.ok) throw new Error('Not found');
     patient = await res.json();
+    // 正常に開けたIDを保存（次回ホーム画面から開いたとき用）
+    localStorage.setItem('bl_patient_id', id);
   } catch {
     showScreen('screenError');
     return;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bodylog-v5';
+const CACHE_NAME = 'bodylog-v6';
 const STATIC_ASSETS = [
   '/patient.html',
   '/manifest.json',
