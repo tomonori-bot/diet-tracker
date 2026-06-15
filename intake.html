@@ -175,6 +175,14 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
     </div>
 
+    <div class="q" style="background:#f4efe7;border-radius:12px;padding:14px 16px;margin-bottom:8px;">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:14px;line-height:1.7;">
+        <input type="checkbox" id="f-consent" style="margin-top:5px;flex-shrink:0;width:18px;height:18px;">
+        <span>入力した情報の取り扱いに同意します。<br>
+        <span style="font-size:13px;color:#5b6878;">入力いただいた情報（氏名・連絡先・身体や健康に関する情報・写真などを含みます）は、担当トレーナー・整体師による指導およびセルフケア支援、ならびに本サービスの提供・改善の目的で利用されます。詳しくは<a href="privacy.html" target="_blank" style="color:#4f8a66;">プライバシーポリシー</a>をご確認ください。</span></span>
+      </label>
+    </div>
+
     <button class="btn" id="submitBtn" onclick="submitIntake()">送信する</button>
   </div>
 </div>
@@ -245,6 +253,7 @@ async function submitIntake() {
   if (!job) return showErr('職業を入力してください');
   if (!concerns.length) return showErr('お悩み・症状を1つ以上選んでください');
   if (painValue == null) return showErr('痛み・不調レベルを選んでください');
+  if (!document.getElementById('f-consent').checked) return showErr('情報の取り扱いへの同意が必要です');
 
   const payload = {
     name,

@@ -155,6 +155,10 @@
         <input type="checkbox" id="remember" checked>
         <span>このデバイスでログイン状態を保持（30日間）</span>
       </label>
+      <label class="remember" id="consentRow" style="display:none;align-items:flex-start;">
+        <input type="checkbox" id="agree" style="margin-top:3px;">
+        <span><a href="terms.html" target="_blank" style="color:var(--accent)">利用規約</a> および <a href="privacy.html" target="_blank" style="color:var(--accent)">プライバシーポリシー</a> に同意します</span>
+      </label>
       <button type="submit" class="btn" id="loginBtn">ログイン</button>
     </form>
 
@@ -189,24 +193,34 @@ function switchMode(m) {
   const tabReg = document.getElementById('tabRegister');
   const active = 'flex:1;border:none;border-radius:9px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;background:#fff;color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.08)';
   const inactive = 'flex:1;border:none;border-radius:9px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;background:none;color:var(--text2)';
+  const consentRow = document.getElementById('consentRow');
   if (m === 'login') {
     tabLogin.style.cssText = active; tabReg.style.cssText = inactive;
     document.getElementById('subLabel').textContent = '管理者ログイン';
     btn.textContent = 'ログイン';
     document.getElementById('password').autocomplete = 'current-password';
     document.getElementById('infoText').innerHTML = 'PC・スマホ どちらからでもログインできます<br>同じデータがリアルタイムで共有されます 📱💻';
+    consentRow.style.display = 'none';
   } else {
     tabReg.style.cssText = active; tabLogin.style.cssText = inactive;
     document.getElementById('subLabel').textContent = '新規アカウント登録';
     btn.textContent = '登録する';
     document.getElementById('password').autocomplete = 'new-password';
     document.getElementById('infoText').innerHTML = 'ユーザー名は3文字以上、パスワードは6文字以上<br>登録したアカウントの患者データはあなただけが見られます 🔒';
+    consentRow.style.display = 'flex';
   }
 }
 
 form.addEventListener('submit', async e => {
   e.preventDefault();
   errEl.classList.remove('show');
+
+  if (mode === 'register' && !document.getElementById('agree').checked) {
+    errEl.textContent = '利用規約・プライバシーポリシーへの同意が必要です';
+    errEl.classList.add('show');
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = mode === 'login' ? 'ログイン中...' : '登録中...';
 
