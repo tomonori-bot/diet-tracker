@@ -3,7 +3,7 @@ const cors = require('cors');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { loadDB, saveDB } = require('./db');
+const { loadDB, saveDB, USE_SUPABASE, uploadPhoto, downloadPhoto, deletePhoto } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -247,7 +247,18 @@ app.get('/data/photos/:file', async (req, res) => {
   const db = await loadDB();
   const sess = token && db.sessions[token];
   if (!sess || sess.role !== 'admin') return res.status(401).end();
-  const filePath = path.join(__dirname, 'data', 'photos', path.basename(req.params.file));
+  const file = path.basename(req.params.file);
+  if (USE_SUPABASE) {
+    // Supabase Storage から取得して配信
+    const buffer = await downloadPhoto(file);
+    if (!buffer) return res.status(404).end();
+    const ext = (file.match(/\.(\w+)$/) || [])[1] || 'jpeg';
+    res.setHeader('Content-Type', `image/${ext}`);
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    return res.send(buffer);
+  }
+  // ローカル開発：ファイルから配信
+  const filePath = path.join(__dirname, 'data', 'photos', file);
   if (!fs.existsSync(filePath)) return res.status(404).end();
   res.sendFile(filePath);
 });
@@ -759,10 +770,17 @@ app.post('/api/patients/:id/photos', requireAdmin, async (req, res) => {
   const photoId = crypto.randomUUID();
   const ext = (dataUrl.match(/^data:image\/(\w+);/) || [])[1] || 'jpg';
   const filename = `${photoId}.${ext}`;
-  const photoDir = path.join(__dirname, 'data', 'photos');
-  if (!fs.existsSync(photoDir)) fs.mkdirSync(photoDir, { recursive: true });
   const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
-  fs.writeFileSync(path.join(photoDir, filename), Buffer.from(base64Data, 'base64'));
+  const buffer = Buffer.from(base64Data, 'base64');
+  if (USE_SUPABASE) {
+    // Supabase Storage に保存（再起動しても消えない）
+    await uploadPhoto(filename, buffer, `image/${ext}`);
+  } else {
+    // ローカル開発：ファイル保存
+    const photoDir = path.join(__dirname, 'data', 'photos');
+    if (!fs.existsSync(photoDir)) fs.mkdirSync(photoDir, { recursive: true });
+    fs.writeFileSync(path.join(photoDir, filename), buffer);
+  }
   const photo = {
     id: photoId, filename,
     url: `/data/photos/${filename}`,
@@ -791,7 +809,11 @@ app.delete('/api/patients/:id/photos/:pid', requireAdmin, async (req, res) => {
   if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
   const photo = (p.photos || []).find(ph => ph.id === req.params.pid);
   if (photo) {
-    try { fs.unlinkSync(path.join(__dirname, 'data', 'photos', photo.filename)); } catch {}
+    if (USE_SUPABASE) {
+      await deletePhoto(photo.filename);
+    } else {
+      try { fs.unlinkSync(path.join(__dirname, 'data', 'photos', photo.filename)); } catch {}
+    }
   }
   p.photos = (p.photos || []).filter(ph => ph.id !== req.params.pid);
   await saveDB(db);

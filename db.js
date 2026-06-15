@@ -100,6 +100,69 @@ async function sbDeleteIn(table, column, values) {
   if (!res.ok) throw new Error(`${table} 削除失敗: ${res.status} ${await res.text()}`);
 }
 
+/* ═══════════ Supabase Storage（写真の永続化） ═══════════
+   写真はRESTのStorage APIで直接読み書きする（supabase-js不使用）。
+   バケット名は 'photos'（非公開）。サーバー経由でのみ配信する。 */
+const STORAGE = SUPABASE_URL + '/storage/v1';
+const PHOTO_BUCKET = 'photos';
+let bucketReady = false;
+
+// バケットが無ければ作る（初回のみ・既存なら無視）
+async function ensurePhotoBucket() {
+  if (bucketReady) return;
+  try {
+    const res = await fetch(`${STORAGE}/bucket`, {
+      method: 'POST',
+      headers: baseHeaders,
+      body: JSON.stringify({ id: PHOTO_BUCKET, name: PHOTO_BUCKET, public: false }),
+    });
+    // 200=作成 / 409=既存 どちらもOK
+    if (res.ok || res.status === 409) bucketReady = true;
+    else console.warn('[storage] バケット作成の確認に失敗:', res.status, await res.text());
+  } catch (e) {
+    console.warn('[storage] バケット作成エラー:', e.message);
+  }
+}
+
+// 写真をアップロード（filename=保存名, buffer=画像バイト, contentType）
+async function uploadPhoto(filename, buffer, contentType) {
+  await ensurePhotoBucket();
+  const url = `${STORAGE}/object/${PHOTO_BUCKET}/${encodeURIComponent(filename)}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': contentType || 'image/jpeg',
+      'x-upsert': 'true',
+    },
+    body: buffer,
+  });
+  if (!res.ok) throw new Error(`写真アップロード失敗: ${res.status} ${await res.text()}`);
+}
+
+// 写真を取得（バイト列を返す）
+async function downloadPhoto(filename) {
+  const url = `${STORAGE}/object/${PHOTO_BUCKET}/${encodeURIComponent(filename)}`;
+  const res = await fetch(url, {
+    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY },
+  });
+  if (!res.ok) return null;
+  const arrayBuf = await res.arrayBuffer();
+  return Buffer.from(arrayBuf);
+}
+
+// 写真を削除
+async function deletePhoto(filename) {
+  const url = `${STORAGE}/object/${PHOTO_BUCKET}/${encodeURIComponent(filename)}`;
+  try {
+    await fetch(url, {
+      method: 'DELETE',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY },
+    });
+  } catch (e) { /* 失敗しても致命的でないので無視 */ }
+}
+
 /* ─── 差分検出のための前回スナップショット ─── */
 let snapshot = { patients: new Map(), users: new Map(), appData: new Map() };
 
@@ -213,4 +276,4 @@ async function saveDB(db) {
   return USE_SUPABASE ? saveDB_supabase(db) : saveDB_file(db);
 }
 
-module.exports = { loadDB, saveDB, USE_SUPABASE };
+module.exports = { loadDB, saveDB, USE_SUPABASE, uploadPhoto, downloadPhoto, deletePhoto };
