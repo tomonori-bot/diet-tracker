@@ -136,6 +136,39 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
     </div>
 
     <div class="card">
+      <div class="sec-title">来院の目的</div>
+      <div class="q">
+        <label class="q-label">主な目的<span class="req">必須</span></label>
+        <div class="q-hint">最も当てはまるものを1つ選んでください</div>
+        <div class="checks" id="f-visitPurpose">
+          <label class="check"><input type="radio" name="visitPurpose" value="痛み改善"><span>痛み改善</span></label>
+          <label class="check"><input type="radio" name="visitPurpose" value="姿勢改善"><span>姿勢改善</span></label>
+          <label class="check"><input type="radio" name="visitPurpose" value="パフォーマンス向上"><span>パフォーマンス向上</span></label>
+          <label class="check"><input type="radio" name="visitPurpose" value="予防・メンテナンス"><span>予防・メンテナンス</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">生活背景</div>
+      <div class="q">
+        <label class="q-label">仕事環境</label>
+        <div class="q-hint">当てはまるものを選んでください</div>
+        <div class="checks" id="f-workStyle">
+          <label class="check"><input type="checkbox" value="デスクワーク中心"><span>デスクワーク中心</span></label>
+          <label class="check"><input type="checkbox" value="立ち仕事中心"><span>立ち仕事中心</span></label>
+          <label class="check"><input type="checkbox" value="力仕事・体を動かす"><span>力仕事・体を動かす</span></label>
+          <label class="check"><input type="checkbox" value="運転が多い"><span>運転が多い</span></label>
+          <label class="check"><input type="checkbox" value="その他"><span>その他</span></label>
+        </div>
+      </div>
+      <div class="q">
+        <label class="q-label">日常習慣（姿勢・スマホ・運動量など）</label>
+        <textarea id="f-lifestyle" placeholder="例：1日中座っている、スマホをよく見る、週1回ジムに通っている など"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="sec-title">お悩みについて</div>
       <div class="q">
         <label class="q-label">現在のお悩み・症状<span class="req">必須</span></label>
@@ -276,6 +309,21 @@ document.querySelectorAll('#f-concerns .check').forEach(lbl => {
   cb.addEventListener('change', () => lbl.classList.toggle('on', cb.checked));
 });
 
+// 仕事環境（複数選択）の見た目トグル
+document.querySelectorAll('#f-workStyle .check').forEach(lbl => {
+  const cb = lbl.querySelector('input');
+  cb.addEventListener('change', () => lbl.classList.toggle('on', cb.checked));
+});
+
+// 来院目的（単一選択ラジオ）の見た目トグル
+document.querySelectorAll('#f-visitPurpose .check').forEach(lbl => {
+  const rb = lbl.querySelector('input');
+  rb.addEventListener('change', () => {
+    document.querySelectorAll('#f-visitPurpose .check').forEach(l => l.classList.remove('on'));
+    if (rb.checked) lbl.classList.add('on');
+  });
+});
+
 // リンクの有効性チェック
 (async () => {
   if (!code) { showInvalid(); return; }
@@ -306,10 +354,14 @@ async function submitIntake() {
   const age = document.getElementById('f-age').value.trim();
   const job = document.getElementById('f-job').value.trim();
   const concerns = [...document.querySelectorAll('#f-concerns input:checked')].map(c => c.value);
+  const visitPurpose = (document.querySelector('#f-visitPurpose input:checked') || {}).value || '';
+  const workStyle = [...document.querySelectorAll('#f-workStyle input:checked')].map(c => c.value);
+  const lifestyle = document.getElementById('f-lifestyle').value.trim();
 
   if (!name) return showErr('お名前を入力してください');
   if (!age) return showErr('年齢を入力してください');
   if (!job) return showErr('職業を入力してください');
+  if (!visitPurpose) return showErr('来院の目的を選んでください');
   if (!concerns.length) return showErr('お悩み・症状を1つ以上選んでください');
   if (painValue == null) return showErr('痛み・不調レベルを選んでください');
 
@@ -327,6 +379,9 @@ async function submitIntake() {
     age,
     gender: document.getElementById('f-gender').value,
     job,
+    visitPurpose,
+    workStyle,
+    lifestyle,
     height: document.getElementById('f-height').value,
     startWeight: document.getElementById('f-startWeight').value,
     targetWeight: document.getElementById('f-targetWeight').value,

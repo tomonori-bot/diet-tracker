@@ -695,9 +695,13 @@ app.post('/api/intake/:code', async (req, res) => {
 
   // 悩み・症状（配列）を文字列にまとめてカルテに残す
   const concerns = Array.isArray(b.concerns) ? b.concerns : [];
+  const workStyle = Array.isArray(b.workStyle) ? b.workStyle : [];
   const karteLines = [];
   if (b.email) karteLines.push(`メール: ${b.email}`);
   if (b.job) karteLines.push(`職業: ${b.job}`);
+  if (b.visitPurpose) karteLines.push(`来院目的: ${b.visitPurpose}`);
+  if (workStyle.length) karteLines.push(`仕事環境: ${workStyle.join('、')}`);
+  if (b.lifestyle) karteLines.push(`日常習慣: ${b.lifestyle}`);
   if (concerns.length) karteLines.push(`悩み・症状: ${concerns.join('、')}`);
   if (b.painLevel != null && b.painLevel !== '') karteLines.push(`痛み・不調レベル: ${b.painLevel}/10`);
   if (b.history) karteLines.push(`既往歴・通院歴: ${b.history}`);
@@ -736,12 +740,13 @@ app.post('/api/intake/:code', async (req, res) => {
     startWeight: b.startWeight ? parseFloat(b.startWeight) : null,
     startDate: new Date().toISOString().slice(0,10),
     targetDate: '',
-    purpose: concerns[0] || b.purpose || '',
+    purpose: b.visitPurpose || concerns[0] || b.purpose || '',
     finalGoal: b.goal || '',
     midGoal: '',
     karteInfo: karteLines.join('\n'),
     intake: {
       email: b.email || '', age: b.age || '', job: b.job || '',
+      visitPurpose: b.visitPurpose || '', workStyle, lifestyle: b.lifestyle || '',
       concerns, painLevel: b.painLevel ?? '', history: b.history || '',
       goal: b.goal || '', note: b.note || '',
       customAnswers,
