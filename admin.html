@@ -2015,7 +2015,7 @@ function syncQuestionInputs() {
     if (label) q.label = label.value;
     if (type) q.type = type.value;
     if (req) q.required = req.checked;
-    if (opts) q.options = opts.value.split(',').map(s => s.trim()).filter(Boolean);
+    if (opts) q.options = opts.value.split(/[,、，\n]/).map(s => s.trim()).filter(Boolean);
   });
 }
 
@@ -2055,7 +2055,7 @@ function renderQuestionsEditor() {
       </div>
       ${needsOptions ? `
       <input type="text" id="q-opts-${i}" value="${(q.options || []).join(', ').replace(/"/g, '&quot;')}"
-        placeholder="選択肢をカンマ区切りで（例：はい, いいえ, わからない）"
+        placeholder="選択肢を「、」で区切って入力（例：はい、いいえ、わからない）"
         style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;margin-top:8px;box-sizing:border-box">
       ` : ''}
     </div>`;
