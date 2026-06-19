@@ -59,7 +59,7 @@ if (USE_SUPABASE) {
   console.log('[db] File mode (data/db.json) — SUPABASE_URL/KEY 未設定');
 }
 
-const empty = () => ({ patients: [], users: [], sessions: {}, intakeCodes: {}, exercises: {} });
+const empty = () => ({ patients: [], users: [], sessions: {}, intakeCodes: {}, exercises: {}, intakeQuestions: {} });
 
 /* ─── Supabase REST 共通ヘルパー ─── */
 const REST = SUPABASE_URL + '/rest/v1';
@@ -189,6 +189,7 @@ async function loadDB_supabase() {
     if (row.key === 'sessions') db.sessions = row.data || {};
     else if (row.key === 'intakeCodes') db.intakeCodes = row.data || {};
     else if (row.key === 'exercises') db.exercises = row.data || {};
+    else if (row.key === 'intakeQuestions') db.intakeQuestions = row.data || {};
     snapshot.appData.set(row.key, JSON.stringify(row.data));
   }
 
@@ -231,6 +232,7 @@ async function saveDB_supabase(db) {
     ['sessions', db.sessions || {}],
     ['intakeCodes', db.intakeCodes || {}],
     ['exercises', db.exercises || {}],
+    ['intakeQuestions', db.intakeQuestions || {}],
   ];
   const upA = [];
   for (const [key, val] of appPairs) {
@@ -257,6 +259,7 @@ function loadDB_file() {
     if (!db.users) db.users = [];
     if (!db.intakeCodes) db.intakeCodes = {};
     if (!db.exercises) db.exercises = {};
+    if (!db.intakeQuestions) db.intakeQuestions = {};
     return db;
   } catch { return empty(); }
 }

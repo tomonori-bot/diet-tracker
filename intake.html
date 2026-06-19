@@ -175,6 +175,12 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
     </div>
 
+    <!-- トレーナー独自のカスタム質問（動的に挿入） -->
+    <div class="card" id="customQuestionsCard" style="display:none">
+      <div class="sec-title">担当者からの質問</div>
+      <div id="customQuestions"></div>
+    </div>
+
     <div class="q" style="background:#f4efe7;border-radius:12px;padding:14px 16px;margin-bottom:8px;">
       <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:14px;line-height:1.7;">
         <input type="checkbox" id="f-consent" style="margin-top:5px;flex-shrink:0;width:18px;height:18px;">
@@ -198,6 +204,58 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
 <script>
 const code = new URLSearchParams(location.search).get('c');
 let painValue = null;
+let customQuestions = [];
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// カスタム質問を画面に描画
+function renderCustomQuestions(questions) {
+  customQuestions = questions || [];
+  if (!customQuestions.length) return;
+  const wrap = document.getElementById('customQuestions');
+  wrap.innerHTML = customQuestions.map((q, i) => {
+    const req = q.required ? ' <span style="color:#d9534f">*</span>' : '';
+    let field = '';
+    if (q.type === 'textarea') {
+      field = `<textarea id="cq-${i}" placeholder="ご記入ください"></textarea>`;
+    } else if (q.type === 'choice') {
+      field = `<div class="checks" id="cq-${i}">` + (q.options || []).map(o =>
+        `<label class="check"><input type="radio" name="cq-${i}" value="${esc(o)}"><span>${esc(o)}</span></label>`
+      ).join('') + `</div>`;
+    } else if (q.type === 'multi') {
+      field = `<div class="checks" id="cq-${i}">` + (q.options || []).map(o =>
+        `<label class="check"><input type="checkbox" value="${esc(o)}"><span>${esc(o)}</span></label>`
+      ).join('') + `</div>`;
+    } else {
+      field = `<input type="text" id="cq-${i}" placeholder="ご記入ください">`;
+    }
+    return `<div class="q"><label class="q-label">${esc(q.label)}${req}</label>${field}</div>`;
+  }).join('');
+  document.getElementById('customQuestionsCard').style.display = 'block';
+}
+
+// カスタム質問の回答を集める。未回答の必須があれば {error:ラベル} を返す
+function collectCustomAnswers() {
+  const answers = [];
+  for (let i = 0; i < customQuestions.length; i++) {
+    const q = customQuestions[i];
+    let answer;
+    if (q.type === 'multi') {
+      answer = [...document.querySelectorAll(`#cq-${i} input:checked`)].map(c => c.value);
+    } else if (q.type === 'choice') {
+      const sel = document.querySelector(`#cq-${i} input:checked`);
+      answer = sel ? sel.value : '';
+    } else {
+      answer = (document.getElementById(`cq-${i}`)?.value || '').trim();
+    }
+    const empty = Array.isArray(answer) ? answer.length === 0 : !answer;
+    if (q.required && empty) return { error: q.label };
+    answers.push({ label: q.label, answer });
+  }
+  return { answers };
+}
 
 // 痛みスケール 1〜10 を生成
 const painWrap = document.getElementById('f-pain');
@@ -227,6 +285,7 @@ document.querySelectorAll('#f-concerns .check').forEach(lbl => {
     if (j.valid) {
       document.getElementById('loadingView').style.display = 'none';
       document.getElementById('formView').style.display = 'block';
+      renderCustomQuestions(j.questions);
     } else showInvalid();
   } catch { showInvalid(); }
 })();
@@ -253,9 +312,15 @@ async function submitIntake() {
   if (!job) return showErr('職業を入力してください');
   if (!concerns.length) return showErr('お悩み・症状を1つ以上選んでください');
   if (painValue == null) return showErr('痛み・不調レベルを選んでください');
+
+  // カスタム質問の回答を集める（必須チェック込み）
+  const cq = collectCustomAnswers();
+  if (cq.error) return showErr(`「${cq.error}」にご回答ください`);
+
   if (!document.getElementById('f-consent').checked) return showErr('情報の取り扱いへの同意が必要です');
 
   const payload = {
+    customAnswers: cq.answers,
     name,
     kana: document.getElementById('f-kana').value.trim(),
     email: document.getElementById('f-email').value.trim(),

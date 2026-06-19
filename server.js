@@ -650,10 +650,37 @@ app.get('/api/intake/code', requireAdmin, async (req, res) => {
   res.json({ code });
 });
 
-/* ─── 問診コードの有効性チェック（顧客ページ用・認証不要） ─── */
+/* ─── トレーナーの問診カスタム質問を取得 ─── */
+app.get('/api/intake/questions', requireAdmin, async (req, res) => {
+  const db = await loadDB();
+  res.json(db.intakeQuestions[req.ownerId] || []);
+});
+
+/* ─── トレーナーの問診カスタム質問を保存（配列まるごと上書き） ─── */
+app.put('/api/intake/questions', requireAdmin, async (req, res) => {
+  const list = Array.isArray(req.body?.questions) ? req.body.questions : [];
+  // 整形：許可された項目だけ・最大20問
+  const clean = list.slice(0, 20).map(q => ({
+    id: q.id || crypto.randomUUID(),
+    label: String(q.label || '').slice(0, 200),
+    type: ['text', 'textarea', 'choice', 'multi'].includes(q.type) ? q.type : 'text',
+    required: !!q.required,
+    options: Array.isArray(q.options) ? q.options.map(o => String(o).slice(0, 100)).filter(Boolean).slice(0, 20) : [],
+  })).filter(q => q.label);
+  const db = await loadDB();
+  db.intakeQuestions[req.ownerId] = clean;
+  await saveDB(db);
+  res.json(clean);
+});
+
+/* ─── 問診コードの有効性チェック＋カスタム質問（顧客ページ用・認証不要） ─── */
 app.get('/api/intake/:code/valid', async (req, res) => {
   const db = await loadDB();
-  res.json({ valid: !!db.intakeCodes[req.params.code] });
+  const owner = db.intakeCodes[req.params.code];
+  res.json({
+    valid: !!owner,
+    questions: owner ? (db.intakeQuestions[owner] || []) : [],
+  });
 });
 
 /* ─── 問診票の送信（認証不要・顧客が記入）→ 顧客を自動新規登録 ─── */
@@ -675,6 +702,18 @@ app.post('/api/intake/:code', async (req, res) => {
   if (b.painLevel != null && b.painLevel !== '') karteLines.push(`痛み・不調レベル: ${b.painLevel}/10`);
   if (b.history) karteLines.push(`既往歴・通院歴: ${b.history}`);
   if (b.note) karteLines.push(`その他・ご要望: ${b.note}`);
+
+  // カスタム質問の回答をカルテに追記
+  const customAnswers = Array.isArray(b.customAnswers) ? b.customAnswers : [];
+  if (customAnswers.length) {
+    karteLines.push('──── 追加質問 ────');
+    for (const a of customAnswers) {
+      const label = String(a.label || '').slice(0, 200);
+      const ans = Array.isArray(a.answer) ? a.answer.join('、') : String(a.answer ?? '');
+      if (label && ans) karteLines.push(`${label}: ${ans}`);
+    }
+  }
+
   karteLines.push(`（問診票より自動登録 ${new Date().toISOString().slice(0,10)}）`);
 
   // 年齢→生年月日の概算（年齢しか聞いていないため、誕生日は1/1で概算）
@@ -705,6 +744,7 @@ app.post('/api/intake/:code', async (req, res) => {
       email: b.email || '', age: b.age || '', job: b.job || '',
       concerns, painLevel: b.painLevel ?? '', history: b.history || '',
       goal: b.goal || '', note: b.note || '',
+      customAnswers,
       submittedAt: new Date().toISOString()
     },
     tags: ['問診票'],

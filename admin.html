@@ -883,9 +883,30 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div id="intakeQr" style="display:inline-block;background:#fff;padding:14px;border-radius:var(--radius);box-shadow:var(--shadow-md)"></div>
     <div style="font-size:10px;color:var(--text3);margin-top:12px;word-break:break-all;padding:0 8px" id="intakeUrlText">発行中...</div>
-    <div class="modal-footer" style="justify-content:center">
+    <div class="modal-footer" style="justify-content:center;flex-wrap:wrap;gap:8px">
       <button class="btn btn-outline btn-sm" onclick="copyIntakeUrl()">URLをコピー</button>
+      <button class="btn btn-primary btn-sm" onclick="openQuestionsModal()">質問をカスタマイズ</button>
       <button class="btn btn-outline btn-sm" onclick="closeModal('intakeModal')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 問診票カスタマイズモーダル -->
+<div class="overlay" id="questionsModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">問診票の質問をカスタマイズ</div>
+      <button class="modal-close" onclick="closeModal('questionsModal')">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.7">
+      基本項目（お名前・年齢・お悩みなど）に加えて、あなた独自の質問を追加できます。<br>
+      ここで設定した質問が、問診票の下に表示されます。
+    </div>
+    <div id="questionsList"></div>
+    <button class="btn btn-outline btn-sm" style="width:100%;margin-top:8px" onclick="addQuestion()">＋ 質問を追加</button>
+    <div class="modal-footer" style="margin-top:16px">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('questionsModal')">キャンセル</button>
+      <button class="btn btn-primary btn-sm" onclick="saveQuestions()">保存する</button>
     </div>
   </div>
 </div>
@@ -1957,6 +1978,108 @@ async function openIntakeModal() {
 function copyIntakeUrl() {
   if (!intakeUrl) return;
   navigator.clipboard.writeText(intakeUrl).then(() => toast('問診票URLをコピーしました'));
+}
+
+/* ════════════════════════════════
+   問診票カスタム質問の編集
+════════════════════════════════ */
+let questionsDraft = [];
+
+async function openQuestionsModal() {
+  openModal('questionsModal');
+  document.getElementById('questionsList').innerHTML =
+    '<div style="text-align:center;color:var(--text3);padding:20px">読み込み中...</div>';
+  try {
+    questionsDraft = await api('GET', '/api/intake/questions') || [];
+  } catch { questionsDraft = []; }
+  renderQuestionsEditor();
+}
+
+function addQuestion() {
+  questionsDraft.push({ id: 'q' + Date.now(), label: '', type: 'text', required: false, options: [] });
+  renderQuestionsEditor();
+}
+
+function removeQuestion(i) {
+  questionsDraft.splice(i, 1);
+  renderQuestionsEditor();
+}
+
+// 入力中の値をdraftに退避（再描画で消えないように）
+function syncQuestionInputs() {
+  questionsDraft.forEach((q, i) => {
+    const label = document.getElementById(`q-label-${i}`);
+    const type = document.getElementById(`q-type-${i}`);
+    const req = document.getElementById(`q-req-${i}`);
+    const opts = document.getElementById(`q-opts-${i}`);
+    if (label) q.label = label.value;
+    if (type) q.type = type.value;
+    if (req) q.required = req.checked;
+    if (opts) q.options = opts.value.split(',').map(s => s.trim()).filter(Boolean);
+  });
+}
+
+function onTypeChange(i) {
+  syncQuestionInputs();
+  renderQuestionsEditor();
+}
+
+function renderQuestionsEditor() {
+  const wrap = document.getElementById('questionsList');
+  if (!questionsDraft.length) {
+    wrap.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px;font-size:13px">まだ質問がありません。「＋ 質問を追加」から作成してください。</div>';
+    return;
+  }
+  wrap.innerHTML = questionsDraft.map((q, i) => {
+    const needsOptions = q.type === 'choice' || q.type === 'multi';
+    return `
+    <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700;color:var(--text3)">質問 ${i + 1}</span>
+        <button class="btn btn-outline btn-xs" style="margin-left:auto;color:#dc2626" onclick="removeQuestion(${i})">削除</button>
+      </div>
+      <input type="text" id="q-label-${i}" value="${(q.label || '').replace(/"/g, '&quot;')}"
+        placeholder="質問文（例：食事制限はありますか？）"
+        style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;margin-bottom:8px;box-sizing:border-box">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <select id="q-type-${i}" onchange="onTypeChange(${i})"
+          style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+          <option value="text"${q.type==='text'?' selected':''}>短い記述</option>
+          <option value="textarea"${q.type==='textarea'?' selected':''}>長い記述</option>
+          <option value="choice"${q.type==='choice'?' selected':''}>選択（1つ）</option>
+          <option value="multi"${q.type==='multi'?' selected':''}>選択（複数可）</option>
+        </select>
+        <label style="font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap">
+          <input type="checkbox" id="q-req-${i}"${q.required?' checked':''} style="width:auto"> 必須
+        </label>
+      </div>
+      ${needsOptions ? `
+      <input type="text" id="q-opts-${i}" value="${(q.options || []).join(', ').replace(/"/g, '&quot;')}"
+        placeholder="選択肢をカンマ区切りで（例：はい, いいえ, わからない）"
+        style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;margin-top:8px;box-sizing:border-box">
+      ` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function saveQuestions() {
+  syncQuestionInputs();
+  // 空ラベルは除外
+  const clean = questionsDraft.filter(q => (q.label || '').trim());
+  // 選択式なのに選択肢が無いものをチェック
+  for (const q of clean) {
+    if ((q.type === 'choice' || q.type === 'multi') && (!q.options || !q.options.length)) {
+      toast(`「${q.label}」の選択肢を入力してください`, 'error');
+      return;
+    }
+  }
+  try {
+    await api('PUT', '/api/intake/questions', { questions: clean });
+    toast('問診票の質問を保存しました');
+    closeModal('questionsModal');
+  } catch {
+    toast('保存に失敗しました', 'error');
+  }
 }
 
 /* ════════════════════════════════
