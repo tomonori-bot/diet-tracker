@@ -351,6 +351,15 @@ input[type=range]::-webkit-slider-thumb{
 .hc-unit{font-size:10px;color:var(--text2);font-weight:500}
 .hc-memo{margin-top:10px;font-size:12px;color:var(--text2);line-height:1.6;
   background:var(--surface2);border-radius:8px;padding:8px 10px}
+/* ── セッション履歴 ── */
+.hc-dur{font-size:11px;font-weight:700;color:var(--accent2);background:rgba(16,185,129,.1);padding:2px 8px;border-radius:10px}
+.sess-block{margin-top:10px}
+.sess-block-label{font-size:10px;font-weight:800;color:var(--text3);letter-spacing:.06em;margin-bottom:5px}
+.exo{background:var(--surface2);border-radius:8px;padding:8px 10px;margin-bottom:6px}
+.exo:last-child{margin-bottom:0}
+.exo-name{font-size:13px;font-weight:800;color:var(--text);margin-bottom:3px}
+.exo-sets{font-size:12px;color:var(--text2);line-height:1.7}
+.exo-set{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1px 7px;margin:2px 4px 2px 0;font-weight:600}
 
 /* ── GRAPH TAB ── */
 .graph-card{
@@ -655,11 +664,11 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ── TAB: 履歴 ── -->
   <div id="tab-history" class="body" style="display:none">
     <div class="section" style="margin-top:4px">
-      <div class="section-title">これまでの記録</div>
+      <div class="section-title">セッション履歴</div>
       <div id="historyList">
         <div class="hist-empty">
           <div class="hist-empty-icon">📋</div>
-          <div>記録を読み込み中...</div>
+          <div>読み込み中...</div>
         </div>
       </div>
     </div>
@@ -1182,57 +1191,70 @@ function switchTab(name) {
 /* ══════════════════════════════════════
    過去履歴タブ
 ══════════════════════════════════════ */
-function renderHistory() {
-  const staffRecs = (patient.records || []).slice().reverse();
-  const patRecs = (patient.patientRecords || []).slice().reverse();
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
 
-  const all = [
-    ...staffRecs.map(r => ({ ...r, _src: 'staff' })),
-    ...patRecs.map(r => ({ ...r, _src: 'patient' }))
-  ].sort((a, b) => b.date.localeCompare(a.date));
+function renderHistory() {
+  const sessions = (patient.sessions || []).slice()
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
   const el = document.getElementById('historyList');
-  if (!all.length) {
-    el.innerHTML = `<div class="hist-empty"><div class="hist-empty-icon">📋</div><div>まだ記録がありません</div></div>`;
+  if (!sessions.length) {
+    el.innerHTML = `<div class="hist-empty"><div class="hist-empty-icon">📋</div><div>まだセッション記録がありません</div></div>`;
     return;
   }
 
-  el.innerHTML = all.map(r => {
-    const h = patient.height;
-    const bmi = (r.weight && h) ? calcBMI(r.weight, h) : null;
-    const bi = bmi ? bmiInfo(bmi) : null;
-    const motiStars = r.moti ? '★'.repeat(r.moti) + '☆'.repeat(5 - r.moti) : null;
-    const srcLabel = r._src === 'patient' ? '自己記録' : 'スタッフ記録';
-    const srcClass = r._src === 'patient' ? 'patient' : 'staff';
+  el.innerHTML = sessions.map(s => {
+    const dateLabel = formatDate(s.date);
+    const durLabel = (s.duration != null && s.duration !== '') ? `${s.duration}分` : '';
 
-    const items = [
-      r.weight != null ? { label:'体重', val: (+r.weight).toFixed(1), unit:'kg' } : null,
-      bmi ? { label:'BMI', val: bmi, unit:'', color: bi.color } : null,
-      r.moti ? { label:'モチベ', val: motiStars, unit:'' } : null,
-    ].filter(Boolean);
+    // 種目（重量×回数×セット）
+    const exercises = Array.isArray(s.exercises) ? s.exercises : [];
+    const exoHtml = exercises.length ? `
+      <div class="sess-block">
+        <div class="sess-block-label">トレーニング内容</div>
+        ${exercises.map(ex => {
+          const sets = Array.isArray(ex.sets) ? ex.sets : [];
+          const setsHtml = sets.length ? sets.map(st => {
+            const w = (st.weight != null && st.weight !== '') ? `${st.weight}kg` : '';
+            const r = (st.reps != null && st.reps !== '') ? `${st.reps}回` : '';
+            const wr = [w, r].filter(Boolean).join('×');
+            return wr ? `<span class="exo-set">${escHtml(wr)}</span>` : '';
+          }).join('') : '';
+          return `<div class="exo">
+            <div class="exo-name">${escHtml(ex.name)}</div>
+            ${setsHtml ? `<div class="exo-sets">${setsHtml}</div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>` : '';
 
-    const dateLabel = formatDate(r.date);
+    // 施術内容
+    const treatHtml = s.treatment ? `
+      <div class="sess-block">
+        <div class="sess-block-label">施術・メニュー</div>
+        <div class="hc-memo" style="margin-top:0">${escHtml(s.treatment)}</div>
+      </div>` : '';
 
-    const trainingItems = patient.trainingItems || [];
-    const checkLines = (r.checkResults && trainingItems.length)
-      ? trainingItems.map(it => `<span style="margin-right:8px">${r.checkResults[it.id] ? '✅' : '⬜'} ${it.text}</span>`).join('')
-      : '';
+    // 宿題
+    const hwHtml = s.homework ? `
+      <div class="sess-block">
+        <div class="sess-block-label">宿題</div>
+        <div class="hc-memo" style="margin-top:0">📝 ${escHtml(s.homework)}</div>
+      </div>` : '';
 
     return `
     <div class="hist-card">
       <div class="hc-head">
         <div class="hc-date">${dateLabel}</div>
-        <span class="hc-source ${srcClass}">${srcLabel}</span>
+        ${durLabel ? `<span class="hc-dur">${durLabel}</span>` : ''}
       </div>
-      ${items.length ? `<div class="hc-grid">
-        ${items.map(it => `
-          <div class="hc-item">
-            <div class="hc-label">${it.label}</div>
-            <div class="hc-val" style="${it.color?'color:'+it.color:''}">${it.val}<span class="hc-unit">${it.unit}</span></div>
-          </div>`).join('')}
-      </div>` : ''}
-      ${checkLines ? `<div class="hc-memo" style="display:flex;flex-wrap:wrap;gap:2px">${checkLines}</div>` : ''}
-      ${r.reflection || r.memo ? `<div class="hc-memo">✏️ ${r.reflection || r.memo}</div>` : ''}
+      ${exoHtml}
+      ${treatHtml}
+      ${hwHtml}
+      ${(!exercises.length && !s.treatment && !s.homework)
+        ? `<div class="hc-memo" style="margin-top:0">この日の記録の詳細はありません</div>` : ''}
     </div>`;
   }).join('');
 }
