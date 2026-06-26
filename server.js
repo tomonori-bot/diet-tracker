@@ -70,25 +70,30 @@ async function requireAdmin(req, res, next) {
 
 /* ─── 新規登録API ─── */
 app.post('/api/auth/register', async (req, res) => {
-  const username = (req.body?.username || '').trim();
+  // 新規登録はメールアドレス方式
+  const email = (req.body?.email || '').trim();
   const password = req.body?.password || '';
-  if (username.length < 3) return res.status(400).json({ error: 'ユーザー名は3文字以上にしてください' });
+  const emailLower = email.toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'メールアドレスの形式が正しくありません' });
+  }
   if (password.length < 6) return res.status(400).json({ error: 'パスワードは6文字以上にしてください' });
   const db = await loadDB();
-  // adminは予約名 + 既存ユーザーと重複不可（大文字小文字無視）
-  const lower = username.toLowerCase();
-  if (lower === ADMIN_USER.toLowerCase()) return res.status(409).json({ error: 'このユーザー名は使用できません' });
-  if (db.users.some(u => u.username.toLowerCase() === lower)) {
-    return res.status(409).json({ error: 'このユーザー名は既に使われています' });
+  // admin予約 + 既存ユーザーのusername/emailと重複不可（大文字小文字無視）
+  if (emailLower === ADMIN_USER.toLowerCase()) return res.status(409).json({ error: 'このメールアドレスは使用できません' });
+  if (db.users.some(u =>
+    (u.username || '').toLowerCase() === emailLower || (u.email || '').toLowerCase() === emailLower)) {
+    return res.status(409).json({ error: 'このメールアドレスは既に登録されています' });
   }
   const { salt, hash } = hashPassword(password);
-  const user = { id: crypto.randomUUID(), username, salt, hash, createdAt: new Date().toISOString() };
+  // username（内部のデータ紐付けキー）= email にする。emailも別途保持。
+  const user = { id: crypto.randomUUID(), username: email, email, salt, hash, createdAt: new Date().toISOString() };
   db.users.push(user);
   // 登録と同時にログイン状態にする
   const token = makeToken();
-  db.sessions[token] = { token, role: 'admin', username, createdAt: new Date().toISOString() };
+  db.sessions[token] = { token, role: 'admin', username: email, createdAt: new Date().toISOString() };
   await saveDB(db);
-  res.json({ token, role: 'admin', username });
+  res.json({ token, role: 'admin', username: email });
 });
 
 /* ─── 認証API ─── */
@@ -101,15 +106,17 @@ app.post('/api/auth/login', async (req, res) => {
   if (username === ADMIN_USER && password === ADMIN_PASS) {
     ok = true;
   } else {
-    // 2) 登録ユーザー（大文字小文字無視で照合）
-    const u = db.users.find(u => u.username.toLowerCase() === (username || '').toLowerCase());
+    // 2) 登録ユーザー：メールアドレス または ユーザー名 で照合（大文字小文字無視）
+    const ident = (username || '').toLowerCase();
+    const u = db.users.find(u =>
+      (u.username || '').toLowerCase() === ident || (u.email || '').toLowerCase() === ident);
     if (u && verifyPassword(password || '', u.salt, u.hash)) {
       ok = true;
-      authUser = u.username;
+      authUser = u.username; // 内部キー(=旧ニックネーム or email)でセッションを作る
     }
   }
   if (!ok) {
-    return res.status(401).json({ error: 'ユーザー名またはパスワードが正しくありません' });
+    return res.status(401).json({ error: 'メールアドレス／ユーザー名またはパスワードが正しくありません' });
   }
   const token = makeToken();
   db.sessions[token] = {

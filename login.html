@@ -148,8 +148,8 @@
 
     <form id="loginForm">
       <div class="field">
-        <label for="username">ユーザー名</label>
-        <input type="text" id="username" autocomplete="username" required autocapitalize="none" autocorrect="off" placeholder="3文字以上">
+        <label for="username" id="idLabel">メールアドレス または ユーザー名</label>
+        <input type="text" id="username" autocomplete="username" required autocapitalize="none" autocorrect="off" placeholder="登録したメールアドレス">
       </div>
       <div class="field">
         <label for="password">パスワード</label>
@@ -205,13 +205,21 @@ function switchMode(m) {
     document.getElementById('password').autocomplete = 'current-password';
     document.getElementById('infoText').innerHTML = 'PC・スマホ どちらからでもログインできます<br>同じデータがリアルタイムで共有されます 📱💻';
     consentRow.style.display = 'none';
+    // ログインはメール・ユーザー名どちらでも可
+    document.getElementById('idLabel').textContent = 'メールアドレス または ユーザー名';
+    const idIn = document.getElementById('username');
+    idIn.type = 'text'; idIn.placeholder = '登録したメールアドレス';
   } else {
     tabReg.style.cssText = active; tabLogin.style.cssText = inactive;
     document.getElementById('subLabel').textContent = '新規アカウント登録';
     btn.textContent = '登録する';
     document.getElementById('password').autocomplete = 'new-password';
-    document.getElementById('infoText').innerHTML = 'ユーザー名は3文字以上、パスワードは6文字以上<br>登録したアカウントの患者データはあなただけが見られます 🔒';
+    document.getElementById('infoText').innerHTML = 'メールアドレスとパスワード（6文字以上）で登録します<br>登録したアカウントの患者データはあなただけが見られます 🔒';
     consentRow.style.display = 'flex';
+    // 新規登録はメールアドレス
+    document.getElementById('idLabel').textContent = 'メールアドレス';
+    const idIn = document.getElementById('username');
+    idIn.type = 'email'; idIn.placeholder = 'you@example.com';
   }
 }
 
@@ -225,19 +233,31 @@ form.addEventListener('submit', async e => {
     return;
   }
 
+  const idValue = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  // 新規登録時はメールアドレスの形式チェック
+  if (mode === 'register' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(idValue)) {
+    errEl.textContent = 'メールアドレスの形式が正しくありません';
+    errEl.classList.add('show');
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = mode === 'login' ? 'ログイン中...' : '登録中...';
 
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value;
   const remember = document.getElementById('remember').checked;
   const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+  // 登録はemail、ログインは識別子(username)として送る
+  const payload = mode === 'register'
+    ? { email: idValue, password }
+    : { username: idValue, password };
 
   try {
     const res = await fetch(endpoint, {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify(payload)
     });
     const j = await res.json();
     if (!res.ok) throw new Error(j.error || (mode === 'login' ? 'ログインに失敗しました' : '登録に失敗しました'));
