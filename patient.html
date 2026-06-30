@@ -17,20 +17,23 @@
 <style>
 /* ═══ Ascend エメラルドテーマ（緑×丸ゴシック・親しみやすさ） ═══ */
 :root{
-  --bg:#eef5f0;--surface:#ffffff;--surface2:#f4f8f6;--surface3:#e6ece8;--border:#e6ece8;
-  --text:#1f2733;--text2:#8a93a3;--text3:#aab3c0;
-  --accent:#10b981;--accent2:#34d399;--danger:#ef4444;--warn:#f59e0b;
-  --grad:linear-gradient(135deg,#10b981,#34d399);
-  --grad2:linear-gradient(135deg,#10b981,#34d399);
-  --shadow:0 2px 12px rgba(16,185,129,.10);
-  --shadow-lg:0 8px 32px rgba(16,185,129,.16);
-  --radius:16px;--radius-sm:12px;
+  --bg:#f5f2ec;--surface:#fffdf8;--surface2:#f0ece3;--surface3:#e4ddd0;--border:#e5ded1;
+  --text:#222a2f;--text2:#6f766f;--text3:#9b9f96;
+  --accent:#2f7d62;--accent2:#68a77c;--danger:#c94a3f;--warn:#b77b2d;
+  --grad:linear-gradient(135deg,#2f7d62,#7fb38d);
+  --grad2:linear-gradient(135deg,#2f7d62,#9bbf86);
+  --shadow:0 1px 2px rgba(32,42,47,.05),0 10px 30px rgba(32,42,47,.08);
+  --shadow-lg:0 4px 12px rgba(32,42,47,.08),0 22px 54px rgba(32,42,47,.14);
+  --radius:20px;--radius-sm:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
 body{
   font-family:'Zen Maru Gothic',-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;
-  background:var(--bg);color:var(--text);font-size:15px;
+  background:
+    radial-gradient(circle at 50% -10%,rgba(127,179,141,.18),transparent 34%),
+    linear-gradient(180deg,#fbfaf6 0%,var(--bg) 36%,#f2eee7 100%);
+  color:var(--text);font-size:15px;
   min-height:100vh;
   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 80px);
   padding-top:env(safe-area-inset-top,0px);
@@ -87,36 +90,43 @@ body{
 
 /* ── HEADER ── */
 .header{
-  background:rgba(255,255,255,.92);
-  border-bottom:1px solid var(--border);
+  background:
+    linear-gradient(160deg,rgba(255,253,248,.97),rgba(244,239,229,.94)),
+    radial-gradient(circle at 50% 0,rgba(47,125,98,.16),transparent 42%);
+  border-bottom:1px solid rgba(229,222,209,.8);
   position:sticky;top:0;z-index:10;
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:0 8px 28px rgba(32,42,47,.06)
 }
-.header-inner{padding:16px 20px 14px;text-align:center}
+.header-inner{padding:22px 20px 18px;text-align:center}
 .logo{
-  font-size:11px;font-weight:800;color:var(--text3);
-  letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px;
+  font-size:10px;font-weight:800;color:var(--accent);
+  letter-spacing:.24em;text-transform:uppercase;margin-bottom:10px;
   display:flex;align-items:center;justify-content:center;gap:6px
 }
-.greeting{font-size:21px;font-weight:900;color:var(--text);letter-spacing:-.5px;line-height:1.3}
-.greeting-sub{font-size:13px;color:var(--text2);margin-top:2px}
+.greeting{font-size:24px;font-weight:900;color:var(--text);letter-spacing:0;line-height:1.35}
+.greeting-sub{font-size:13px;color:var(--text2);margin-top:6px;letter-spacing:0}
 .badge-row{
-  display:flex;align-items:center;justify-content:center;
-  gap:6px;margin-top:8px;flex-wrap:wrap
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;margin:14px auto 0;max-width:430px
 }
 .streak-badge{
-  display:inline-flex;align-items:center;gap:4px;
-  background:rgba(245,158,11,.1);border:1.5px solid rgba(245,158,11,.25);
-  border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--warn)
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  background:rgba(183,123,45,.1);border:1px solid rgba(183,123,45,.22);
+  border-radius:16px;padding:8px 8px;font-size:12px;font-weight:800;color:var(--warn);
+  min-height:38px
 }
 .date-badge{
-  display:inline-flex;align-items:center;gap:4px;
-  background:rgba(16,185,129,.08);border:1.5px solid rgba(16,185,129,.16);
-  border-radius:20px;padding:4px 11px;font-size:12px;font-weight:600;color:var(--accent)
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  background:rgba(47,125,98,.08);border:1px solid rgba(47,125,98,.18);
+  border-radius:16px;padding:8px 8px;font-size:12px;font-weight:800;color:var(--accent);
+  min-height:38px
 }
 .online-dot{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:11px;font-weight:600;color:var(--accent2);
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  background:rgba(255,253,248,.68);border:1px solid var(--border);
+  border-radius:16px;padding:8px 8px;
+  font-size:11px;font-weight:800;color:var(--accent2);
   cursor:pointer;
 }
 .online-dot::before{
@@ -135,25 +145,23 @@ body{
 /* ── BOTTOM NAV ── */
 .bottom-nav{
   position:fixed;bottom:0;left:0;right:0;z-index:50;
-  background:var(--surface);border-top:1px solid var(--border);
-  display:flex;
-  padding-bottom:env(safe-area-inset-bottom,0px);
-  box-shadow:0 -4px 20px rgba(16,185,129,.10)
+  background:rgba(255,253,248,.94);border-top:1px solid rgba(229,222,209,.9);
+  display:flex;gap:6px;
+  padding:8px 10px calc(env(safe-area-inset-bottom,0px) + 8px);
+  box-shadow:0 -10px 30px rgba(32,42,47,.10);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)
 }
 .bn-item{
   flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:2px;padding:9px 0;
+  justify-content:center;gap:3px;padding:8px 0;
   cursor:pointer;border:none;background:none;font-family:inherit;
   color:var(--text3);font-size:10px;font-weight:600;
   transition:color .15s,background .15s;
   -webkit-tap-highlight-color:transparent;
-  position:relative;
+  position:relative;border-radius:16px;min-height:52px
 }
-.bn-item.active{color:var(--accent)}
-.bn-item.active::after{
-  content:'';position:absolute;bottom:0;left:20%;right:20%;
-  height:2px;background:var(--accent);border-radius:2px 2px 0 0
-}
+.bn-item.active{color:var(--accent);background:rgba(47,125,98,.10)}
+.bn-item.active::after{display:none}
 .bn-icon{font-size:20px;line-height:1;transition:transform .15s}
 .bn-item.active .bn-icon{transform:scale(1.12)}
 .bn-badge{
@@ -164,21 +172,25 @@ body{
 }
 
 /* ── BODY ── */
-.body{padding:16px 16px 0;max-width:520px;margin:0 auto}
+.body{padding:18px 16px 0;max-width:520px;margin:0 auto}
 
 /* ── SECTION ── */
 .section{margin-bottom:18px}
 .section-title{
-  font-size:11px;font-weight:800;color:var(--text2);
-  letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;
+  font-size:12px;font-weight:700;color:var(--text2);
+  letter-spacing:.04em;margin-bottom:11px;padding-left:11px;position:relative;
   display:flex;align-items:center;gap:6px
+}
+.section-title::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:13px;border-radius:2px;background:var(--accent)
 }
 
 /* ── GOAL BANNER ── */
 .goal-banner{
-  background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(16,185,129,.04));
-  border:1.5px solid rgba(16,185,129,.2);border-radius:var(--radius);
-  padding:14px 16px;margin-bottom:16px;
+  background:linear-gradient(135deg,rgba(47,125,98,.09),rgba(255,253,248,.78));
+  border:1px solid rgba(47,125,98,.18);border-radius:var(--radius);
+  padding:16px 17px;margin-bottom:16px;box-shadow:var(--shadow);
   display:flex;align-items:flex-start;gap:12px
 }
 .goal-icon{font-size:20px;flex-shrink:0;margin-top:1px}
@@ -187,9 +199,9 @@ body{
 
 /* ── HOMEWORK REMINDER ── */
 .hw-reminder{
-  background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(16,185,129,.02));
-  border:1.5px solid rgba(16,185,129,.18);border-radius:var(--radius);
-  padding:14px 16px;margin-bottom:16px;
+  background:linear-gradient(135deg,rgba(183,123,45,.08),rgba(255,253,248,.76));
+  border:1px solid rgba(183,123,45,.18);border-radius:var(--radius);
+  padding:16px 17px;margin-bottom:16px;box-shadow:var(--shadow);
   display:flex;align-items:flex-start;gap:12px
 }
 .hw-reminder-icon{font-size:20px;flex-shrink:0}
@@ -221,23 +233,34 @@ body{
   font-size:13px;font-weight:600;color:var(--warn)
 }
 
+/* ── 継続を励ますカード ── */
+.cheer-card{
+  display:flex;align-items:center;gap:14px;margin-bottom:16px;
+  background:linear-gradient(135deg,rgba(183,123,45,.13),rgba(255,253,248,.78));
+  border:1px solid rgba(183,123,45,.22);border-radius:var(--radius);
+  padding:16px 17px;box-shadow:var(--shadow)
+}
+.cheer-emoji{font-size:32px;line-height:1;flex-shrink:0}
+.cheer-title{font-size:17px;font-weight:900;color:var(--warn);letter-spacing:-.3px}
+.cheer-sub{font-size:12.5px;color:var(--text2);margin-top:2px;line-height:1.5}
+
 /* ── WEIGHT CARD ── */
 .weight-card{
-  background:var(--surface);border:2px solid var(--border);
-  border-radius:var(--radius);padding:20px 18px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:24px;padding:22px 18px;
   box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s;
   position:relative
 }
-.weight-card:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px rgba(16,185,129,.10)}
+.weight-card:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px rgba(47,125,98,.10),var(--shadow)}
 .weight-row{display:flex;align-items:flex-end;justify-content:center;gap:8px}
 .weight-input{
   background:none;border:none;outline:none;
-  font-size:60px;font-weight:900;color:var(--text);
-  width:180px;text-align:center;font-family:inherit;
-  letter-spacing:-2px;line-height:1
+  font-size:52px;font-weight:900;color:var(--text);
+  width:150px;text-align:center;font-family:inherit;
+  letter-spacing:-1px;line-height:1
 }
 .weight-input::placeholder{color:var(--text3)}
-.weight-unit{font-size:22px;font-weight:700;color:var(--text2);padding-bottom:6px}
+.weight-unit{font-size:20px;font-weight:800;color:var(--text2);padding-bottom:6px}
 .bmi-preview{
   margin-top:12px;padding:10px 14px;
   background:var(--surface2);border-radius:var(--radius-sm);
@@ -255,17 +278,18 @@ body{
 
 /* ── STAR CARD ── */
 .star-card{
-  background:var(--surface);border:1.5px solid var(--border);
-  border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:24px;padding:22px 20px;box-shadow:var(--shadow)
 }
 .star-card.required-unanswered{
   border-color:var(--danger);
   box-shadow:0 0 0 3px rgba(239,68,68,.10)
 }
-.star-row{display:flex;justify-content:center;gap:10px;margin-top:10px}
+.star-row{display:flex;justify-content:center;gap:8px;margin-top:4px}
 .star{
-  font-size:40px;cursor:pointer;color:var(--surface3);
-  transition:all .14s;line-height:1;user-select:none
+  font-size:40px;cursor:pointer;color:#ddd8cc;
+  transition:all .14s;line-height:1;user-select:none;
+  min-width:48px;min-height:48px;display:inline-flex;align-items:center;justify-content:center
 }
 .star:hover{transform:scale(1.18)}
 .star.on{color:var(--warn);filter:drop-shadow(0 2px 8px rgba(245,158,11,.45))}
@@ -298,22 +322,23 @@ input[type=range]::-webkit-slider-thumb{
 
 /* ── MEMO ── */
 .memo-input{
-  width:100%;background:var(--surface);border:1.5px solid var(--border);
-  border-radius:var(--radius);padding:14px 16px;font-size:15px;color:var(--text);
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:16px 17px;font-size:15px;color:var(--text);
   outline:none;font-family:inherit;resize:none;line-height:1.65;
   transition:border-color .15s,box-shadow .15s;display:block
 }
-.memo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(16,185,129,.10)}
+.memo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,125,98,.10)}
 
 /* ── SUBMIT ── */
 .submit-btn{
   width:100%;background:var(--grad);color:#fff;border:none;
-  border-radius:var(--radius);padding:20px;font-size:18px;font-weight:900;
-  cursor:pointer;letter-spacing:-.3px;
-  box-shadow:0 4px 20px rgba(16,185,129,.38);transition:all .2s;
+  border-radius:22px;padding:19px;font-size:17px;font-weight:900;
+  cursor:pointer;letter-spacing:.02em;
+  box-shadow:0 10px 24px rgba(47,125,98,.24),0 2px 6px rgba(47,125,98,.16);transition:all .2s;
   display:flex;align-items:center;justify-content:center;gap:10px;
   font-family:inherit;
 }
+.submit-btn:active{transform:translateY(1px);box-shadow:0 3px 10px rgba(14,159,110,.20)}
 .submit-btn:hover{filter:brightness(1.06);transform:translateY(-2px)}
 .submit-btn:active{transform:translateY(0);filter:brightness(.98)}
 .submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
@@ -360,6 +385,26 @@ input[type=range]::-webkit-slider-thumb{
 .exo-name{font-size:13px;font-weight:800;color:var(--text);margin-bottom:3px}
 .exo-sets{font-size:12px;color:var(--text2);line-height:1.7}
 .exo-set{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1px 7px;margin:2px 4px 2px 0;font-weight:600}
+/* ── 写真グリッド ── */
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.photo-cell{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.photo-cell img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:var(--surface2)}
+.photo-cap{font-size:11px;color:var(--text2);padding:6px 8px;text-align:center}
+/* ── トレーナーからの一言 ── */
+.trainer-msg{margin-top:10px;background:rgba(16,185,129,.08);border:1.5px solid rgba(16,185,129,.22);border-radius:10px;padding:10px 12px}
+.trainer-msg-label{font-size:11px;font-weight:800;color:var(--accent2);margin-bottom:4px}
+.trainer-msg-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap}
+/* ── 開始からの変化バナー ── */
+.change-banner{border-radius:var(--radius);padding:16px;text-align:center;border:1.5px solid}
+.change-banner.down{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25)}
+.change-banner.up{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.25)}
+.change-banner.flat{background:var(--surface2);border-color:var(--border)}
+.change-label{font-size:12px;color:var(--text2);font-weight:600}
+.change-val{font-size:38px;font-weight:900;letter-spacing:-1px;line-height:1.2;margin:2px 0}
+.change-banner.down .change-val{color:var(--accent2)}
+.change-banner.up .change-val{color:var(--warn)}
+.change-unit{font-size:16px;font-weight:700;margin-left:2px}
+.change-sub{font-size:12px;color:var(--text2)}
 
 /* ── GRAPH TAB ── */
 .graph-card{
@@ -427,13 +472,13 @@ input[type=range]::-webkit-slider-thumb{
 /* ── TRAINING CHECKLIST ── */
 .check-item{
   display:flex;align-items:center;gap:14px;
-  background:var(--surface);border:1.5px solid var(--border);
-  border-radius:var(--radius);padding:16px 18px;margin-bottom:10px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:18px 18px;margin-bottom:10px;
   cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent
 }
-.check-item.checked{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.35)}
+.check-item.checked{background:rgba(47,125,98,.09);border-color:rgba(47,125,98,.32);box-shadow:0 0 0 3px rgba(47,125,98,.07)}
 .check-item input[type=checkbox]{
-  width:22px;height:22px;accent-color:var(--accent2);
+  width:24px;height:24px;accent-color:var(--accent);
   flex-shrink:0;cursor:pointer
 }
 .check-item-text{font-size:15px;color:var(--text);line-height:1.4;flex:1}
@@ -532,8 +577,8 @@ input[type=range]::-webkit-slider-thumb{
       <span>グラフ</span>
     </button>
     <button class="bn-item" id="bn-goal" onclick="switchTab('goal')">
-      <div class="bn-icon">🎯</div>
-      <span>目標</span>
+      <div class="bn-icon">👤</div>
+      <span>基本情報</span>
     </button>
   </div>
 
@@ -583,6 +628,15 @@ input[type=range]::-webkit-slider-thumb{
     <!-- 記録フォーム -->
     <div id="recordForm">
 
+      <!-- 継続を励ますバナー -->
+      <div class="cheer-card" id="cheerCard" style="display:none">
+        <div class="cheer-emoji" id="cheerEmoji">🔥</div>
+        <div>
+          <div class="cheer-title" id="cheerTitle"></div>
+          <div class="cheer-sub" id="cheerSub"></div>
+        </div>
+      </div>
+
       <!-- 体重 -->
       <div class="section">
         <div class="section-title">体重</div>
@@ -592,19 +646,6 @@ input[type=range]::-webkit-slider-thumb{
               placeholder="—" step="0.1" min="20" max="300"
               inputmode="decimal" oninput="onWeightInput(this.value)">
             <span class="weight-unit">kg</span>
-          </div>
-          <div class="bmi-preview" id="bmiPreview">
-            <div>
-              <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">BMI</div>
-              <div class="bmi-num" id="bmiNum">—</div>
-            </div>
-            <div>
-              <div class="bmi-label" id="bmiLabel">—</div>
-            </div>
-            <div class="bmi-tip" id="bmiTip"></div>
-          </div>
-          <div class="bmi-formula" id="bmiFormula">
-            📐 <b style="color:var(--text2)">BMI</b>: <span id="bmiFormulaText"></span>
           </div>
         </div>
       </div>
@@ -1077,6 +1118,7 @@ function initScreen() {
   // ストリーク
   const streak = calcStreak();
   document.getElementById('streakBadge').textContent = `🔥 ${streak}日連続`;
+  updateCheerCard(streak, !!todayRec);
 
   // 日付
   const dateStr = new Date().toLocaleDateString('ja-JP', { month:'long', day:'numeric', weekday:'short' });
@@ -1154,9 +1196,6 @@ function showForm() {
   const wval = (todayRec && todayRec.weight != null) ? todayRec.weight : '';
   document.getElementById('weightInput').value = wval;
   document.getElementById('memoInput').value = (todayRec && (todayRec.reflection || todayRec.memo)) || '';
-  document.getElementById('bmiPreview').classList.remove('visible');
-  document.getElementById('bmiFormula').style.display = 'none';
-  if (wval !== '' && typeof onWeightInput === 'function') { try { onWeightInput(wval); } catch {} }
 
   // トレーニングチェックを復元
   renderTrainingChecklist();
@@ -1244,6 +1283,13 @@ function renderHistory() {
         <div class="hc-memo" style="margin-top:0">📝 ${escHtml(s.homework)}</div>
       </div>` : '';
 
+    // トレーナーからの一言・共有事項
+    const msgHtml = s.message ? `
+      <div class="trainer-msg">
+        <div class="trainer-msg-label">💬 担当者より</div>
+        <div class="trainer-msg-text">${escHtml(s.message)}</div>
+      </div>` : '';
+
     return `
     <div class="hist-card">
       <div class="hc-head">
@@ -1253,7 +1299,8 @@ function renderHistory() {
       ${exoHtml}
       ${treatHtml}
       ${hwHtml}
-      ${(!exercises.length && !s.treatment && !s.homework)
+      ${msgHtml}
+      ${(!exercises.length && !s.treatment && !s.homework && !s.message)
         ? `<div class="hc-memo" style="margin-top:0">この日の記録の詳細はありません</div>` : ''}
     </div>`;
   }).join('');
@@ -1383,8 +1430,12 @@ function renderGoalTab() {
   const remaining = (p.targetWeight && latestW) ? +(latestW - p.targetWeight).toFixed(1) : null;
   const streak = calcStreak();
 
+  // 開始からの変化量（プラス=減った）
+  const lost = (p.startWeight != null && latestW != null)
+    ? +(p.startWeight - latestW).toFixed(1) : null;
+
   el.innerHTML = `
-    <div class="section-title" style="margin-bottom:14px">あなたの目標</div>
+    <div class="section-title" style="margin-bottom:14px">目標</div>
 
     ${p.finalGoal ? `
     <div class="goal-banner" style="margin-bottom:14px">
@@ -1419,6 +1470,15 @@ function renderGoalTab() {
       </div>
     </div>` : ''}
 
+    <div class="section-title" style="margin:18px 0 14px">体重・BMI</div>
+
+    ${lost !== null ? `
+    <div class="change-banner ${lost > 0 ? 'down' : lost < 0 ? 'up' : 'flat'}" style="margin-bottom:12px">
+      <div class="change-label">開始体重 ${p.startWeight}kg から</div>
+      <div class="change-val">${lost > 0 ? '−' : lost < 0 ? '＋' : '±'}${Math.abs(lost)}<span class="change-unit">kg</span></div>
+      <div class="change-sub">${lost > 0 ? 'よく頑張っています！' : lost < 0 ? '一緒に巻き返しましょう' : 'スタート地点です'}</div>
+    </div>` : ''}
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
       ${p.startWeight ? `<div class="hc-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
         <div class="hc-label">開始体重</div>
@@ -1433,8 +1493,9 @@ function renderGoalTab() {
         <div class="hc-val">${(+latestW).toFixed(1)}<span class="hc-unit">kg</span></div>
       </div>` : ''}
       ${bmi ? `<div class="hc-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
-        <div class="hc-label">現在のBMI</div>
+        <div class="hc-label">BMI</div>
         <div class="hc-val" style="color:${bi.color}">${bmi}</div>
+        <div style="font-size:11px;font-weight:700;color:${bi.color};margin-top:4px">${bi.label}</div>
       </div>` : ''}
     </div>
 
@@ -1453,13 +1514,14 @@ function renderGoalTab() {
       <div style="font-size:12px;color:var(--text3);margin-top:4px">${daysUntil(p.targetDate)}</div>
     </div>` : ''}
 
-    ${p.homework ? `
-    <div class="hw-reminder">
-      <div class="hw-reminder-icon">📌</div>
-      <div>
-        <div class="hw-reminder-label">ホームワーク</div>
-        <div class="hw-reminder-text">${p.homework}</div>
-      </div>
+    ${(p.photos && p.photos.length) ? `
+    <div class="section-title" style="margin:18px 0 14px">写真</div>
+    <div class="photo-grid">
+      ${p.photos.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(ph => `
+        <div class="photo-cell">
+          <img loading="lazy" src="${ph.url}?pid=${encodeURIComponent(p.id)}" alt="${ph.label||'写真'}">
+          <div class="photo-cap">${ph.label ? escPhoto(ph.label)+' / ' : ''}${ph.date||''}</div>
+        </div>`).join('')}
     </div>` : ''}
   `;
 
@@ -1469,6 +1531,11 @@ function renderGoalTab() {
       if (fill) fill.style.width = prog + '%';
     }, 200);
   }
+}
+
+function escPhoto(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
 function daysUntil(dateStr) {
@@ -1483,6 +1550,36 @@ function daysUntil(dateStr) {
 /* ══════════════════════════════════════
    STREAK
 ══════════════════════════════════════ */
+// 継続を励ますカードを連続日数に応じて表示
+function updateCheerCard(streak, doneToday) {
+  const card = document.getElementById('cheerCard');
+  if (!card) return;
+  let emoji, title, sub;
+  if (streak === 0 && !doneToday) {
+    emoji = '🌱'; title = 'さあ、はじめましょう';
+    sub = '今日の記録が、なりたい自分への第一歩です';
+  } else if (streak >= 14) {
+    emoji = '🏆'; title = `${streak}日連続！`;
+    sub = 'もはや習慣ですね。あなたの努力は本物です';
+  } else if (streak >= 7) {
+    emoji = '🔥'; title = `${streak}日連続！`;
+    sub = '1週間突破！しっかり習慣になってきました';
+  } else if (streak >= 3) {
+    emoji = '🔥'; title = `${streak}日連続！`;
+    sub = 'いい流れです。この調子で続けましょう';
+  } else if (streak >= 1) {
+    emoji = '✨'; title = `${streak}日連続`;
+    sub = 'いいスタート！明日も続けるとさらに弾みがつきます';
+  } else {
+    emoji = '💪'; title = 'おかえりなさい';
+    sub = 'また今日から積み重ねていきましょう';
+  }
+  document.getElementById('cheerEmoji').textContent = emoji;
+  document.getElementById('cheerTitle').textContent = title;
+  document.getElementById('cheerSub').textContent = sub;
+  card.style.display = 'flex';
+}
+
 function calcStreak() {
   const recs = [...(patient.records || []), ...(patient.patientRecords || [])]
     .map(r => r.date).filter(Boolean);
@@ -1514,33 +1611,7 @@ function bmiInfo(bmi) {
 }
 
 function onWeightInput(v) {
-  const w = parseFloat(v);
-  const h = patient?.height;
-  const preview = document.getElementById('bmiPreview');
-  const formula = document.getElementById('bmiFormula');
-  if (w && h) {
-    const bmi = calcBMI(w, h);
-    const info = bmiInfo(bmi);
-    document.getElementById('bmiNum').textContent = bmi;
-    document.getElementById('bmiNum').style.color = info.color;
-    const lbl = document.getElementById('bmiLabel');
-    lbl.textContent = info.label;
-    lbl.style.background = info.bg;
-    lbl.style.color = info.color;
-    if (patient.targetWeight) {
-      const diff = (w - patient.targetWeight).toFixed(1);
-      document.getElementById('bmiTip').textContent =
-        diff <= 0 ? '🎉 目標達成！' : `目標まで -${diff}kg`;
-    }
-    preview.classList.add('visible');
-    const hm = (h / 100).toFixed(2);
-    document.getElementById('bmiFormulaText').textContent =
-      `${w}kg ÷ ${hm}m² = ${bmi}`;
-    formula.style.display = '';
-  } else {
-    preview.classList.remove('visible');
-    formula.style.display = 'none';
-  }
+  // BMIプレビューは廃止（臨床的すぎ・体重を主役にしないため）。体重入力はそのまま記録に使われる。
 }
 
 /* ══════════════════════════════════════
@@ -1703,11 +1774,6 @@ function showCompletionScreen(rec) {
 
   const cards = [
     rec.weight ? `<div class="result-card"><div class="rc-label">今日の体重</div><div class="rc-val">${rec.weight}<span class="rc-unit">kg</span></div></div>` : '',
-    bmi ? (() => {
-      const info = bmiInfo(bmi);
-      return `<div class="result-card"><div class="rc-label">BMI</div><div class="rc-val" style="color:${info.color}">${bmi}</div><div class="rc-sub" style="color:${info.color}">${info.label}</div></div>`;
-    })() : '',
-    bmr ? `<div class="result-card"><div class="rc-label">基礎代謝</div><div class="rc-val">${bmr}<span class="rc-unit">kcal</span></div><div class="rc-sub">消費の基準値</div></div>` : '',
     `<div class="result-card"><div class="rc-label">モチベ</div><div class="rc-val" style="color:var(--warn)">${'★'.repeat(rec.moti)}</div></div>`,
     (() => {
       const ti = patient.trainingItems || [];

@@ -248,13 +248,22 @@ app.delete('/api/owner/trainers/:username', requireOwner, async (req, res) => {
 /* ─── ルート(/) は admin に飛ばす（admin内で未認証ならlogin.htmlへリダイレクト） ─── */
 app.get('/', (req, res) => res.redirect('/admin.html'));
 
-/* ─── 写真ファイル配信（token認証・staticより前に置く） ─── */
+/* ─── 写真ファイル配信（staticより前に置く） ───
+   ・トレーナー：ログイン済みなら全て閲覧可
+   ・顧客：?pid=<患者ID> を付け、その患者が持つ写真のみ閲覧可（自分の写真だけ） */
 app.get('/data/photos/:file', async (req, res) => {
   const token = getToken(req);
   const db = await loadDB();
   const sess = token && db.sessions[token];
-  if (!sess || sess.role !== 'admin') return res.status(401).end();
+  const isAdmin = sess && sess.role === 'admin';
   const file = path.basename(req.params.file);
+  if (!isAdmin) {
+    // 顧客アクセス：指定患者がこの写真を所有しているか確認
+    const pid = req.query.pid;
+    const owner = pid && db.patients.find(x => x.id === pid);
+    const owns = owner && (owner.photos || []).some(ph => ph.filename === file);
+    if (!owns) return res.status(401).end();
+  }
   if (USE_SUPABASE) {
     // Supabase Storage から取得して配信
     const buffer = await downloadPhoto(file);
@@ -360,12 +369,48 @@ app.post('/api/patients', requireAdmin, async (req, res) => {
 
 /* ─── 患者1件取得 ───
    注意：患者用URL(patient.html)からも認証なしで呼ばれるため、ここは所有チェックしない。
-   患者IDはランダムなUUIDなので推測困難。 */
+   患者IDはランダムなUUIDなので推測困難。
+   ★トレーナー(管理者ログイン済み)には全データ、顧客には安全な項目だけを返す。 */
 app.get('/api/patients/:id', async (req, res) => {
   const db = await loadDB();
   const p = db.patients.find(p => p.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
-  res.json(p);
+
+  // 管理者(トレーナー)としてログイン済みか判定
+  const token = getToken(req);
+  const sess = token && db.sessions[token];
+  const isAdmin = sess && sess.role === 'admin';
+  if (isAdmin) return res.json(p);
+
+  // ── 顧客向け：ホワイトリストの安全な項目だけ返す ──
+  // （カルテ・スタッフメモ・次回プラン等の内部情報は最初から含めない）
+  res.json({
+    id: p.id,
+    name: p.name,
+    gender: p.gender,
+    birthdate: p.birthdate,
+    height: p.height,
+    startWeight: p.startWeight,
+    targetWeight: p.targetWeight,
+    startDate: p.startDate,
+    targetDate: p.targetDate,
+    purpose: p.purpose,
+    finalGoal: p.finalGoal,
+    midGoal: p.midGoal,
+    records: p.records || [],
+    patientRecords: p.patientRecords || [],
+    trainingItems: p.trainingItems || [],
+    photos: p.photos || [],
+    sessions: (p.sessions || []).map(s => ({
+      id: s.id,
+      date: s.date,
+      duration: s.duration,
+      treatment: s.treatment,
+      homework: s.homework,
+      message: s.message,
+      exercises: s.exercises || [],
+    })),
+  });
 });
 
 /* ─── 患者更新 ─── */
@@ -459,6 +504,7 @@ app.post('/api/patients/:id/sessions', requireAdmin, async (req, res) => {
     response: req.body.response || '',
     homework: req.body.homework || '',
     nextPlan: req.body.nextPlan || '',
+    message: req.body.message || '',
     staffNote: req.body.staffNote || '',
     duration: req.body.duration != null ? parseInt(req.body.duration) : null,
     exercises: normalizeExercises(req.body.exercises),

@@ -758,6 +758,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
         <textarea id="s-homework" rows="2" placeholder="例：毎日10分ストレッチ、歩数8000歩目標、糖質控えめの食事を意識"></textarea>
       </div>
       <div class="form-group full">
+        <label class="fl" style="color:var(--accent)">💬 顧客への一言・共有事項（顧客アプリに表示）</label>
+        <textarea id="s-message" rows="2" placeholder="例：今日のフォームとても良かったです！この調子で続けましょう。次回までに体調メモがあれば共有してください"></textarea>
+      </div>
+      <div class="form-group full">
         <label class="fl" style="color:var(--warn)">次回プラン</label>
         <textarea id="s-nextPlan" rows="2" placeholder="例：2週間後、体重変化と姿勢を確認してアプローチを調整"></textarea>
       </div>
@@ -1492,6 +1496,7 @@ async function openSessionModal(sessionId=null) {
     document.getElementById('s-response').value = s.response || '';
     document.getElementById('s-homework').value = s.homework || '';
     document.getElementById('s-nextPlan').value = s.nextPlan || '';
+    document.getElementById('s-message').value = s.message || '';
     document.getElementById('s-note').value = s.staffNote || '';
     renderExerciseEditor(s.exercises || []);
   } else {
@@ -1502,6 +1507,7 @@ async function openSessionModal(sessionId=null) {
     document.getElementById('s-response').value = '';
     document.getElementById('s-homework').value = '';
     document.getElementById('s-nextPlan').value = '';
+    document.getElementById('s-message').value = '';
     document.getElementById('s-note').value = '';
     renderExerciseEditor([]);
   }
@@ -1518,6 +1524,7 @@ async function submitSession() {
     response: document.getElementById('s-response').value,
     homework: document.getElementById('s-homework').value,
     nextPlan: document.getElementById('s-nextPlan').value,
+    message: document.getElementById('s-message').value,
     staffNote: document.getElementById('s-note').value,
     exercises: collectExercises(),
   };
