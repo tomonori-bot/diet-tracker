@@ -453,7 +453,7 @@ input[type=range]::-webkit-slider-thumb{
 .change-unit{font-size:16px;font-weight:700;margin-left:2px}
 .change-sub{font-size:12px;color:var(--text2)}
 
-/* ── 現在の状態 ── */
+/* ── 現状 ── */
 .state-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .state-card{
   background:var(--surface);border:1px solid var(--border);
@@ -495,6 +495,17 @@ input[type=range]::-webkit-slider-thumb{
 .prog-bar{background:var(--surface2);border-radius:20px;height:10px;overflow:hidden}
 .prog-fill{height:100%;border-radius:20px;background:var(--grad2);transition:width 1.2s ease}
 .prog-sub{font-size:11px;color:var(--text2);margin-top:6px;text-align:right}
+.level-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(47,125,98,.08);border:1px solid rgba(47,125,98,.18);
+  color:var(--accent);border-radius:999px;padding:4px 10px;
+  font-size:11px;font-weight:700;margin-top:8px
+}
+.progress-section.warm .prog-pct{color:var(--warn)}
+.progress-section.warm .prog-fill{background:linear-gradient(135deg,#b77b2d,#d9a85a)}
+.progress-section.warm .level-chip{
+  background:rgba(183,123,45,.09);border-color:rgba(183,123,45,.2);color:var(--warn)
+}
 .streak-complete{
   background:rgba(245,158,11,.08);border:1.5px solid rgba(245,158,11,.2);
   border-radius:var(--radius);padding:16px;margin-bottom:16px;
@@ -885,13 +896,24 @@ input[type=range]::-webkit-slider-thumb{
       <!-- 進捗バー -->
       <div class="progress-section" id="progressSection" style="display:none">
         <div class="prog-header">
-          <div class="prog-title">目標達成率</div>
+          <div class="prog-title">今日の積み上げ</div>
           <div class="prog-pct" id="progPct">0%</div>
         </div>
         <div class="prog-bar">
           <div class="prog-fill" id="progFill" style="width:0%"></div>
         </div>
         <div class="prog-sub" id="progSub"></div>
+      </div>
+
+      <div class="progress-section warm" id="habitProgressSection" style="display:none">
+        <div class="prog-header">
+          <div class="prog-title">習慣レベル</div>
+          <div class="prog-pct" id="habitPct">Lv.1</div>
+        </div>
+        <div class="prog-bar">
+          <div class="prog-fill" id="habitFill" style="width:0%"></div>
+        </div>
+        <div class="prog-sub" id="habitSub"></div>
       </div>
 
       <!-- ホームワーク -->
@@ -1115,6 +1137,77 @@ function streakCaption(streak, includeToday = false) {
   if (doneThisMonth >= 10) return '今月のリズムが安定してきています';
   if (doneThisMonth >= 1) return '今月の記録が積み上がっています';
   return '今日から今月の習慣を始めましょう';
+}
+
+function latestRecordForDate(dateKey) {
+  const allRecs = [...(patient?.records || []), ...(patient?.patientRecords || [])];
+  return allRecs.filter(r => r.date === dateKey)
+    .sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0] || null;
+}
+
+function calcDailyStack(rec) {
+  if (!rec) {
+    return { score:0, label:'今日はまだこれから', sub:'気分・体重・振り返りなど、できたことから残しましょう' };
+  }
+  const hasMood = !!rec.moti;
+  const hasWeight = rec.weight != null && rec.weight !== '';
+  const hasMemo = !!(rec.reflection || rec.memo || rec.note);
+  const trainingItems = patient?.trainingItems || [];
+  const trainingTotal = trainingItems.length;
+  const trainingDone = trainingItems.filter(item => rec.checkResults?.[item.id]).length;
+
+  let base = 0;
+  if (hasMood) base += 25;
+  if (hasWeight) base += 20;
+  if (hasMemo) base += 20;
+
+  let score = base;
+  if (trainingTotal > 0) {
+    score += Math.round((trainingDone / trainingTotal) * 35);
+  } else {
+    score = Math.round((base / 65) * 100);
+  }
+  score = Math.max(0, Math.min(100, score));
+
+  const doneLabels = [
+    hasMood ? '気分' : null,
+    hasWeight ? '体重' : null,
+    hasMemo ? '振り返り' : null,
+    trainingTotal > 0 ? `トレーニング ${trainingDone}/${trainingTotal}` : null
+  ].filter(Boolean);
+  const sub = doneLabels.length
+    ? `${doneLabels.join('・')} が記録できています`
+    : '小さな記録から始めましょう';
+  const label = score >= 80 ? 'できたことが形になっています'
+    : score >= 50 ? '今日の行動が積み上がっています'
+    : score > 0 ? '小さな一歩を残せています'
+    : '今日はまだこれから';
+  return { score, label, sub };
+}
+
+function habitLevelInfo(includeToday = false) {
+  const streak = calcStreak() + (includeToday && !recordedDateSet(false).has(localDateKey(new Date())) ? 1 : 0);
+  const monthCount = currentMonthDates().filter(d => recordedDateSet(includeToday).has(localDateKey(d))).length;
+  const basis = Math.max(streak, monthCount);
+  const levels = [
+    { level:1, min:0, max:2, name:'はじめの一歩' },
+    { level:2, min:3, max:6, name:'リズム作り' },
+    { level:3, min:7, max:13, name:'継続中' },
+    { level:4, min:14, max:20, name:'習慣化' },
+    { level:5, min:21, max:31, name:'しっかり定着' }
+  ];
+  const current = levels.find(l => basis <= l.max) || levels[levels.length - 1];
+  const span = Math.max(1, current.max - current.min + 1);
+  const within = Math.max(0, Math.min(span, basis - current.min + 1));
+  const progress = current.level === 5 ? 100 : Math.round((within / span) * 100);
+  return {
+    level:current.level,
+    name:current.name,
+    progress,
+    streak,
+    monthCount,
+    sub:`${streak}日連続・今月${monthCount}回の記録`
+  };
 }
 
 function updateHeaderStreak(streak) {
@@ -1622,17 +1715,74 @@ function renderGoalTab() {
   const moti = latestRec?.moti || null;
   const mood = moodInfo(moti);
   const latestDate = latestRec?.date ? formatDate(latestRec.date) : '記録なし';
-
-  const prog = (p.startWeight && p.targetWeight && latestW)
-    ? Math.min(100, Math.max(0, Math.round(
-        (p.startWeight - latestW) / (p.startWeight - p.targetWeight) * 100
-      )))
-    : null;
-  const remaining = (p.targetWeight && latestW) ? +(latestW - p.targetWeight).toFixed(1) : null;
   const streak = calcStreak();
+  const todayStack = calcDailyStack(latestRecordForDate(localDateKey(new Date())));
+  const habit = habitLevelInfo(false);
 
   el.innerHTML = `
-    <div class="section-title" style="margin-bottom:14px">現在の状態</div>
+    <div class="section-title" style="margin-bottom:14px">目標</div>
+
+    ${p.finalGoal ? `
+    <div class="goal-banner" style="margin-bottom:14px">
+      <div class="goal-icon">🎯</div>
+      <div>
+        <div class="goal-label">最終目標</div>
+        <div class="goal-text">${p.finalGoal}</div>
+      </div>
+    </div>` : ''}
+
+    ${p.midGoal ? `
+    <div class="goal-banner" style="margin-bottom:14px;border-color:rgba(47,125,98,.18);background:rgba(47,125,98,.05)">
+      <div class="goal-icon">📍</div>
+      <div>
+        <div class="goal-label" style="color:var(--accent)">中間目標</div>
+        <div class="goal-text">${p.midGoal}</div>
+      </div>
+    </div>` : ''}
+
+    ${p.targetDate ? `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;margin-bottom:14px">
+      <div class="section-title" style="justify-content:center;margin-bottom:6px">目標期日</div>
+      <div style="font-size:18px;font-weight:700;color:var(--text)">${p.targetDate}</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px">${daysUntil(p.targetDate)}</div>
+    </div>` : ''}
+
+    <div class="section-title" style="margin:18px 0 14px">積み上げ・習慣レベル</div>
+
+    <div class="streak-complete" style="margin-bottom:14px">
+      <div style="font-size:32px">🔥</div>
+      <div class="streak-stack">
+        <div class="streak-title">今月の記録</div>
+        <div class="streak-fill">${renderStreakFill(streak)}</div>
+        <div class="streak-caption">${streakCaption(streak)}</div>
+      </div>
+    </div>
+
+    <div class="progress-section" style="margin-bottom:14px">
+      <div class="prog-header">
+        <div class="prog-title">今日の積み上げ</div>
+        <div class="prog-pct">${todayStack.score}%</div>
+      </div>
+      <div class="prog-bar">
+        <div class="prog-fill" id="todayStackFill" style="width:${todayStack.score}%"></div>
+      </div>
+      <div class="level-chip">${todayStack.label}</div>
+      <div class="prog-sub">${todayStack.sub}</div>
+    </div>
+
+    <div class="progress-section warm" style="margin-bottom:14px">
+      <div class="prog-header">
+        <div class="prog-title">習慣レベル</div>
+        <div class="prog-pct">Lv.${habit.level}</div>
+      </div>
+      <div class="prog-bar">
+        <div class="prog-fill" id="habitLevelFill" style="width:${habit.progress}%"></div>
+      </div>
+      <div class="level-chip">${habit.name}</div>
+      <div class="prog-sub">${habit.sub}</div>
+    </div>
+
+    <div class="section-title" style="margin:18px 0 14px">現状</div>
 
     <div class="state-grid">
       <div class="state-card primary">
@@ -1679,57 +1829,6 @@ function renderGoalTab() {
       </div>` : ''}
     </div>
 
-    <div class="streak-complete" style="margin-bottom:14px">
-      <div style="font-size:32px">🔥</div>
-      <div class="streak-stack">
-        <div class="streak-title">今月の記録</div>
-        <div class="streak-fill">${renderStreakFill(streak)}</div>
-        <div class="streak-caption">${streakCaption(streak)}</div>
-      </div>
-    </div>
-
-    <div class="section-title" style="margin:18px 0 14px">目標</div>
-
-    ${p.finalGoal ? `
-    <div class="goal-banner" style="margin-bottom:14px">
-      <div class="goal-icon">🎯</div>
-      <div>
-        <div class="goal-label">最終目標</div>
-        <div class="goal-text">${p.finalGoal}</div>
-      </div>
-    </div>` : ''}
-
-    ${p.midGoal ? `
-    <div class="goal-banner" style="margin-bottom:14px;border-color:rgba(47,125,98,.18);background:rgba(47,125,98,.05)">
-      <div class="goal-icon">📍</div>
-      <div>
-        <div class="goal-label" style="color:var(--accent)">中間目標</div>
-        <div class="goal-text">${p.midGoal}</div>
-      </div>
-    </div>` : ''}
-
-    ${prog !== null ? `
-    <div class="progress-section" style="margin-bottom:14px">
-      <div class="prog-header">
-        <div class="prog-title">目標達成率</div>
-        <div class="prog-pct">${prog}%</div>
-      </div>
-      <div class="prog-bar">
-        <div class="prog-fill" id="goalProgFill" style="width:0%"></div>
-      </div>
-      <div class="prog-sub">
-        ${remaining !== null && remaining > 0 ? `目標まであと <b>${remaining}kg</b>` :
-          remaining !== null && remaining <= 0 ? '目標体重達成' : ''}
-      </div>
-    </div>` : ''}
-
-    ${p.targetDate ? `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;margin-bottom:14px">
-      <div class="section-title" style="justify-content:center;margin-bottom:6px">目標期日</div>
-      <div style="font-size:18px;font-weight:700;color:var(--text)">${p.targetDate}</div>
-      <div style="font-size:12px;color:var(--text3);margin-top:4px">${daysUntil(p.targetDate)}</div>
-    </div>` : ''}
-
     ${(p.photos && p.photos.length) ? `
     <div class="section-title" style="margin:18px 0 14px">写真</div>
     <div class="photo-grid">
@@ -1741,12 +1840,6 @@ function renderGoalTab() {
     </div>` : ''}
   `;
 
-  if (prog !== null) {
-    setTimeout(() => {
-      const fill = document.getElementById('goalProgFill');
-      if (fill) fill.style.width = prog + '%';
-    }, 200);
-  }
 }
 
 function escPhoto(s) {
@@ -2016,17 +2109,19 @@ function showCompletionScreen(rec) {
   ].filter(Boolean);
   document.getElementById('resultCards').innerHTML = cards.join('');
 
-  if (rec.weight && patient.targetWeight && patient.startWeight) {
-    const prog = Math.min(100, Math.max(0, Math.round(
-      (patient.startWeight - rec.weight) / (patient.startWeight - patient.targetWeight) * 100
-    )));
-    const remaining = +(rec.weight - patient.targetWeight).toFixed(1);
-    document.getElementById('progressSection').style.display = '';
-    document.getElementById('progPct').textContent = prog + '%';
-    document.getElementById('progSub').textContent =
-      remaining <= 0 ? '目標体重達成' : `目標まであと ${remaining}kg`;
-    setTimeout(() => document.getElementById('progFill').style.width = prog + '%', 300);
-  }
+  const stack = calcDailyStack(rec);
+  document.getElementById('progressSection').style.display = '';
+  document.getElementById('progPct').textContent = stack.score + '%';
+  document.getElementById('progSub').textContent = `${stack.label}。${stack.sub}`;
+  document.getElementById('progFill').style.width = '0%';
+  setTimeout(() => document.getElementById('progFill').style.width = stack.score + '%', 300);
+
+  const habit = habitLevelInfo(true);
+  document.getElementById('habitProgressSection').style.display = '';
+  document.getElementById('habitPct').textContent = `Lv.${habit.level}`;
+  document.getElementById('habitSub').textContent = `${habit.name}。${habit.sub}`;
+  document.getElementById('habitFill').style.width = '0%';
+  setTimeout(() => document.getElementById('habitFill').style.width = habit.progress + '%', 300);
 
   const lastSession = (patient.sessions || []).slice(-1)[0];
   if (lastSession?.homework) {
