@@ -12,10 +12,10 @@
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-/* ═══ Ascend エメラルドテーマ（緑×丸ゴシック・親しみやすさ） ═══ */
+/* ═══ Ascend エメラルドテーマ（整体・パーソナル指導の落ち着き） ═══ */
 :root{
   --bg:#f5f2ec;--surface:#fffdf8;--surface2:#f0ece3;--surface3:#e4ddd0;--border:#e5ded1;
   --text:#222a2f;--text2:#6f766f;--text3:#9b9f96;
@@ -29,7 +29,10 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
 body{
-  font-family:'Zen Maru Gothic',-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;
+  font-family:'Zen Maru Gothic','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif;
+  font-feature-settings:'palt' 1;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
   background:
     radial-gradient(circle at 50% -10%,rgba(127,179,141,.18),transparent 34%),
     linear-gradient(180deg,#fbfaf6 0%,var(--bg) 36%,#f2eee7 100%);
@@ -60,7 +63,7 @@ body{
 /* ── ERROR ── */
 .error-wrap{padding:80px 28px;text-align:center;max-width:400px;margin:0 auto}
 .error-icon{font-size:60px;margin-bottom:18px;opacity:.55}
-.error-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:10px}
+.error-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:10px}
 .error-sub{font-size:14px;color:var(--text2);line-height:1.8}
 
 /* ── INSTALL BANNER ── */
@@ -74,12 +77,12 @@ body{
 }
 .install-banner.show{display:flex}
 .install-banner-text{flex:1;font-size:13px;font-weight:600;line-height:1.5}
-.install-banner-text strong{display:block;font-size:14px;font-weight:800}
+.install-banner-text strong{display:block;font-size:14px;font-weight:700}
 .install-btn-wrap{display:flex;gap:8px;flex-shrink:0}
 .btn-install{
   background:#fff;color:var(--accent);
   border:none;border-radius:20px;padding:8px 16px;
-  font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;
+  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
   white-space:nowrap
 }
 .btn-dismiss{
@@ -100,33 +103,33 @@ body{
 }
 .header-inner{padding:22px 20px 18px;text-align:center}
 .logo{
-  font-size:10px;font-weight:800;color:var(--accent);
-  letter-spacing:.24em;text-transform:uppercase;margin-bottom:10px;
+  font-family:'Noto Sans JP','Zen Maru Gothic',sans-serif;
+  font-size:10px;font-weight:700;color:var(--accent);
+  letter-spacing:.28em;text-transform:uppercase;margin-bottom:10px;
   display:flex;align-items:center;justify-content:center;gap:6px
 }
-.greeting{font-size:24px;font-weight:900;color:var(--text);letter-spacing:0;line-height:1.35}
+.greeting{font-size:24px;font-weight:700;color:var(--text);letter-spacing:.01em;line-height:1.38}
 .greeting-sub{font-size:13px;color:var(--text2);margin-top:6px;letter-spacing:0}
 .badge-row{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:8px;margin:14px auto 0;max-width:430px
+  display:none
 }
 .streak-badge{
   display:flex;align-items:center;justify-content:center;gap:4px;
   background:rgba(183,123,45,.1);border:1px solid rgba(183,123,45,.22);
-  border-radius:16px;padding:8px 8px;font-size:12px;font-weight:800;color:var(--warn);
+  border-radius:16px;padding:8px 8px;font-size:12px;font-weight:700;color:var(--warn);
   min-height:38px
 }
 .date-badge{
   display:flex;align-items:center;justify-content:center;gap:4px;
   background:rgba(47,125,98,.08);border:1px solid rgba(47,125,98,.18);
-  border-radius:16px;padding:8px 8px;font-size:12px;font-weight:800;color:var(--accent);
+  border-radius:16px;padding:8px 8px;font-size:12px;font-weight:700;color:var(--accent);
   min-height:38px
 }
 .online-dot{
   display:flex;align-items:center;justify-content:center;gap:5px;
   background:rgba(255,253,248,.68);border:1px solid var(--border);
   border-radius:16px;padding:8px 8px;
-  font-size:11px;font-weight:800;color:var(--accent2);
+  font-size:11px;font-weight:700;color:var(--accent2);
   cursor:pointer;
 }
 .online-dot::before{
@@ -164,21 +167,15 @@ body{
 .bn-item.active::after{display:none}
 .bn-icon{font-size:20px;line-height:1;transition:transform .15s}
 .bn-item.active .bn-icon{transform:scale(1.12)}
-.bn-badge{
-  position:absolute;top:5px;right:calc(50% - 22px);
-  background:var(--danger);color:#fff;
-  font-size:9px;font-weight:800;padding:1px 5px;border-radius:8px;
-  min-width:16px;text-align:center;display:none
-}
-
 /* ── BODY ── */
 .body{padding:18px 16px 0;max-width:520px;margin:0 auto}
 
 /* ── SECTION ── */
 .section{margin-bottom:18px}
 .section-title{
-  font-size:12px;font-weight:700;color:var(--text2);
-  letter-spacing:.04em;margin-bottom:11px;padding-left:11px;position:relative;
+  font-family:'Noto Sans JP','Zen Maru Gothic',sans-serif;
+  font-size:12px;font-weight:600;color:var(--text2);
+  letter-spacing:.06em;margin-bottom:11px;padding-left:11px;position:relative;
   display:flex;align-items:center;gap:6px
 }
 .section-title::before{
@@ -187,6 +184,10 @@ body{
 }
 
 /* ── GOAL BANNER ── */
+.main-focus{
+  display:flex;flex-direction:column;gap:14px;margin:2px 0 22px
+}
+.main-focus > div{margin-bottom:0!important}
 .goal-banner{
   background:linear-gradient(135deg,rgba(47,125,98,.09),rgba(255,253,248,.78));
   border:1px solid rgba(47,125,98,.18);border-radius:var(--radius);
@@ -194,7 +195,7 @@ body{
   display:flex;align-items:flex-start;gap:12px
 }
 .goal-icon{font-size:20px;flex-shrink:0;margin-top:1px}
-.goal-label{font-size:10px;font-weight:800;color:var(--accent2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.goal-label{font-size:10px;font-weight:700;color:var(--accent2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
 .goal-text{font-size:14px;color:var(--text);line-height:1.6}
 
 /* ── HOMEWORK REMINDER ── */
@@ -205,7 +206,7 @@ body{
   display:flex;align-items:flex-start;gap:12px
 }
 .hw-reminder-icon{font-size:20px;flex-shrink:0}
-.hw-reminder-label{font-size:10px;font-weight:800;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.hw-reminder-label{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
 .hw-reminder-text{font-size:14px;color:var(--text);line-height:1.6}
 
 /* ── ALREADY DONE ── */
@@ -214,7 +215,7 @@ body{
   border-radius:var(--radius);padding:20px;text-align:center
 }
 .already-icon{font-size:40px;margin-bottom:10px}
-.already-title{font-size:17px;font-weight:800;color:var(--accent2);margin-bottom:5px}
+.already-title{font-size:17px;font-weight:700;color:var(--accent2);margin-bottom:5px}
 .already-sub{font-size:13px;color:var(--text2);line-height:1.7}
 .already-rec{
   margin-top:14px;background:var(--surface);border-radius:var(--radius-sm);
@@ -222,7 +223,7 @@ body{
 }
 .ar-item{text-align:center}
 .ar-label{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
-.ar-val{font-size:20px;font-weight:900;color:var(--text);letter-spacing:-.5px}
+.ar-val{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.2px;font-variant-numeric:tabular-nums}
 .ar-unit{font-size:11px;color:var(--text2);font-weight:500}
 
 /* ── OFFLINE QUEUE NOTICE ── */
@@ -241,8 +242,31 @@ body{
   padding:16px 17px;box-shadow:var(--shadow)
 }
 .cheer-emoji{font-size:32px;line-height:1;flex-shrink:0}
-.cheer-title{font-size:17px;font-weight:900;color:var(--warn);letter-spacing:-.3px}
+.cheer-title{font-size:17px;font-weight:700;color:var(--warn);letter-spacing:0}
 .cheer-sub{font-size:12.5px;color:var(--text2);margin-top:2px;line-height:1.5}
+
+.main-focus .goal-banner,
+.main-focus .hw-reminder,
+.main-focus .cheer-card{
+  border-radius:28px;padding:24px 25px;min-height:118px;
+  align-items:center;box-shadow:var(--shadow-lg)
+}
+.main-focus .goal-icon,
+.main-focus .hw-reminder-icon,
+.main-focus .cheer-emoji{
+  width:42px;min-width:42px;font-size:28px;text-align:center;margin-top:0
+}
+.main-focus .goal-label,
+.main-focus .hw-reminder-label{
+  font-family:'Noto Sans JP','Zen Maru Gothic',sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:.12em;margin-bottom:8px
+}
+.main-focus .goal-text,
+.main-focus .hw-reminder-text{
+  font-size:21px;font-weight:700;line-height:1.52;color:var(--text);letter-spacing:.01em
+}
+.main-focus .cheer-title{font-size:24px;font-weight:700;line-height:1.34;letter-spacing:.01em}
+.main-focus .cheer-sub{font-size:15px;line-height:1.65;margin-top:7px}
 
 /* ── WEIGHT CARD ── */
 .weight-card{
@@ -255,19 +279,19 @@ body{
 .weight-row{display:flex;align-items:flex-end;justify-content:center;gap:8px}
 .weight-input{
   background:none;border:none;outline:none;
-  font-size:52px;font-weight:900;color:var(--text);
-  width:150px;text-align:center;font-family:inherit;
-  letter-spacing:-1px;line-height:1
+  font-size:52px;font-weight:800;color:var(--text);
+  width:150px;text-align:center;font-family:'Noto Sans JP','Zen Maru Gothic',sans-serif;
+  letter-spacing:-.4px;line-height:1;font-variant-numeric:tabular-nums
 }
 .weight-input::placeholder{color:var(--text3)}
-.weight-unit{font-size:20px;font-weight:800;color:var(--text2);padding-bottom:6px}
+.weight-unit{font-size:20px;font-weight:700;color:var(--text2);padding-bottom:6px}
 .bmi-preview{
   margin-top:12px;padding:10px 14px;
   background:var(--surface2);border-radius:var(--radius-sm);
   display:none;align-items:center;gap:10px
 }
 .bmi-preview.visible{display:flex}
-.bmi-num{font-size:22px;font-weight:900;letter-spacing:-.5px}
+.bmi-num{font-size:22px;font-weight:800;letter-spacing:-.2px;font-variant-numeric:tabular-nums}
 .bmi-label{font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px}
 .bmi-tip{font-size:11px;color:var(--text3);margin-left:auto}
 .bmi-formula{
@@ -276,30 +300,53 @@ body{
   font-size:11px;color:var(--text3);line-height:1.7
 }
 
-/* ── STAR CARD ── */
-.star-card{
+/* ── EMOTION CARD ── */
+.emotion-card{
   background:var(--surface);border:1px solid var(--border);
   border-radius:24px;padding:22px 20px;box-shadow:var(--shadow)
 }
-.star-card.required-unanswered{
+.emotion-card.required-unanswered{
   border-color:var(--danger);
   box-shadow:0 0 0 3px rgba(239,68,68,.10)
 }
-.star-row{display:flex;justify-content:center;gap:8px;margin-top:4px}
-.star{
-  font-size:40px;cursor:pointer;color:#ddd8cc;
-  transition:all .14s;line-height:1;user-select:none;
-  min-width:48px;min-height:48px;display:inline-flex;align-items:center;justify-content:center
+.mood-illustration{
+  display:flex;align-items:center;gap:13px;
+  background:linear-gradient(135deg,rgba(47,125,98,.08),rgba(183,123,45,.08));
+  border:1px solid rgba(47,125,98,.12);
+  border-radius:20px;padding:14px 15px;margin-bottom:13px;
+  min-height:78px;transition:background .2s,border-color .2s
 }
-.star:hover{transform:scale(1.18)}
-.star.on{color:var(--warn);filter:drop-shadow(0 2px 8px rgba(245,158,11,.45))}
+.mood-face{
+  width:52px;height:52px;border-radius:18px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface);box-shadow:0 8px 18px rgba(32,42,47,.08);
+  font-size:30px;flex-shrink:0
+}
+.mood-copy{font-size:13px;font-weight:700;color:var(--text);line-height:1.55;text-align:left}
+.mood-subcopy{font-size:11px;color:var(--text2);font-weight:600;margin-top:3px}
+.emotion-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.emotion-option{
+  border:1px solid var(--border);background:var(--surface2);
+  border-radius:16px;padding:12px 10px;min-height:66px;
+  font-family:inherit;color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;justify-content:flex-start;text-align:left;gap:9px;
+  transition:transform .15s,border-color .15s,background .15s,box-shadow .15s
+}
+.emotion-option:active{transform:scale(.97)}
+.emotion-option.selected{
+  color:var(--accent);background:rgba(47,125,98,.10);
+  border-color:rgba(47,125,98,.38);
+  box-shadow:0 0 0 3px rgba(47,125,98,.08)
+}
+.emotion-icon{font-size:21px;line-height:1;flex-shrink:0}
+.emotion-label{font-size:13px;font-weight:700;line-height:1.25;text-align:left}
 .star-desc{text-align:center;font-size:12px;color:var(--text3);margin-top:8px;min-height:18px}
-.required-mark{color:var(--danger);font-weight:900;margin-left:3px}
+.required-mark{color:var(--danger);font-weight:700;margin-left:3px}
 .unanswered-hint{
   font-size:11px;color:var(--danger);margin-top:6px;
   display:none;font-weight:600;text-align:center
 }
-.star-card.required-unanswered .unanswered-hint{display:block}
+.emotion-card.required-unanswered .unanswered-hint{display:block}
 
 /* ── EXERCISE SLIDER ── */
 .slider-card{
@@ -307,7 +354,7 @@ body{
   border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)
 }
 .ex-val-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.ex-val{font-size:28px;font-weight:900;color:var(--accent2);letter-spacing:-.5px}
+.ex-val{font-size:28px;font-weight:800;color:var(--accent2);letter-spacing:-.2px;font-variant-numeric:tabular-nums}
 input[type=range]{
   width:100%;-webkit-appearance:none;appearance:none;
   height:8px;border-radius:8px;background:var(--surface2);
@@ -332,7 +379,7 @@ input[type=range]::-webkit-slider-thumb{
 /* ── SUBMIT ── */
 .submit-btn{
   width:100%;background:var(--grad);color:#fff;border:none;
-  border-radius:22px;padding:19px;font-size:17px;font-weight:900;
+  border-radius:22px;padding:19px;font-size:17px;font-weight:700;
   cursor:pointer;letter-spacing:.02em;
   box-shadow:0 10px 24px rgba(47,125,98,.24),0 2px 6px rgba(47,125,98,.16);transition:all .2s;
   display:flex;align-items:center;justify-content:center;gap:10px;
@@ -365,24 +412,24 @@ input[type=range]::-webkit-slider-thumb{
   margin-bottom:12px;box-shadow:var(--shadow)
 }
 .hc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.hc-date{font-size:14px;font-weight:800;color:var(--text)}
+.hc-date{font-size:14px;font-weight:700;color:var(--text)}
 .hc-source{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
 .hc-source.staff{background:rgba(16,185,129,.1);color:var(--accent)}
 .hc-source.patient{background:rgba(16,185,129,.1);color:var(--accent2)}
 .hc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .hc-item{text-align:center;background:var(--surface2);border-radius:10px;padding:8px 6px}
 .hc-label{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
-.hc-val{font-size:17px;font-weight:900;color:var(--text);letter-spacing:-.3px}
+.hc-val{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.1px;font-variant-numeric:tabular-nums}
 .hc-unit{font-size:10px;color:var(--text2);font-weight:500}
 .hc-memo{margin-top:10px;font-size:12px;color:var(--text2);line-height:1.6;
   background:var(--surface2);border-radius:8px;padding:8px 10px}
 /* ── セッション履歴 ── */
 .hc-dur{font-size:11px;font-weight:700;color:var(--accent2);background:rgba(16,185,129,.1);padding:2px 8px;border-radius:10px}
 .sess-block{margin-top:10px}
-.sess-block-label{font-size:10px;font-weight:800;color:var(--text3);letter-spacing:.06em;margin-bottom:5px}
+.sess-block-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;margin-bottom:5px}
 .exo{background:var(--surface2);border-radius:8px;padding:8px 10px;margin-bottom:6px}
 .exo:last-child{margin-bottom:0}
-.exo-name{font-size:13px;font-weight:800;color:var(--text);margin-bottom:3px}
+.exo-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
 .exo-sets{font-size:12px;color:var(--text2);line-height:1.7}
 .exo-set{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1px 7px;margin:2px 4px 2px 0;font-weight:600}
 /* ── 写真グリッド ── */
@@ -392,7 +439,7 @@ input[type=range]::-webkit-slider-thumb{
 .photo-cap{font-size:11px;color:var(--text2);padding:6px 8px;text-align:center}
 /* ── トレーナーからの一言 ── */
 .trainer-msg{margin-top:10px;background:rgba(16,185,129,.08);border:1.5px solid rgba(16,185,129,.22);border-radius:10px;padding:10px 12px}
-.trainer-msg-label{font-size:11px;font-weight:800;color:var(--accent2);margin-bottom:4px}
+.trainer-msg-label{font-size:11px;font-weight:700;color:var(--accent2);margin-bottom:4px}
 .trainer-msg-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap}
 /* ── 開始からの変化バナー ── */
 .change-banner{border-radius:var(--radius);padding:16px;text-align:center;border:1.5px solid}
@@ -400,11 +447,30 @@ input[type=range]::-webkit-slider-thumb{
 .change-banner.up{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.25)}
 .change-banner.flat{background:var(--surface2);border-color:var(--border)}
 .change-label{font-size:12px;color:var(--text2);font-weight:600}
-.change-val{font-size:38px;font-weight:900;letter-spacing:-1px;line-height:1.2;margin:2px 0}
+.change-val{font-size:38px;font-weight:800;letter-spacing:-.4px;line-height:1.2;margin:2px 0;font-variant-numeric:tabular-nums}
 .change-banner.down .change-val{color:var(--accent2)}
 .change-banner.up .change-val{color:var(--warn)}
 .change-unit{font-size:16px;font-weight:700;margin-left:2px}
 .change-sub{font-size:12px;color:var(--text2)}
+
+/* ── 現在の状態 ── */
+.state-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.state-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:15px 14px;box-shadow:var(--shadow);
+  min-height:104px;display:flex;flex-direction:column;justify-content:center;text-align:center
+}
+.state-card.primary{
+  grid-column:1/-1;text-align:left;min-height:116px;
+  background:linear-gradient(135deg,rgba(47,125,98,.10),rgba(255,253,248,.88));
+  border-color:rgba(47,125,98,.20)
+}
+.state-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:6px}
+.state-value{font-size:26px;font-weight:800;color:var(--text);letter-spacing:-.2px;line-height:1.15;font-variant-numeric:tabular-nums}
+.state-value.big{font-size:40px;color:var(--accent)}
+.state-unit{font-size:13px;font-weight:700;color:var(--text2);margin-left:2px}
+.state-note{font-size:11px;color:var(--text2);margin-top:5px;line-height:1.5}
+.state-mood{font-size:22px;color:var(--warn);letter-spacing:1px;line-height:1.1}
 
 /* ── GRAPH TAB ── */
 .graph-card{
@@ -412,7 +478,7 @@ input[type=range]::-webkit-slider-thumb{
   border-radius:var(--radius);padding:18px 16px;
   margin-bottom:16px;box-shadow:var(--shadow)
 }
-.graph-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:14px;
+.graph-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;
   display:flex;align-items:center;gap:6px}
 .graph-empty{text-align:center;padding:30px 20px;color:var(--text3);font-size:13px}
 .chart-wrap{position:relative;height:200px}
@@ -425,7 +491,7 @@ input[type=range]::-webkit-slider-thumb{
 }
 .prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .prog-title{font-size:13px;font-weight:700;color:var(--text)}
-.prog-pct{font-size:22px;font-weight:900;color:var(--accent2)}
+.prog-pct{font-size:22px;font-weight:800;color:var(--accent2);font-variant-numeric:tabular-nums}
 .prog-bar{background:var(--surface2);border-radius:20px;height:10px;overflow:hidden}
 .prog-fill{height:100%;border-radius:20px;background:var(--grad2);transition:width 1.2s ease}
 .prog-sub{font-size:11px;color:var(--text2);margin-top:6px;text-align:right}
@@ -434,6 +500,24 @@ input[type=range]::-webkit-slider-thumb{
   border-radius:var(--radius);padding:16px;margin-bottom:16px;
   display:flex;align-items:center;gap:14px
 }
+.streak-stack{flex:1;min-width:0}
+.streak-title{font-size:15px;font-weight:700;color:var(--warn);margin-bottom:9px}
+.streak-fill{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;min-width:220px}
+.streak-dot{
+  min-height:34px;border-radius:10px;background:rgba(183,123,45,.10);
+  border:1px solid rgba(183,123,45,.18);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  color:rgba(111,118,111,.72)
+}
+.streak-dot.filled{background:linear-gradient(135deg,#b77b2d,#d9a85a);border-color:rgba(183,123,45,.38);color:#fff}
+.habit-day{font-size:10px;font-weight:700;line-height:1}
+.habit-mark{font-size:13px;font-weight:700;line-height:1}
+.streak-caption{font-size:12px;color:var(--text2);margin-top:7px;line-height:1.5}
+.streak-badge .streak-label{font-size:10px;color:var(--warn);letter-spacing:.06em}
+.streak-badge .streak-fill{min-width:82px;gap:2px;grid-template-columns:repeat(7,1fr)}
+.streak-badge .streak-dot{min-height:9px;border-radius:3px}
+.streak-badge .habit-day{display:none}
+.streak-badge .habit-mark{display:none}
 
 /* ── COMPLETION SCREEN ── */
 .completion{
@@ -444,15 +528,15 @@ input[type=range]::-webkit-slider-thumb{
   animation:pop .5s cubic-bezier(.25,.46,.45,.94)
 }
 @keyframes pop{0%{transform:scale(.5);opacity:0}80%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
-.completion-title{font-size:26px;font-weight:900;color:var(--text);letter-spacing:-.5px;margin-bottom:6px}
+.completion-title{font-size:26px;font-weight:700;color:var(--text);letter-spacing:.01em;margin-bottom:6px}
 .completion-sub{font-size:15px;color:var(--text2);margin-bottom:26px;line-height:1.65}
 .result-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
 .result-card{
   background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow)
 }
-.rc-label{font-size:9px;font-weight:800;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
-.rc-val{font-size:24px;font-weight:900;color:var(--text);letter-spacing:-.5px}
+.rc-label{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.rc-val{font-size:24px;font-weight:800;color:var(--text);letter-spacing:-.2px;font-variant-numeric:tabular-nums}
 .rc-unit{font-size:12px;color:var(--text2);font-weight:500}
 .rc-sub{font-size:11px;color:var(--text2);margin-top:4px}
 .info-box{
@@ -460,7 +544,7 @@ input[type=range]::-webkit-slider-thumb{
 }
 .info-box.green{background:rgba(16,185,129,.07);border:1.5px solid rgba(16,185,129,.2)}
 .info-box.blue{background:rgba(16,185,129,.07);border:1.5px solid rgba(16,185,129,.18)}
-.ib-title{font-size:12px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.ib-title{font-size:12px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .ib-text{font-size:14px;color:var(--text);line-height:1.7}
 .done-btn{
   width:100%;background:var(--surface);border:2px solid var(--border);
@@ -468,6 +552,17 @@ input[type=range]::-webkit-slider-thumb{
   color:var(--text2);cursor:pointer;font-family:inherit;transition:all .2s
 }
 .done-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.ar-val,
+.bmi-num,
+.ex-val,
+.hc-val,
+.change-val,
+.state-value,
+.prog-pct,
+.rc-val{
+  font-family:'Noto Sans JP','Zen Maru Gothic',sans-serif
+}
 
 /* ── TRAINING CHECKLIST ── */
 .check-item{
@@ -504,23 +599,36 @@ input[type=range]::-webkit-slider-thumb{
   box-shadow:0 4px 16px rgba(16,185,129,.35);white-space:nowrap
 }
 #syncToast.show{opacity:1}
+
+@media (max-width:380px){
+  .main-focus .goal-banner,
+  .main-focus .hw-reminder,
+  .main-focus .cheer-card{padding:20px 18px;min-height:106px}
+  .main-focus .goal-icon,
+  .main-focus .hw-reminder-icon,
+  .main-focus .cheer-emoji{width:34px;min-width:34px;font-size:24px}
+  .main-focus .goal-text,
+  .main-focus .hw-reminder-text{font-size:19px}
+  .main-focus .cheer-title{font-size:22px}
+  .main-focus .cheer-sub{font-size:13px}
+}
 </style>
 </head>
 <body>
 
 <!-- オフライントースト -->
-<div id="offlineToast">📵 オフライン中 — 記録はオンライン復帰後に自動送信</div>
-<div id="syncToast">✅ オフライン中の記録を送信しました</div>
+<div id="offlineToast">オフライン中 - 記録はオンライン復帰後に自動送信</div>
+<div id="syncToast">オフライン中の記録を送信しました</div>
 
 <!-- PWAインストールバナー -->
 <div class="install-banner" id="installBanner">
   <div class="install-banner-text">
-    <strong>📱 ホーム画面に追加しよう</strong>
+    <strong>ホーム画面に追加しよう</strong>
     毎日かんたんに記録できます
   </div>
   <div class="install-btn-wrap">
     <button class="btn-install" id="installBtn">追加する</button>
-    <button class="btn-dismiss" id="dismissInstall">✕</button>
+    <button class="btn-dismiss" id="dismissInstall">x</button>
   </div>
 </div>
 
@@ -533,7 +641,7 @@ input[type=range]::-webkit-slider-thumb{
 <!-- エラー -->
 <div class="screen" id="screenError">
   <div class="error-wrap">
-    <div class="error-icon">⚠️</div>
+    <div class="error-icon">!</div>
     <div class="error-title">ページが見つかりません</div>
     <div class="error-sub" id="errorMsg">
       URLが正しくないか、患者情報が存在しません。<br>
@@ -549,14 +657,16 @@ input[type=range]::-webkit-slider-thumb{
   <div class="header">
     <div class="header-inner">
       <div class="logo">
-        <span>💪</span> BodyLog
+        <span></span> BodyLog
       </div>
       <div class="greeting" id="greeting">こんにちは！</div>
       <div class="greeting-sub" id="greetingSub">今日の状態を記録しましょう</div>
       <div class="badge-row">
-        <div class="streak-badge" id="streakBadge">🔥 0日連続</div>
-        <div class="date-badge" id="dateBadge">📅 —</div>
-        <div class="online-dot" id="onlineDot" onclick="sharePageUrl()">サーバー接続中</div>
+        <div class="streak-badge" id="streakBadge">
+          <span class="streak-label">今月</span>
+          <span class="streak-fill"><span class="streak-dot"></span><span class="streak-dot"></span><span class="streak-dot"></span><span class="streak-dot"></span><span class="streak-dot"></span><span class="streak-dot"></span><span class="streak-dot"></span></span>
+        </div>
+        <div class="date-badge" id="dateBadge">—</div>
       </div>
     </div>
   </div>
@@ -570,7 +680,6 @@ input[type=range]::-webkit-slider-thumb{
     <button class="bn-item" id="bn-history" onclick="switchTab('history')">
       <div class="bn-icon">📋</div>
       <span>履歴</span>
-      <div class="bn-badge" id="histBadge"></div>
     </button>
     <button class="bn-item" id="bn-graph" onclick="switchTab('graph')">
       <div class="bn-icon">📈</div>
@@ -590,24 +699,35 @@ input[type=range]::-webkit-slider-thumb{
       ⏳ <span id="offlineQueueText">送信待ちの記録があります</span>
     </div>
 
-    <!-- 目標バナー -->
-    <div id="goalBannerSmall" style="display:none;margin-bottom:16px">
-      <div class="goal-banner">
-        <div class="goal-icon">🎯</div>
-        <div>
-          <div class="goal-label">あなたの目標</div>
-          <div class="goal-text" id="goalBannerText"></div>
+    <div class="main-focus">
+      <!-- 目標バナー -->
+      <div id="goalBannerSmall" style="display:none;margin-bottom:16px">
+        <div class="goal-banner">
+          <div class="goal-icon">🎯</div>
+          <div>
+            <div class="goal-label">あなたの目標</div>
+            <div class="goal-text" id="goalBannerText"></div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- ホームワークリマインダー -->
-    <div id="hwReminder" style="display:none;margin-bottom:16px">
-      <div class="hw-reminder">
-        <div class="hw-reminder-icon">📌</div>
+      <!-- ホームワークリマインダー -->
+      <div id="hwReminder" style="display:none;margin-bottom:16px">
+        <div class="hw-reminder">
+          <div class="hw-reminder-icon">📌</div>
+          <div>
+            <div class="hw-reminder-label">今日の課題</div>
+            <div class="hw-reminder-text" id="hwReminderText"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 継続を励ますバナー -->
+      <div class="cheer-card" id="cheerCard" style="display:none">
+        <div class="cheer-emoji" id="cheerEmoji">✨</div>
         <div>
-          <div class="hw-reminder-label">今日の課題</div>
-          <div class="hw-reminder-text" id="hwReminderText"></div>
+          <div class="cheer-title" id="cheerTitle"></div>
+          <div class="cheer-sub" id="cheerSub"></div>
         </div>
       </div>
     </div>
@@ -617,25 +737,16 @@ input[type=range]::-webkit-slider-thumb{
       <div class="already-box">
         <div class="already-icon">✅</div>
         <div class="already-title">今日の記録は完了しています</div>
-        <div class="already-sub">お疲れ様でした！<br>明日もまた記録を続けましょう 💪</div>
+        <div class="already-sub">お疲れ様でした。<br>明日もまた記録を続けましょう</div>
         <div class="already-rec" id="todayRecSummary"></div>
       </div>
       <button class="submit-btn" style="margin-top:12px;background:var(--surface);color:var(--accent);border:2px solid var(--accent);box-shadow:none;font-family:inherit;" onclick="showForm()">
-        ✏️ もう一度記録する
+        もう一度記録する
       </button>
     </div>
 
     <!-- 記録フォーム -->
     <div id="recordForm">
-
-      <!-- 継続を励ますバナー -->
-      <div class="cheer-card" id="cheerCard" style="display:none">
-        <div class="cheer-emoji" id="cheerEmoji">🔥</div>
-        <div>
-          <div class="cheer-title" id="cheerTitle"></div>
-          <div class="cheer-sub" id="cheerSub"></div>
-        </div>
-      </div>
 
       <!-- 体重 -->
       <div class="section">
@@ -650,19 +761,36 @@ input[type=range]::-webkit-slider-thumb{
         </div>
       </div>
 
-      <!-- モチベーション -->
+      <!-- 気分 -->
       <div class="section">
-        <div class="section-title">モチベーション<span class="required-mark">*</span></div>
-        <div class="star-card" id="motiCard">
-          <div class="star-row" id="motiStars">
-            <span class="star" onclick="setMoti(1)">★</span>
-            <span class="star" onclick="setMoti(2)">★</span>
-            <span class="star" onclick="setMoti(3)">★</span>
-            <span class="star" onclick="setMoti(4)">★</span>
-            <span class="star" onclick="setMoti(5)">★</span>
+        <div class="section-title">気分<span class="required-mark">*</span></div>
+        <div class="emotion-card" id="motiCard">
+          <div class="mood-illustration" id="motiIllustration">
+            <div class="mood-face" id="motiMoodFace">🌿</div>
+            <div>
+              <div class="mood-copy" id="motiMoodCopy">今の気分に近いものを選んでください</div>
+              <div class="mood-subcopy" id="motiMoodSubcopy">数字ではなく、今日の状態として残します</div>
+            </div>
           </div>
-          <div class="star-desc" id="motiDesc">★をタップして評価（任意）</div>
-          <div class="unanswered-hint">モチベーションを選択してください</div>
+          <div class="emotion-grid" id="motiChoices">
+            <button type="button" class="emotion-option" data-moti="2" onclick="setMoti(2)">
+              <span class="emotion-icon">💪</span><span class="emotion-label">元気</span>
+            </button>
+            <button type="button" class="emotion-option" data-moti="4" onclick="setMoti(4)">
+              <span class="emotion-icon">😊</span><span class="emotion-label">幸せ</span>
+            </button>
+            <button type="button" class="emotion-option" data-moti="5" onclick="setMoti(5)">
+              <span class="emotion-icon">🌿</span><span class="emotion-label">平穏</span>
+            </button>
+            <button type="button" class="emotion-option" data-moti="1" onclick="setMoti(1)">
+              <span class="emotion-icon">😮‍💨</span><span class="emotion-label">疲れ</span>
+            </button>
+            <button type="button" class="emotion-option" data-moti="3" onclick="setMoti(3)">
+              <span class="emotion-icon">😞</span><span class="emotion-label">落ち込んでいる</span>
+            </button>
+          </div>
+          <div class="star-desc" id="motiDesc">今の感情を選択してください</div>
+          <div class="unanswered-hint">今の気分を選択してください</div>
         </div>
       </div>
 
@@ -682,7 +810,7 @@ input[type=range]::-webkit-slider-thumb{
       <!-- 送信 -->
       <div class="section">
         <button class="submit-btn" id="submitBtn" onclick="submitRecord()">
-          <span>📤</span>
+          <span></span>
           <span>今日の記録を送信する</span>
         </button>
       </div>
@@ -691,10 +819,10 @@ input[type=range]::-webkit-slider-thumb{
       <div class="section">
         <div class="share-row">
           <button class="share-btn" onclick="sharePageUrl()">
-            🔗 このページを共有
+            このページを共有
           </button>
           <button class="share-btn" onclick="addToHomeScreen()">
-            📱 ホーム画面に追加
+            ホーム画面に追加
           </button>
         </div>
       </div>
@@ -708,7 +836,7 @@ input[type=range]::-webkit-slider-thumb{
       <div class="section-title">セッション履歴</div>
       <div id="historyList">
         <div class="hist-empty">
-          <div class="hist-empty-icon">📋</div>
+          <div class="hist-empty-icon">履歴</div>
           <div>読み込み中...</div>
         </div>
       </div>
@@ -726,7 +854,7 @@ input[type=range]::-webkit-slider-thumb{
         </div>
       </div>
       <div class="graph-card">
-        <div class="graph-title">モチベーション推移</div>
+        <div class="graph-title">気分の推移</div>
         <div id="motiChartWrap">
           <div class="graph-empty">記録が2件以上になるとグラフが表示されます</div>
         </div>
@@ -747,7 +875,7 @@ input[type=range]::-webkit-slider-thumb{
 <div class="screen" id="screenComplete">
   <div style="background:linear-gradient(160deg,#fff,var(--bg));min-height:100vh;padding-top:env(safe-area-inset-top,0)">
     <div class="completion">
-      <div class="completion-icon">🎉</div>
+      <div class="completion-icon">✅</div>
       <div class="completion-title">記録完了！</div>
       <div class="completion-sub" id="completeMsg">お疲れ様でした。</div>
 
@@ -768,7 +896,7 @@ input[type=range]::-webkit-slider-thumb{
 
       <!-- ホームワーク -->
       <div class="info-box green" id="homeworkBox" style="display:none">
-        <div class="ib-title" style="color:var(--accent2)">📌 今日の課題・ホームワーク</div>
+        <div class="ib-title" style="color:var(--accent2)">今日の課題・ホームワーク</div>
         <div class="ib-text" id="homeworkText"></div>
       </div>
 
@@ -780,19 +908,20 @@ input[type=range]::-webkit-slider-thumb{
 
       <!-- ストリーク -->
       <div class="streak-complete">
-        <div style="font-size:36px">🔥</div>
-        <div>
-          <div style="font-size:20px;font-weight:900;color:var(--warn)" id="completionStreak">— 日連続</div>
-          <div style="font-size:12px;color:var(--text2)">継続記録達成中！</div>
+        <div style="font-size:34px">•</div>
+        <div class="streak-stack" id="completionStreak">
+          <div class="streak-title">今月の記録</div>
+          <div class="streak-fill"><span class="streak-dot"></span><span class="streak-dot"></span><span class="streak-dot"></span><span class="streak-dot"></span><span class="streak-dot"></span><span class="streak-dot"></span><span class="streak-dot"></span></div>
+          <div class="streak-caption">今日も積み上がりました</div>
         </div>
       </div>
 
       <!-- シェアボタン -->
       <button class="share-btn" style="width:100%;margin-bottom:12px;border-radius:var(--radius)" onclick="shareResult()">
-        📤 記録結果をシェアする
+        記録結果をシェアする
       </button>
 
-      <button class="done-btn" onclick="onDone()">✨ 閉じる</button>
+      <button class="done-btn" onclick="onDone()">閉じる</button>
     </div>
   </div>
 </div>
@@ -813,7 +942,13 @@ let deferredPrompt = null;
 let currentTab = 'record';
 let lastRecordData = null;
 
-const motiDescs = ['','全くやる気なし 😞','少し低め 😐','普通 🙂','やる気あり 💪','最高に燃えてる 🔥'];
+const moodOptions = {
+  1: { label:'疲れ', icon:'😮‍💨', copy:'疲れを感じている日ですね', sub:'無理をせず、できる範囲で整えましょう' },
+  2: { label:'元気', icon:'💪', copy:'元気に動けそうな状態です', sub:'良い流れを大切に、丁寧に続けましょう' },
+  3: { label:'落ち込んでいる', icon:'😞', copy:'落ち込みも大切な状態の記録です', sub:'今日は小さく整えるだけでも十分です' },
+  4: { label:'幸せ', icon:'😊', copy:'幸せな感覚を残しておきましょう', sub:'良かったことも振り返りに書けます' },
+  5: { label:'平穏', icon:'🌿', copy:'落ち着いた状態で過ごせています', sub:'この穏やかなリズムを大切にしましょう' }
+};
 
 /* ══════════════════════════════════════
    SERVICE WORKER 登録
@@ -825,7 +960,7 @@ if ('serviceWorker' in navigator) {
 
   navigator.serviceWorker.addEventListener('message', e => {
     if (e.data?.type === 'SYNC_COMPLETE') {
-      showSyncToast('✅ オフライン中の記録を送信しました');
+      showSyncToast('オフライン中の記録を送信しました');
     }
   });
 }
@@ -862,7 +997,7 @@ if (/iphone|ipad|ipod/i.test(navigator.userAgent) &&
   const banner = document.getElementById('installBanner');
   banner.classList.add('show');
   banner.querySelector('.install-banner-text').innerHTML =
-    '<strong>📱 ホーム画面に追加する方法</strong>' +
+    '<strong>ホーム画面に追加する方法</strong>' +
     'Safariの「共有」→「ホーム画面に追加」をタップ';
   document.getElementById('installBtn').style.display = 'none';
 }
@@ -874,7 +1009,7 @@ function addToHomeScreen() {
   } else if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
     document.getElementById('installBanner').classList.add('show');
     document.getElementById('installBanner').querySelector('.install-banner-text').innerHTML =
-      '<strong>📱 ホーム画面に追加する方法</strong>' +
+      '<strong>ホーム画面に追加する方法</strong>' +
       'Safariの「共有」→「ホーム画面に追加」をタップ';
     document.getElementById('installBtn').style.display = 'none';
   } else {
@@ -891,14 +1026,14 @@ async function sharePageUrl() {
     try {
       await navigator.share({
         title: `BodyLog - ${patient?.name || ''}さんの記録ページ`,
-        text: '毎日の体重・モチベーションを記録しています 💪',
+        text: '毎日の体重・気分を記録しています',
         url
       });
     } catch {}
   } else {
     try {
       await navigator.clipboard.writeText(url);
-      showSyncToast('🔗 URLをコピーしました');
+      showSyncToast('URLをコピーしました');
     } catch {
       prompt('このURLをコピーしてください:', url);
     }
@@ -908,36 +1043,96 @@ async function sharePageUrl() {
 async function shareResult() {
   if (!lastRecordData) return;
   const name = patient?.name || 'あなた';
-  const streak = calcStreak();
   const weight = lastRecordData.weight ? `体重: ${lastRecordData.weight}kg\n` : '';
-  const moti = lastRecordData.moti ? `モチベ: ${'★'.repeat(lastRecordData.moti)}\n` : '';
-  const text = `📊 ${name}の今日の記録\n${weight}${moti}🔥 ${streak}日連続達成中！\n#BodyLog`;
+  const mood = moodInfo(lastRecordData.moti);
+  const moti = lastRecordData.moti ? `今日の気分: ${mood.label}\n` : '';
+  const text = `${name}の今日の記録\n${weight}${moti}今日も継続を積み上げました\n#BodyLog`;
   if (navigator.share) {
     try { await navigator.share({ title: 'BodyLog記録', text, url: location.href }); }
     catch {}
   } else {
     try {
       await navigator.clipboard.writeText(text);
-      showSyncToast('📋 記録テキストをコピーしました');
+      showSyncToast('記録テキストをコピーしました');
     } catch {}
   }
+}
+
+function moodInfo(v) {
+  return moodOptions[Number(v)] || { label:'未記録', icon:'🌿', copy:'今の気分に近いものを選んでください', sub:'数字ではなく、今日の状態として残します' };
+}
+
+function renderMoodIllustration(value) {
+  const mood = moodInfo(value);
+  const face = document.getElementById('motiMoodFace');
+  const copy = document.getElementById('motiMoodCopy');
+  const subcopy = document.getElementById('motiMoodSubcopy');
+  const desc = document.getElementById('motiDesc');
+  if (face) face.textContent = mood.icon;
+  if (copy) copy.textContent = mood.copy;
+  if (subcopy) subcopy.textContent = mood.sub;
+  if (desc) desc.textContent = value ? `${mood.icon} ${mood.label}` : '今の感情を選択してください';
+}
+
+function localDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function currentMonthDates() {
+  const today = new Date();
+  const first = new Date(today.getFullYear(), today.getMonth(), 1);
+  const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  return Array.from({ length: last.getDate() }, (_, i) => {
+    const d = new Date(first);
+    d.setDate(i + 1);
+    return d;
+  });
+}
+
+function recordedDateSet(includeToday = false) {
+  const recs = [...(patient?.records || []), ...(patient?.patientRecords || [])]
+    .map(r => r.date).filter(Boolean);
+  if (includeToday) recs.push(localDateKey(new Date()));
+  return new Set(recs);
+}
+
+function renderStreakFill(streak, includeToday = false) {
+  const recorded = recordedDateSet(includeToday);
+  const month = currentMonthDates();
+  return month.map(date => {
+    const filled = recorded.has(localDateKey(date));
+    return `<span class="streak-dot${filled ? ' filled' : ''}"><span class="habit-day">${date.getDate()}</span><span class="habit-mark">${filled ? '' : ''}</span></span>`;
+  }).join('');
+}
+
+function streakCaption(streak, includeToday = false) {
+  const recorded = recordedDateSet(includeToday);
+  const doneThisMonth = currentMonthDates().filter(d => recorded.has(localDateKey(d))).length;
+  if (doneThisMonth >= 20) return '今月もしっかり習慣化できています';
+  if (doneThisMonth >= 10) return '今月のリズムが安定してきています';
+  if (doneThisMonth >= 1) return '今月の記録が積み上がっています';
+  return '今日から今月の習慣を始めましょう';
+}
+
+function updateHeaderStreak(streak) {
+  const el = document.getElementById('streakBadge');
+  if (!el) return;
+  el.innerHTML = `<span class="streak-label">今月</span><span class="streak-fill">${renderStreakFill(streak)}</span>`;
 }
 
 /* ══════════════════════════════════════
    オフライン検知 + IndexedDB キュー
 ══════════════════════════════════════ */
 function updateOnlineStatus() {
-  const dot = document.getElementById('onlineDot');
   const toast = document.getElementById('offlineToast');
   if (navigator.onLine) {
-    dot.classList.remove('offline');
-    dot.textContent = 'サーバー接続中';
     toast.classList.remove('show');
     // オンライン復帰時にキューを送信
     flushOfflineQueue();
   } else {
-    dot.classList.add('offline');
-    dot.textContent = 'オフライン';
     toast.classList.add('show');
   }
   updateOfflineQueueNotice();
@@ -1023,7 +1218,7 @@ async function flushOfflineQueue() {
     } catch {}
   }
   if (sent > 0) {
-    showSyncToast(`✅ ${sent}件のオフライン記録を送信しました`);
+    showSyncToast(`${sent}件のオフライン記録を送信しました`);
     updateOfflineQueueNotice();
     // データ再取得
     try {
@@ -1113,16 +1308,16 @@ function initScreen() {
   const firstName = patient.name?.split(' ')[0] || patient.name || 'あなた';
   document.getElementById('greeting').textContent = `${greet}、${firstName}さん！`;
   document.getElementById('greetingSub').textContent =
-    todayRec ? '今日の記録を確認してください ✅' : '今日の状態を記録しましょう 📋';
+    todayRec ? '今日の記録を確認してください' : '今日の状態を記録しましょう';
 
   // ストリーク
   const streak = calcStreak();
-  document.getElementById('streakBadge').textContent = `🔥 ${streak}日連続`;
+  updateHeaderStreak(streak);
   updateCheerCard(streak, !!todayRec);
 
   // 日付
   const dateStr = new Date().toLocaleDateString('ja-JP', { month:'long', day:'numeric', weekday:'short' });
-  document.getElementById('dateBadge').textContent = `📅 ${dateStr}`;
+  document.getElementById('dateBadge').textContent = dateStr;
 
   // 目標バナー
   if (patient.finalGoal) {
@@ -1147,14 +1342,6 @@ function initScreen() {
     renderTodaySummary(todayRec);
   }
 
-  // 過去記録バッジ
-  const recCount = (patient.records || []).length + (patient.patientRecords || []).length;
-  if (recCount > 0) {
-    const badge = document.getElementById('histBadge');
-    badge.textContent = recCount;
-    badge.style.display = 'block';
-  }
-
   showScreen('screenMain');
 }
 
@@ -1162,10 +1349,11 @@ function renderTodaySummary(rec) {
   const h = patient.height;
   const bmi = (rec.weight && h) ? calcBMI(rec.weight, h) : null;
   const bi = bmi ? bmiInfo(bmi) : null;
+  const mood = moodInfo(rec.moti);
   const items = [
     rec.weight ? { label:'体重', val: rec.weight, unit:'kg' } : null,
     bmi ? { label:'BMI', val: bmi, unit:'', color: bi?.color } : null,
-    rec.moti ? { label:'モチベ', val: `${'★'.repeat(rec.moti)}`, unit:'' } : null,
+    rec.moti ? { label:'気分', val: `${mood.icon} ${mood.label}`, unit:'' } : null,
   ].filter(Boolean);
   document.getElementById('todayRecSummary').innerHTML = items.map(it => `
     <div class="ar-item">
@@ -1185,12 +1373,11 @@ function showForm() {
   const todayRec = allRecs.filter(r => r.date === today)
     .sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0))[0];
 
-  // モチベ
+  // 気分
   motiVal = (todayRec && todayRec.moti) ? todayRec.moti : 0;
-  document.querySelectorAll('#motiStars .star').forEach((s,i) => s.classList.toggle('on', i < motiVal));
-  document.getElementById('motiDesc').textContent = motiVal > 0
-    ? `モチベーション：${motiVal}/5`
-    : '★をタップして評価（任意）';
+  document.querySelectorAll('#motiChoices .emotion-option')
+    .forEach(btn => btn.classList.toggle('selected', Number(btn.dataset.moti) === motiVal));
+  renderMoodIllustration(motiVal);
 
   // 体重・振り返り
   const wval = (todayRec && todayRec.weight != null) ? todayRec.weight : '';
@@ -1241,7 +1428,7 @@ function renderHistory() {
 
   const el = document.getElementById('historyList');
   if (!sessions.length) {
-    el.innerHTML = `<div class="hist-empty"><div class="hist-empty-icon">📋</div><div>まだセッション記録がありません</div></div>`;
+    el.innerHTML = `<div class="hist-empty"><div class="hist-empty-icon">履歴</div><div>まだセッション記録がありません</div></div>`;
     return;
   }
 
@@ -1280,13 +1467,13 @@ function renderHistory() {
     const hwHtml = s.homework ? `
       <div class="sess-block">
         <div class="sess-block-label">宿題</div>
-        <div class="hc-memo" style="margin-top:0">📝 ${escHtml(s.homework)}</div>
+        <div class="hc-memo" style="margin-top:0">${escHtml(s.homework)}</div>
       </div>` : '';
 
     // トレーナーからの一言・共有事項
     const msgHtml = s.message ? `
       <div class="trainer-msg">
-        <div class="trainer-msg-label">💬 担当者より</div>
+        <div class="trainer-msg-label">担当者より</div>
         <div class="trainer-msg-text">${escHtml(s.message)}</div>
       </div>` : '';
 
@@ -1337,11 +1524,20 @@ function renderGraphs() {
   renderLineChart('weightChartWrap', 'weightChart', labels, weights,
     '体重 (kg)', '#10b981', hasWeights);
 
-  // モチベグラフ
+  // 気分グラフ
   const motis = sorted.map(r => r.moti ?? null);
   const hasMotis = motis.some(m => m !== null);
   renderLineChart('motiChartWrap', 'motiChart', labels, motis,
-    'モチベ (★)', '#f59e0b', hasMotis, { min: 0, max: 5 });
+    '気分', '#b77b2d', hasMotis, {
+      min: 0,
+      max: 5,
+      ticks: {
+        stepSize: 1,
+        color: '#9ba8c0',
+        font: { size: 10 },
+        callback: value => moodInfo(value).label === '未記録' ? '' : moodInfo(value).label
+      }
+    });
 }
 
 function renderLineChart(wrapId, chartId, labels, data, label, color, hasData, yOptions = {}) {
@@ -1421,6 +1617,11 @@ function renderGoalTab() {
   const latestW = latestRec?.weight ?? p.startWeight;
   const bmi = latestW && p.height ? calcBMI(latestW, p.height) : null;
   const bi = bmi ? bmiInfo(bmi) : null;
+  const age = calcAge(p.birthdate);
+  const bmr = latestW && p.height && age ? calcBMR(latestW, p.height, age, p.gender) : null;
+  const moti = latestRec?.moti || null;
+  const mood = moodInfo(moti);
+  const latestDate = latestRec?.date ? formatDate(latestRec.date) : '記録なし';
 
   const prog = (p.startWeight && p.targetWeight && latestW)
     ? Math.min(100, Math.max(0, Math.round(
@@ -1430,12 +1631,64 @@ function renderGoalTab() {
   const remaining = (p.targetWeight && latestW) ? +(latestW - p.targetWeight).toFixed(1) : null;
   const streak = calcStreak();
 
-  // 開始からの変化量（プラス=減った）
-  const lost = (p.startWeight != null && latestW != null)
-    ? +(p.startWeight - latestW).toFixed(1) : null;
-
   el.innerHTML = `
-    <div class="section-title" style="margin-bottom:14px">目標</div>
+    <div class="section-title" style="margin-bottom:14px">現在の状態</div>
+
+    <div class="state-grid">
+      <div class="state-card primary">
+        <div class="state-label">最新記録</div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+          <div>
+            <div class="state-value big">${latestW ? (+latestW).toFixed(1) : '—'}<span class="state-unit">kg</span></div>
+            <div class="state-note">${latestDate}</div>
+          </div>
+          ${moti ? `<div style="text-align:right">
+            <div class="state-label">気分</div>
+            <div class="state-mood">${mood.icon}</div>
+            <div class="state-note">${mood.label}</div>
+          </div>` : `<div style="text-align:right">
+            <div class="state-label">気分</div>
+            <div class="state-value">—</div>
+            <div class="state-note">未記録</div>
+          </div>`}
+        </div>
+      </div>
+
+      ${bmi ? `<div class="state-card">
+        <div class="state-label">BMI</div>
+        <div class="state-value" style="color:${bi.color}">${bmi}</div>
+        <div class="state-note" style="color:${bi.color};font-weight:700">${bi.label}</div>
+      </div>` : ''}
+
+      ${bmr ? `<div class="state-card">
+        <div class="state-label">基礎代謝</div>
+        <div class="state-value">${bmr}<span class="state-unit">kcal</span></div>
+        <div class="state-note">目安値</div>
+      </div>` : ''}
+
+      ${p.startWeight ? `<div class="state-card">
+        <div class="state-label">開始体重</div>
+        <div class="state-value">${p.startWeight}<span class="state-unit">kg</span></div>
+        <div class="state-note">スタート時</div>
+      </div>` : ''}
+
+      ${p.targetWeight ? `<div class="state-card">
+        <div class="state-label">目標体重</div>
+        <div class="state-value" style="color:var(--accent)">${p.targetWeight}<span class="state-unit">kg</span></div>
+        <div class="state-note">目安として確認</div>
+      </div>` : ''}
+    </div>
+
+    <div class="streak-complete" style="margin-bottom:14px">
+      <div style="font-size:32px">🔥</div>
+      <div class="streak-stack">
+        <div class="streak-title">今月の記録</div>
+        <div class="streak-fill">${renderStreakFill(streak)}</div>
+        <div class="streak-caption">${streakCaption(streak)}</div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin:18px 0 14px">目標</div>
 
     ${p.finalGoal ? `
     <div class="goal-banner" style="margin-bottom:14px">
@@ -1447,7 +1700,7 @@ function renderGoalTab() {
     </div>` : ''}
 
     ${p.midGoal ? `
-    <div class="goal-banner" style="margin-bottom:14px;border-color:rgba(16,185,129,.2);background:rgba(16,185,129,.05)">
+    <div class="goal-banner" style="margin-bottom:14px;border-color:rgba(47,125,98,.18);background:rgba(47,125,98,.05)">
       <div class="goal-icon">📍</div>
       <div>
         <div class="goal-label" style="color:var(--accent)">中間目標</div>
@@ -1466,51 +1719,14 @@ function renderGoalTab() {
       </div>
       <div class="prog-sub">
         ${remaining !== null && remaining > 0 ? `目標まであと <b>${remaining}kg</b>` :
-          remaining !== null && remaining <= 0 ? '🎉 目標体重達成！' : ''}
+          remaining !== null && remaining <= 0 ? '目標体重達成' : ''}
       </div>
     </div>` : ''}
-
-    <div class="section-title" style="margin:18px 0 14px">体重・BMI</div>
-
-    ${lost !== null ? `
-    <div class="change-banner ${lost > 0 ? 'down' : lost < 0 ? 'up' : 'flat'}" style="margin-bottom:12px">
-      <div class="change-label">開始体重 ${p.startWeight}kg から</div>
-      <div class="change-val">${lost > 0 ? '−' : lost < 0 ? '＋' : '±'}${Math.abs(lost)}<span class="change-unit">kg</span></div>
-      <div class="change-sub">${lost > 0 ? 'よく頑張っています！' : lost < 0 ? '一緒に巻き返しましょう' : 'スタート地点です'}</div>
-    </div>` : ''}
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-      ${p.startWeight ? `<div class="hc-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
-        <div class="hc-label">開始体重</div>
-        <div class="hc-val">${p.startWeight}<span class="hc-unit">kg</span></div>
-      </div>` : ''}
-      ${p.targetWeight ? `<div class="hc-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
-        <div class="hc-label">目標体重</div>
-        <div class="hc-val" style="color:var(--accent2)">${p.targetWeight}<span class="hc-unit">kg</span></div>
-      </div>` : ''}
-      ${latestW ? `<div class="hc-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
-        <div class="hc-label">現在の体重</div>
-        <div class="hc-val">${(+latestW).toFixed(1)}<span class="hc-unit">kg</span></div>
-      </div>` : ''}
-      ${bmi ? `<div class="hc-item" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
-        <div class="hc-label">BMI</div>
-        <div class="hc-val" style="color:${bi.color}">${bmi}</div>
-        <div style="font-size:11px;font-weight:700;color:${bi.color};margin-top:4px">${bi.label}</div>
-      </div>` : ''}
-    </div>
-
-    <div class="streak-complete" style="margin-bottom:14px">
-      <div style="font-size:32px">🔥</div>
-      <div>
-        <div style="font-size:22px;font-weight:900;color:var(--warn)">${streak} 日連続</div>
-        <div style="font-size:12px;color:var(--text2)">継続は力なり！記録を続けましょう</div>
-      </div>
-    </div>
 
     ${p.targetDate ? `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;margin-bottom:14px">
       <div class="section-title" style="justify-content:center;margin-bottom:6px">目標期日</div>
-      <div style="font-size:18px;font-weight:800;color:var(--text)">${p.targetDate}</div>
+      <div style="font-size:18px;font-weight:700;color:var(--text)">${p.targetDate}</div>
       <div style="font-size:12px;color:var(--text3);margin-top:4px">${daysUntil(p.targetDate)}</div>
     </div>` : ''}
 
@@ -1559,16 +1775,16 @@ function updateCheerCard(streak, doneToday) {
     emoji = '🌱'; title = 'さあ、はじめましょう';
     sub = '今日の記録が、なりたい自分への第一歩です';
   } else if (streak >= 14) {
-    emoji = '🏆'; title = `${streak}日連続！`;
+    emoji = '🏆'; title = '習慣が根づいています';
     sub = 'もはや習慣ですね。あなたの努力は本物です';
   } else if (streak >= 7) {
-    emoji = '🔥'; title = `${streak}日連続！`;
+    emoji = '🔥'; title = 'いい習慣になっています';
     sub = '1週間突破！しっかり習慣になってきました';
   } else if (streak >= 3) {
-    emoji = '🔥'; title = `${streak}日連続！`;
+    emoji = '🔥'; title = 'いい流れです';
     sub = 'いい流れです。この調子で続けましょう';
   } else if (streak >= 1) {
-    emoji = '✨'; title = `${streak}日連続`;
+    emoji = '✨'; title = '積み上がっています';
     sub = 'いいスタート！明日も続けるとさらに弾みがつきます';
   } else {
     emoji = '💪'; title = 'おかえりなさい';
@@ -1605,9 +1821,23 @@ function calcBMI(w, h) {
 }
 function bmiInfo(bmi) {
   if (bmi < 18.5) return { label:'低体重', color:'#10b981', bg:'rgba(16,185,129,.12)' };
-  if (bmi < 25)   return { label:'標準体重 ✓', color:'#10b981', bg:'rgba(16,185,129,.12)' };
+  if (bmi < 25)   return { label:'標準体重', color:'#10b981', bg:'rgba(16,185,129,.12)' };
   if (bmi < 30)   return { label:'肥満(1度)', color:'#f59e0b', bg:'rgba(245,158,11,.12)' };
   return { label:'肥満(2度以上)', color:'#ef4444', bg:'rgba(239,68,68,.12)' };
+}
+function calcAge(birthdate) {
+  if (!birthdate) return null;
+  const b = new Date(birthdate);
+  if (Number.isNaN(b.getTime())) return null;
+  const n = new Date();
+  let age = n.getFullYear() - b.getFullYear();
+  if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) age--;
+  return age > 0 && age < 120 ? age : null;
+}
+function calcBMR(weight, height, age, gender) {
+  if (!weight || !height || !age) return null;
+  const base = 10 * weight + 6.25 * height - 5 * age;
+  return Math.round(gender === '女性' ? base - 161 : base + 5);
 }
 
 function onWeightInput(v) {
@@ -1615,12 +1845,13 @@ function onWeightInput(v) {
 }
 
 /* ══════════════════════════════════════
-   MOTI STARS
+   MOOD SELECT
 ══════════════════════════════════════ */
 function setMoti(v) {
   motiVal = v;
-  document.querySelectorAll('#motiStars .star').forEach((s, i) => s.classList.toggle('on', i < v));
-  document.getElementById('motiDesc').textContent = motiDescs[v];
+  document.querySelectorAll('#motiChoices .emotion-option')
+    .forEach(btn => btn.classList.toggle('selected', Number(btn.dataset.moti) === v));
+  renderMoodIllustration(v);
   document.getElementById('motiCard').classList.remove('required-unanswered');
   // 触覚フィードバック
   if (navigator.vibrate) navigator.vibrate(20);
@@ -1674,7 +1905,7 @@ async function submitRecord() {
     const wc = document.getElementById('weightInput');
     if (wc) wc.scrollIntoView({ behavior:'smooth', block:'center' });
     if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-    alert('体重・モチベ・トレーニングなど、いずれか入力してから送信してください');
+    alert('体重・気分・トレーニングなど、いずれか入力してから送信してください');
     return;
   }
 
@@ -1742,7 +1973,7 @@ async function submitRecord() {
       createdAt: new Date().toISOString(),
       _offline: true
     });
-    showSyncToast('📵 保存しました（オンライン復帰後に自動送信）');
+    showSyncToast('保存しました（オンライン復帰後に自動送信）');
     showCompletionScreen(payload);
   }
 }
@@ -1753,6 +1984,7 @@ async function submitRecord() {
 function showCompletionScreen(rec) {
   const h = patient.height;
   const bmi = (rec.weight && h) ? calcBMI(rec.weight, h) : null;
+  const mood = moodInfo(rec.moti);
   const a = patient.birthdate ? (() => {
     const b = new Date(patient.birthdate), n = new Date();
     let age = n.getFullYear() - b.getFullYear();
@@ -1765,16 +1997,16 @@ function showCompletionScreen(rec) {
   })() : null;
 
   const msgs = [
-    'お疲れ様でした！継続は力なり 💪',
-    '素晴らしい！記録を続けましょう 🌟',
-    '頑張っています！明日も一緒に 🎯',
-    'Keep it up！着実に前進中 ✨'
+    'お疲れ様でした。継続は力なり 💪',
+    '素晴らしいです。記録を続けましょう ✨',
+    '頑張っています。明日も一緒に 🎯',
+    '着実に前進中です 🌿'
   ];
   document.getElementById('completeMsg').textContent = msgs[Math.floor(Math.random() * msgs.length)];
 
   const cards = [
     rec.weight ? `<div class="result-card"><div class="rc-label">今日の体重</div><div class="rc-val">${rec.weight}<span class="rc-unit">kg</span></div></div>` : '',
-    `<div class="result-card"><div class="rc-label">モチベ</div><div class="rc-val" style="color:var(--warn)">${'★'.repeat(rec.moti)}</div></div>`,
+    rec.moti ? `<div class="result-card"><div class="rc-label">今日の気分</div><div class="rc-val" style="color:var(--warn)">${mood.icon}</div><div class="rc-sub">${mood.label}</div></div>` : '',
     (() => {
       const ti = patient.trainingItems || [];
       if (!ti.length) return '';
@@ -1792,7 +2024,7 @@ function showCompletionScreen(rec) {
     document.getElementById('progressSection').style.display = '';
     document.getElementById('progPct').textContent = prog + '%';
     document.getElementById('progSub').textContent =
-      remaining <= 0 ? '🎉 目標体重達成！' : `目標まであと ${remaining}kg`;
+      remaining <= 0 ? '目標体重達成' : `目標まであと ${remaining}kg`;
     setTimeout(() => document.getElementById('progFill').style.width = prog + '%', 300);
   }
 
@@ -1807,7 +2039,12 @@ function showCompletionScreen(rec) {
   }
 
   const streak = calcStreak();
-  document.getElementById('completionStreak').textContent = `${streak + 1} 日連続`;
+  const nextStreak = streak + 1;
+  document.getElementById('completionStreak').innerHTML = `
+    <div class="streak-title">今月の記録</div>
+    <div class="streak-fill">${renderStreakFill(nextStreak, true)}</div>
+    <div class="streak-caption">${streakCaption(nextStreak, true)}</div>
+  `;
 
   showScreen('screenComplete');
 }
