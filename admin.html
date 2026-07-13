@@ -371,7 +371,23 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 /* ═══ EXERCISE（セッションの種目記録）═══ */
 .ex-block{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px;background:var(--surface2)}
 .ex-head{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-.ex-head select{flex:1}
+.exercise-picker{position:relative;flex:1;min-width:0}
+.exercise-picker input.ex-search{background:var(--surface);padding-right:30px}
+.exercise-picker.open input.ex-search{border-color:var(--accent);box-shadow:0 0 0 3px rgba(14,165,233,.1)}
+.exercise-dropdown{
+  display:none;position:absolute;z-index:260;top:calc(100% + 6px);left:0;right:0;
+  max-height:280px;overflow:auto;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);padding:8px
+}
+.exercise-picker.open .exercise-dropdown{display:block}
+.exercise-cat{font-size:10px;font-weight:800;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:8px 8px 4px}
+.exercise-option{
+  width:100%;border:none;background:none;text-align:left;color:var(--text);
+  padding:9px 10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer
+}
+.exercise-option:hover,.exercise-option.active{background:rgba(14,165,233,.08);color:var(--accent)}
+.exercise-option.add{color:var(--accent2);border-top:1px solid var(--border);margin-top:6px;border-radius:0;padding-top:10px}
+.exercise-empty{font-size:12px;color:var(--text3);padding:10px 8px}
 .ex-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px 6px;border-radius:6px;flex-shrink:0}
 .ex-del:hover{color:var(--danger);background:rgba(239,68,68,.08)}
 .ex-set{display:flex;gap:6px;align-items:center;margin-bottom:6px}
@@ -1602,14 +1618,54 @@ async function loadExerciseMaster() {
   catch { exerciseMaster = []; }
 }
 
-// 種目セレクトのoptions HTML（「＋ 新しい種目を入力」付き）
-function exerciseOptions(selected) {
-  const opts = exerciseMaster.map(name =>
-    `<option value="${escapeHtml(name)}"${name===selected?' selected':''}>${escapeHtml(name)}</option>`).join('');
-  // selected がリストにない（過去に使った種目）場合も表示
-  const extra = (selected && !exerciseMaster.includes(selected))
-    ? `<option value="${escapeHtml(selected)}" selected>${escapeHtml(selected)}</option>` : '';
-  return `<option value="">種目を選択...</option>${extra}${opts}<option value="__new__">＋ 新しい種目を入力</option>`;
+function normalizeExerciseQuery(s) {
+  return String(s || '')
+    .normalize('NFKC')
+    .trim()
+    .toLowerCase()
+    .replace(/[ぁ-ゖ]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+}
+
+function exerciseInitials(name) {
+  return normalizeExerciseQuery(name)
+    .split(/[\s・･／/_-]+/)
+    .filter(Boolean)
+    .map(part => part[0])
+    .join('');
+}
+
+function exerciseNameMatches(name, query) {
+  const q = normalizeExerciseQuery(query);
+  if (!q) return true;
+  const n = normalizeExerciseQuery(name);
+  return n.includes(q) || exerciseInitials(name).startsWith(q);
+}
+
+function exerciseCategory(name) {
+  const n = normalizeExerciseQuery(name);
+  if (/スクワット|ランジ|レッグ|カーフ|ヒップ|ブルガリアン|下半身/.test(n)) return '脚・下半身';
+  if (/ベンチ|チェスト|プッシュアップ|腕立て|胸/.test(n)) return '胸';
+  if (/ラット|ロー|ロウ|プル|懸垂|デッドリフト|背中/.test(n)) return '背中';
+  if (/ショルダー|サイドレイズ|フロントレイズ|リアレイズ|肩/.test(n)) return '肩';
+  if (/アーム|カール|トライセプス|プレスダウン|二頭|三頭|腕/.test(n)) return '腕';
+  if (/プランク|クランチ|腹筋|レッグレイズ|バックエクステンション|体幹|コア/.test(n)) return '体幹';
+  if (/ラン|ウォーク|バイク|ストレッチ|モビリティ|有酸素|ケア/.test(n)) return '有酸素・ケア';
+  return 'その他';
+}
+
+const exerciseCategoryOrder = ['脚・下半身','胸','背中','肩','腕','体幹','有酸素・ケア','その他'];
+
+function exercisePickerHtml(selected) {
+  return `
+    <div class="exercise-picker">
+      <input type="hidden" class="exercise-name" value="${escapeHtml(selected || '')}">
+      <input type="text" class="ex-search" placeholder="種目を検索..." autocomplete="off"
+        value="${escapeHtml(selected || '')}"
+        onfocus="openExercisePicker(this)"
+        oninput="renderExerciseDropdown(this.closest('.exercise-picker'))"
+        onkeydown="onExercisePickerKey(event,this)">
+      <div class="exercise-dropdown"></div>
+    </div>`;
 }
 
 // エディタを既存データから描画
@@ -1627,7 +1683,7 @@ function addExerciseRow(ex) {
   const name = ex && ex.name ? ex.name : '';
   block.innerHTML = `
     <div class="ex-head">
-      <select onchange="onExerciseSelect(this)">${exerciseOptions(name)}</select>
+      ${exercisePickerHtml(name)}
       <button type="button" class="ex-del" title="この種目を削除" onclick="this.closest('.ex-block').remove()">削除</button>
     </div>
     <div class="ex-sets"></div>
@@ -1635,23 +1691,89 @@ function addExerciseRow(ex) {
   wrap.appendChild(block);
   const sets = (ex && ex.sets && ex.sets.length) ? ex.sets : [{}];
   sets.forEach(st => addSetRow(block, st));
+  renderExerciseDropdown(block.querySelector('.exercise-picker'));
 }
 
-// 種目セレクトで「新しい種目を入力」を選んだとき
-async function onExerciseSelect(sel) {
-  if (sel.value !== '__new__') return;
-  const name = (prompt('新しい種目名を入力してください') || '').trim();
-  if (!name) { sel.value = ''; return; }
-  try {
-    exerciseMaster = await api('POST', '/api/exercises', { name });
-  } catch { toast('種目の追加に失敗しました', 'error'); }
-  // 全ての種目セレクトを更新し、この欄を新種目に設定
-  document.querySelectorAll('#exerciseList .ex-head select').forEach(s => {
-    const cur = s === sel ? name : s.value;
-    s.innerHTML = exerciseOptions(cur);
-    s.value = cur;
+function openExercisePicker(input) {
+  closeExercisePickers(input.closest('.exercise-picker'));
+  input.closest('.exercise-picker').classList.add('open');
+  renderExerciseDropdown(input.closest('.exercise-picker'));
+}
+
+function closeExercisePickers(except) {
+  document.querySelectorAll('.exercise-picker.open').forEach(p => {
+    if (p !== except) p.classList.remove('open');
   });
 }
+
+function groupExerciseNames(names, query) {
+  const groups = {};
+  names.filter(name => exerciseNameMatches(name, query)).forEach(name => {
+    const cat = exerciseCategory(name);
+    (groups[cat] ||= []).push(name);
+  });
+  return groups;
+}
+
+function renderExerciseDropdown(picker) {
+  const input = picker.querySelector('.ex-search');
+  const dropdown = picker.querySelector('.exercise-dropdown');
+  const hidden = picker.querySelector('.exercise-name');
+  const current = hidden.value;
+  const names = [...exerciseMaster];
+  if (current && !names.includes(current)) names.unshift(current);
+  const groups = groupExerciseNames(names, input.value);
+  let html = '';
+  let hitCount = 0;
+  exerciseCategoryOrder.forEach(cat => {
+    const items = groups[cat] || [];
+    if (!items.length) return;
+    hitCount += items.length;
+    html += `<div class="exercise-cat">${cat}</div>`;
+    html += items.map(name =>
+      `<button type="button" class="exercise-option${name === current ? ' active' : ''}" data-name="${escapeHtml(name)}" onclick="selectExerciseName(this.closest('.exercise-picker'), this.dataset.name)">${escapeHtml(name)}</button>`
+    ).join('');
+  });
+  if (!hitCount) html += '<div class="exercise-empty">該当する種目がありません</div>';
+  const addLabel = input.value.trim()
+    ? `＋「${escapeHtml(input.value.trim())}」を新しい種目として追加`
+    : '＋ 新しい種目を入力';
+  html += `<button type="button" class="exercise-option add" onclick="addExerciseFromPicker(this.closest('.exercise-picker'))">${addLabel}</button>`;
+  dropdown.innerHTML = html;
+}
+
+function selectExerciseName(picker, name) {
+  picker.querySelector('.exercise-name').value = name || '';
+  picker.querySelector('.ex-search').value = name || '';
+  picker.classList.remove('open');
+}
+
+async function addExerciseFromPicker(picker) {
+  const input = picker.querySelector('.ex-search');
+  let name = input.value.trim();
+  if (!name) name = (prompt('新しい種目名を入力してください') || '').trim();
+  if (!name) return;
+  try {
+    exerciseMaster = await api('POST', '/api/exercises', { name });
+    selectExerciseName(picker, name);
+    refreshExercisePickers();
+  } catch { toast('種目の追加に失敗しました', 'error'); }
+}
+
+function refreshExercisePickers() {
+  document.querySelectorAll('#exerciseList .exercise-picker').forEach(picker => renderExerciseDropdown(picker));
+}
+
+function onExercisePickerKey(ev, input) {
+  if (ev.key === 'Escape') {
+    input.closest('.exercise-picker').classList.remove('open');
+    input.blur();
+  }
+}
+
+document.addEventListener('click', (ev) => {
+  if (!ev.target.closest('.exercise-picker')) closeExercisePickers();
+});
 
 // セット行を追加
 function addSetRow(block, st) {
@@ -1679,8 +1801,8 @@ function delSetRow(btn) {
 function collectExercises() {
   const out = [];
   document.querySelectorAll('#exerciseList .ex-block').forEach(block => {
-    const name = block.querySelector('.ex-head select').value;
-    if (!name || name === '__new__') return;
+    const name = block.querySelector('.exercise-name').value.trim();
+    if (!name) return;
     const sets = [];
     block.querySelectorAll('.ex-set').forEach(row => {
       const w = row.querySelector('.w').value;
@@ -1720,6 +1842,7 @@ async function addExerciseMaster() {
     exerciseMaster = await api('POST', '/api/exercises', { name });
     input.value = '';
     renderExerciseMasterList();
+    refreshExercisePickers();
     toast('追加しました');
   } catch { toast('追加に失敗しました', 'error'); }
 }
@@ -1730,6 +1853,7 @@ async function deleteExerciseMaster(index) {
   try {
     exerciseMaster = await api('DELETE', '/api/exercises', { name });
     renderExerciseMasterList();
+    refreshExercisePickers();
     toast('削除しました');
   } catch { toast('削除に失敗しました', 'error'); }
 }

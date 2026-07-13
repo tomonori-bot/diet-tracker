@@ -818,43 +818,76 @@ app.post('/api/intake/:code', async (req, res) => {
 });
 
 /* ════════════════════════════════
-   マイ種目マスタ（トレーナーごと）
+   種目マスタ
 ════════════════════════════════ */
+function normalizeExerciseName(name) {
+  return String(name || '').trim().toLowerCase();
+}
 
-/* ─── マイ種目リスト取得（無ければ初期種目を保存して返す） ─── */
+function allExerciseNames(db) {
+  const out = [];
+  const seen = new Set();
+  function add(name) {
+    const clean = String(name || '').trim();
+    const key = normalizeExerciseName(clean);
+    if (!clean || seen.has(key)) return;
+    seen.add(key);
+    out.push(clean);
+  }
+  DEFAULT_EXERCISES.forEach(add);
+  const store = db.exercises || {};
+  if (Array.isArray(store)) {
+    store.forEach(add);
+  } else {
+    Object.values(store).forEach(list => {
+      if (Array.isArray(list)) list.forEach(add);
+    });
+  }
+  return out;
+}
+
+/* ─── 種目リスト取得（全アカウント共通候補） ─── */
 app.get('/api/exercises', requireAdmin, async (req, res) => {
   const db = await loadDB();
-  if (!Array.isArray(db.exercises[req.ownerId])) {
-    db.exercises[req.ownerId] = [...DEFAULT_EXERCISES];
-    await saveDB(db);
-  }
-  res.json(db.exercises[req.ownerId]);
+  res.json(allExerciseNames(db));
 });
 
-/* ─── マイ種目を追加 ─── */
+/* ─── 種目を追加（保存先は追加元アカウント、候補は共通集約） ─── */
 app.post('/api/exercises', requireAdmin, async (req, res) => {
   const name = (req.body?.name || '').trim();
   if (!name) return res.status(400).json({ error: '種目名を入力してください' });
   const db = await loadDB();
-  if (!Array.isArray(db.exercises[req.ownerId])) db.exercises[req.ownerId] = [...DEFAULT_EXERCISES];
-  // 重複（大文字小文字・前後空白無視）は追加しない
-  const exists = db.exercises[req.ownerId].some(e => e.toLowerCase() === name.toLowerCase());
+  if (!db.exercises || Array.isArray(db.exercises)) db.exercises = {};
+  if (!Array.isArray(db.exercises[req.ownerId])) db.exercises[req.ownerId] = [];
+  const key = normalizeExerciseName(name);
+  const exists = db.exercises[req.ownerId].some(e => normalizeExerciseName(e) === key);
   if (!exists) {
     db.exercises[req.ownerId].push(name);
     await saveDB(db);
   }
-  res.json(db.exercises[req.ownerId]);
+  res.json(allExerciseNames(db));
 });
 
-/* ─── マイ種目を削除 ─── */
+/* ─── 種目を削除（同名候補を全アカウント配列から削除） ─── */
 app.delete('/api/exercises', requireAdmin, async (req, res) => {
   const name = (req.body?.name || '').trim();
   const db = await loadDB();
-  if (Array.isArray(db.exercises[req.ownerId])) {
-    db.exercises[req.ownerId] = db.exercises[req.ownerId].filter(e => e !== name);
-    await saveDB(db);
+  const key = normalizeExerciseName(name);
+  let changed = false;
+  if (db.exercises && !Array.isArray(db.exercises)) {
+    Object.keys(db.exercises).forEach(owner => {
+      if (!Array.isArray(db.exercises[owner])) return;
+      const before = db.exercises[owner].length;
+      db.exercises[owner] = db.exercises[owner].filter(e => normalizeExerciseName(e) !== key);
+      if (db.exercises[owner].length !== before) changed = true;
+    });
+  } else if (Array.isArray(db.exercises)) {
+    const before = db.exercises.length;
+    db.exercises = db.exercises.filter(e => normalizeExerciseName(e) !== key);
+    changed = db.exercises.length !== before;
   }
-  res.json(db.exercises[req.ownerId] || []);
+  if (changed) await saveDB(db);
+  res.json(allExerciseNames(db));
 });
 
 /* ─── 写真アップロード（ビフォーアフター） ─── */
