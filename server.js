@@ -25,6 +25,13 @@ const DEFAULT_EXERCISES = [
 ];
 
 app.use(cors({ origin: true, credentials: true }));
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
 app.use(express.json({ limit: '12mb' }));
 
 /* ─── DB helpers は db.js に移動（loadDB / saveDB を使用） ─── */
