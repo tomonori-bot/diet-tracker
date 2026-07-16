@@ -13,6 +13,8 @@ const DATA_FILE = path.join(__dirname, 'data', 'db.json');
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'bodylog2025';
 const REGISTRATION_ENABLED = process.env.REGISTRATION_ENABLED !== 'false';
+const LOGIN_MAX_ATTEMPTS = Math.max(1, parseInt(process.env.LOGIN_MAX_ATTEMPTS || '10', 10) || 10);
+const LOGIN_LOCK_MINUTES = Math.max(1, parseInt(process.env.LOGIN_LOCK_MINUTES || '15', 10) || 15);
 
 // 全体バックアップ用の秘密キー（運営者のみが知る。環境変数で設定）
 // 未設定なら全体バックアップAPIは無効（安全側に倒す）
@@ -50,6 +52,40 @@ function verifyPassword(password, salt, hash) {
 /* ─── 認証（Bearerトークン方式・PCとスマホで同じトークンで共有可） ─── */
 function makeToken() {
   return crypto.randomBytes(24).toString('hex');
+}
+
+const loginFailures = new Map();
+
+function loginFailureKey(req, username) {
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim()
+    || req.socket?.remoteAddress
+    || 'unknown';
+  return `${ip}:${String(username || '').toLowerCase()}`;
+}
+
+function isLoginLocked(key) {
+  const rec = loginFailures.get(key);
+  if (!rec || !rec.lockedUntil) return false;
+  if (Date.now() >= rec.lockedUntil) {
+    loginFailures.delete(key);
+    return false;
+  }
+  return true;
+}
+
+function recordLoginFailure(key) {
+  const now = Date.now();
+  const rec = loginFailures.get(key) || { count: 0, lockedUntil: 0 };
+  rec.count += 1;
+  if (rec.count >= LOGIN_MAX_ATTEMPTS) {
+    rec.lockedUntil = now + LOGIN_LOCK_MINUTES * 60 * 1000;
+  }
+  loginFailures.set(key, rec);
+}
+
+function clearLoginFailure(key) {
+  loginFailures.delete(key);
 }
 
 function getToken(req) {
@@ -110,6 +146,10 @@ app.post('/api/auth/register', async (req, res) => {
 /* ─── 認証API ─── */
 app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body || {};
+  const loginKey = loginFailureKey(req, username);
+  if (isLoginLocked(loginKey)) {
+    return res.status(429).json({ error: 'ログイン試行が多すぎます。しばらく時間を置いて再度お試しください' });
+  }
   const db = await loadDB();
   let ok = false;
   let authUser = username;
@@ -127,8 +167,10 @@ app.post('/api/auth/login', async (req, res) => {
     }
   }
   if (!ok) {
+    recordLoginFailure(loginKey);
     return res.status(401).json({ error: 'メールアドレス／ユーザー名またはパスワードが正しくありません' });
   }
+  clearLoginFailure(loginKey);
   const token = makeToken();
   db.sessions[token] = {
     token, role: 'admin', username: authUser,
