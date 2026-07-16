@@ -12,6 +12,7 @@ const DATA_FILE = path.join(__dirname, 'data', 'db.json');
 // 管理者アカウント（環境変数で上書き可。デフォルト: admin / bodylog2025）
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'bodylog2025';
+const REGISTRATION_ENABLED = process.env.REGISTRATION_ENABLED !== 'false';
 
 // 全体バックアップ用の秘密キー（運営者のみが知る。環境変数で設定）
 // 未設定なら全体バックアップAPIは無効（安全側に倒す）
@@ -77,6 +78,9 @@ async function requireAdmin(req, res, next) {
 
 /* ─── 新規登録API ─── */
 app.post('/api/auth/register', async (req, res) => {
+  if (!REGISTRATION_ENABLED) {
+    return res.status(403).json({ error: '現在、新規登録は受け付けていません' });
+  }
   // 新規登録はメールアドレス方式
   const email = (req.body?.email || '').trim();
   const password = req.body?.password || '';
