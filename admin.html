@@ -169,6 +169,23 @@ tbody tr:hover td{background:rgba(14,165,233,.03)}
 .badge-red{background:rgba(239,68,68,.1);color:var(--danger)}
 .badge-yellow{background:rgba(245,158,11,.1);color:var(--warn)}
 .badge-purple{background:rgba(139,92,246,.1);color:var(--purple)}
+/* CRMステータス */
+.badge-status{font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px}
+.st-見込み{background:rgba(139,92,246,.12);color:#8b5cf6}
+.st-継続{background:rgba(16,185,129,.12);color:var(--accent2)}
+.st-休眠{background:rgba(239,68,68,.12);color:var(--danger)}
+.st-卒業{background:rgba(148,163,184,.15);color:#64748b}
+.risk-tag{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;background:rgba(245,158,11,.14);color:var(--warn)}
+.pt-card.at-risk{border-color:rgba(245,158,11,.4)}
+.pt-card.at-dormant{border-color:rgba(239,68,68,.35)}
+/* CRMサマリー */
+.crm-grid{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:14px}
+.crm-mini{padding:16px 18px}
+.crm-big{font-size:34px;font-weight:900;letter-spacing:-1px;line-height:1.1;margin:2px 0}
+.crm-stages{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.follow-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border)}
+.follow-row:last-child{border-bottom:none}
+@media(max-width:640px){.crm-grid{grid-template-columns:1fr}.follow-row{flex-direction:column;align-items:flex-start;gap:8px}}
 .badge-new{background:var(--danger);color:#fff;animation:pulse-badge 2s infinite}
 @keyframes pulse-badge{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.8;transform:scale(1.05)}}
 
@@ -519,6 +536,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="stat-card yellow"><div class="sc-label">セッション数</div><div class="sc-num">—</div></div>
     <div class="stat-card red"><div class="sc-label">未確認記録</div><div class="sc-num">—</div></div>
   </div>
+  <div id="dashCrm"></div>
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div style="font-size:14px;font-weight:700">最近の活動</div>
@@ -556,6 +574,16 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
         <div class="dh-name" id="detailName">-</div>
         <div class="dh-kana" id="detailKana"></div>
         <div class="dh-tags" id="detailTags"></div>
+        <div id="detailStatusRow" style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--text3);font-weight:700">ステータス</span>
+          <select id="detailStatus" onchange="changeStatus(this.value)"
+            style="padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">
+            <option value="見込み">🟣 見込み</option>
+            <option value="継続">🟢 継続</option>
+            <option value="卒業">⚪ 卒業</option>
+          </select>
+          <span id="detailRiskTag"></span>
+        </div>
         <div class="dh-actions">
           <button class="btn btn-outline btn-sm" onclick="showQR()">QRコード</button>
           <button class="btn btn-outline btn-sm" onclick="openEditPatientModal()">編集</button>
@@ -1102,6 +1130,66 @@ function showPage(name) {
 }
 
 /* ════════════════════════════════
+   CRM サマリー（継続率・段階別・要フォロー）
+════════════════════════════════ */
+function renderCrmSummary(stats) {
+  const el = document.getElementById('dashCrm');
+  if (!el) return;
+  const c = stats.statusCounts || {};
+  const rr = stats.retentionRate;
+  const follow = stats.followList || [];
+
+  const followRows = follow.length
+    ? follow.slice(0, 10).map(f => `
+      <div class="follow-row">
+        <div>
+          <span class="badge-status st-${f.status}">${f.status}</span>
+          <b style="margin-left:8px">${f.name}</b>
+          <span style="color:var(--warn);font-weight:700;margin-left:8px">${f.daysInactive}日 未活動</span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-xs" onclick="openPatient('${f.id}')">カルテ</button>
+          <button class="btn btn-primary btn-xs" onclick="markFollowed('${f.id}', this)">対応済み</button>
+        </div>
+      </div>`).join('')
+    : '<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">🎉 今フォローが必要な顧客はいません</div>';
+
+  el.innerHTML = `
+    <div class="crm-grid">
+      <div class="card crm-mini">
+        <div class="sc-label">継続率</div>
+        <div class="crm-big" style="color:var(--accent2)">${rr != null ? rr + '%' : '—'}</div>
+        <div class="sc-sub">離脱率 ${stats.churnRate != null ? stats.churnRate + '%' : '—'}</div>
+      </div>
+      <div class="card crm-mini">
+        <div class="sc-label">段階別</div>
+        <div class="crm-stages">
+          <span class="badge-status st-見込み">見込 ${c.見込み||0}</span>
+          <span class="badge-status st-継続">継続 ${c.継続||0}</span>
+          <span class="badge-status st-休眠">休眠 ${c.休眠||0}</span>
+          <span class="badge-status st-卒業">卒業 ${c.卒業||0}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:700">📣 今日フォローすべき人</div>
+        ${follow.length ? `<span class="risk-tag">${follow.length}人</span>` : ''}
+      </div>
+      ${followRows}
+    </div>`;
+}
+
+async function markFollowed(id, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  try {
+    await api('POST', `/api/patients/${id}/follow`);
+    toast('フォロー済みにしました');
+    loadDashboard();
+  } catch { toast('失敗しました', 'error'); if (btn) { btn.disabled = false; btn.textContent = '対応済み'; } }
+}
+
+/* ════════════════════════════════
    DASHBOARD
 ════════════════════════════════ */
 async function loadDashboard() {
@@ -1127,12 +1215,16 @@ async function loadDashboard() {
         <div class="sc-sub">施術・トレーニング</div>
       </div>
       <div class="stat-card red">
-        
+
         <div class="sc-label">未取り込み記録</div>
         <div class="sc-num">${stats.totalUnimported}</div>
         <div class="sc-sub">患者からの報告</div>
       </div>
     `;
+
+    // ── CRMサマリー（継続率・段階別・フォロー） ──
+    renderCrmSummary(stats);
+
     // アクティビティ
     if (!stats.recentActivity.length) {
       document.getElementById('dashActivity').innerHTML = '<div class="empty-state"><div class="empty-state-msg">まだ活動がありません</div></div>';
@@ -1210,12 +1302,22 @@ async function loadPatients(query='') {
       : null;
     const avatarColors = ['var(--grad)', 'var(--grad2)', 'linear-gradient(135deg,#8b5cf6,#c4b5fd)', 'linear-gradient(135deg,#f59e0b,#fbbf24)', 'linear-gradient(135deg,#ec4899,#f9a8d4)'];
     const colorIdx = p.name.charCodeAt(0) % avatarColors.length;
+    const riskClass = p.risk === 'dormant' ? ' at-dormant' : p.risk === 'risk' ? ' at-risk' : '';
+    const riskTag = p.risk === 'risk'
+      ? `<span class="risk-tag">⚠ ${p.daysInactive}日 未活動</span>`
+      : p.risk === 'dormant'
+      ? `<span class="risk-tag" style="background:rgba(239,68,68,.14);color:var(--danger)">💤 ${p.daysInactive}日 未活動</span>`
+      : '';
     return `
-    <div class="pt-card${p.unimportedCount > 0 ? ' has-new' : ''}" onclick="openPatient('${p.id}')">
+    <div class="pt-card${p.unimportedCount > 0 ? ' has-new' : ''}${riskClass}" onclick="openPatient('${p.id}')">
       <button class="pt-del" onclick="event.stopPropagation();deletePatient('${p.id}')">✕</button>
       ${p.unimportedCount > 0 ? `<div class="pt-new-badge">NEW ${p.unimportedCount}</div>` : ''}
       <div class="pt-avatar" style="background:${avatarColors[colorIdx]}">${p.name[0]}</div>
       <div class="pt-name">${p.name}</div>
+      <div style="margin:4px 0;display:flex;gap:5px;justify-content:center;flex-wrap:wrap">
+        <span class="badge-status st-${p.status}">${p.status}</span>
+        ${riskTag}
+      </div>
       <div class="pt-meta">${p.kana ? p.kana+' ' : ''}${a ? a+'歳' : ''}${p.gender ? ' ・ '+p.gender : ''}</div>
       <div class="pt-meta" style="margin-top:4px">
         ${p.purpose ? `<span class="badge badge-blue" style="margin-bottom:4px">${p.purpose}</span><br>` : ''}
@@ -1319,6 +1421,19 @@ async function openPatient(id) {
   } catch(e) { toast('読み込みに失敗しました', 'error'); }
 }
 
+// ステータス手動変更（見込み/継続/卒業）
+async function changeStatus(newStatus) {
+  if (!currentPatientId) return;
+  try {
+    await api('PUT', `/api/patients/${currentPatientId}`, { status: newStatus });
+    if (currentPatient) currentPatient.status = newStatus;
+    toast(`ステータスを「${newStatus}」に変更しました`);
+    // 詳細のリスク表示・一覧・ダッシュボードを更新
+    currentPatient = await api('GET', '/api/patients/' + currentPatientId);
+    renderDetail();
+  } catch { toast('変更に失敗しました', 'error'); }
+}
+
 function renderDetail() {
   const p = currentPatient;
   if (!p) return;
@@ -1342,6 +1457,20 @@ function renderDetail() {
   if (p.height) tags.push(`<span class="badge badge-green">${p.height}cm</span>`);
   if (p.purpose) tags.push(`<span class="badge badge-yellow">${p.purpose}</span>`);
   document.getElementById('detailTags').innerHTML = tags.join('');
+
+  // CRMステータス
+  const crm = p._crm || {};
+  document.getElementById('detailStatus').value = crm.storedStatus || p.status || '継続';
+  const riskEl = document.getElementById('detailRiskTag');
+  if (crm.risk === 'dormant') {
+    riskEl.innerHTML = `<span class="risk-tag" style="background:rgba(239,68,68,.14);color:var(--danger)">💤 休眠中（${crm.daysInactive}日 未活動）</span>`;
+  } else if (crm.risk === 'risk') {
+    riskEl.innerHTML = `<span class="risk-tag">⚠ 離脱リスク（${crm.daysInactive}日 未活動）</span>`;
+  } else if (crm.daysInactive != null) {
+    riskEl.innerHTML = `<span style="font-size:11px;color:var(--accent2);font-weight:700">✓ ${crm.daysInactive}日前に活動</span>`;
+  } else {
+    riskEl.innerHTML = '';
+  }
 
   // Metrics
   const recs = p.records || [];

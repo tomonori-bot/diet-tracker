@@ -361,6 +361,47 @@ function normalizeExercises(input) {
     .slice(0, 30); // 1セッション最大30種目
 }
 
+/* ═══════════════════════════════════════════════════════
+   CRM：顧客の状態計算（活動日ベース）
+   ・lastActivity：最後に活動した日（記録・セッション・自己記録）
+   ・daysInactive：そこから今日までの日数
+   ・effectiveStatus：見込み/継続/休眠/卒業（休眠は自動判定）
+   ・followNeeded：要フォロー（離脱リスクかつ未対応）
+═══════════════════════════════════════════════════════ */
+const CRM_RISK_DAYS = 14;     // 14日活動なし → 離脱リスク
+const CRM_DORMANT_DAYS = 30;  // 30日活動なし → 休眠
+
+function computeCrm(p) {
+  // 全活動日を集める
+  const dates = [];
+  (p.records || []).forEach(r => r.date && dates.push(r.date));
+  (p.patientRecords || []).forEach(r => r.date && dates.push(r.date));
+  (p.sessions || []).forEach(s => s.date && dates.push(s.date));
+  const lastActivity = dates.length ? dates.sort().slice(-1)[0]
+    : (p.startDate || (p.createdAt || '').slice(0, 10) || null);
+
+  let daysInactive = null;
+  if (lastActivity) {
+    const diff = Date.now() - new Date(lastActivity + 'T00:00:00').getTime();
+    daysInactive = Math.max(0, Math.floor(diff / 86400000));
+  }
+
+  const stored = p.status || '継続';  // 既定は継続
+  let effectiveStatus = stored;
+  let risk = 'ok'; // ok | risk | dormant
+  if (stored === '継続' && daysInactive != null) {
+    if (daysInactive >= CRM_DORMANT_DAYS) { effectiveStatus = '休眠'; risk = 'dormant'; }
+    else if (daysInactive >= CRM_RISK_DAYS) { risk = 'risk'; }
+  }
+
+  // フォロー要否：リスクあり かつ「最後の活動より後にフォローしていない」
+  const followedAt = p.followedAt || null;
+  const followNeeded = (risk === 'risk' || risk === 'dormant') &&
+    (!followedAt || (lastActivity && followedAt < lastActivity + 'T00:00:00'));
+
+  return { lastActivity, daysInactive, storedStatus: stored, effectiveStatus, risk, followNeeded, followedAt };
+}
+
 /* ─── 患者一覧取得（自分の患者のみ） ─── */
 app.get('/api/patients', requireAdmin, async (req, res) => {
   const db = await loadDB();
@@ -375,6 +416,7 @@ app.get('/api/patients', requireAdmin, async (req, res) => {
   }
   res.json(list.map(p => {
     const unimported = (p.patientRecords || []).filter(r => !r.imported).length;
+    const crm = computeCrm(p);
     return {
       id: p.id, name: p.name, kana: p.kana, memo: p.memo,
       gender: p.gender, birthdate: p.birthdate,
@@ -384,7 +426,14 @@ app.get('/api/patients', requireAdmin, async (req, res) => {
       latestRecord: p.records?.slice(-1)[0] || null,
       recordCount: p.records?.length || 0,
       sessionCount: p.sessions?.length || 0,
-      unimportedCount: unimported
+      unimportedCount: unimported,
+      // CRM状態
+      status: crm.effectiveStatus,
+      storedStatus: crm.storedStatus,
+      risk: crm.risk,
+      daysInactive: crm.daysInactive,
+      lastActivity: crm.lastActivity,
+      followNeeded: crm.followNeeded,
     };
   }));
 });
@@ -410,6 +459,8 @@ app.post('/api/patients', requireAdmin, async (req, res) => {
     midGoal: req.body.midGoal || '',
     karteInfo: req.body.karteInfo || '',
     tags: req.body.tags || [],
+    status: req.body.status || '継続',   // CRMステータス
+    followedAt: null,
     createdAt: new Date().toISOString(),
     records: [],
     sessions: [],
@@ -433,7 +484,7 @@ app.get('/api/patients/:id', async (req, res) => {
   const token = getToken(req);
   const sess = token && db.sessions[token];
   const isAdmin = sess && sess.role === 'admin';
-  if (isAdmin) return res.json(p);
+  if (isAdmin) return res.json({ ...p, _crm: computeCrm(p) });
 
   // ── 顧客向け：ホワイトリストの安全な項目だけ返す ──
   // （カルテ・スタッフメモ・次回プラン等の内部情報は最初から含めない）
@@ -477,6 +528,17 @@ app.put('/api/patients/:id', requireAdmin, async (req, res) => {
   db.patients[idx] = { ...db.patients[idx], ...body, id: req.params.id };
   await saveDB(db);
   res.json(db.patients[idx]);
+});
+
+/* ─── フォロー済みにする（要フォローを解除） ─── */
+app.post('/api/patients/:id/follow', requireAdmin, async (req, res) => {
+  const db = await loadDB();
+  const p = db.patients.find(p => p.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  if (!ownsPatient(p, req.ownerId)) return res.status(403).json({ error: 'Forbidden' });
+  p.followedAt = new Date().toISOString();
+  await saveDB(db);
+  res.json({ ok: true, followedAt: p.followedAt });
 });
 
 /* ─── 患者削除 ─── */
@@ -730,12 +792,39 @@ app.get('/api/stats', requireAdmin, async (req, res) => {
   });
   recentActivity.sort((a,b) => b.date.localeCompare(a.date));
 
+  // ── CRM集計 ──
+  const counts = { 見込み: 0, 継続: 0, 休眠: 0, 卒業: 0 };
+  const followList = [];  // 要フォローの顧客
+  patients.forEach(p => {
+    const crm = computeCrm(p);
+    counts[crm.effectiveStatus] = (counts[crm.effectiveStatus] || 0) + 1;
+    if (crm.followNeeded) {
+      followList.push({
+        id: p.id, name: p.name,
+        daysInactive: crm.daysInactive,
+        status: crm.effectiveStatus,
+        lastActivity: crm.lastActivity,
+      });
+    }
+  });
+  followList.sort((a, b) => (b.daysInactive || 0) - (a.daysInactive || 0));
+
+  // 継続率：継続 /（継続＋休眠）。見込み・卒業は母数から除外
+  const activeBase = counts.継続 + counts.休眠;
+  const retentionRate = activeBase > 0 ? Math.round(counts.継続 / activeBase * 100) : null;
+  const churnRate = activeBase > 0 ? Math.round(counts.休眠 / activeBase * 100) : null;
+
   res.json({
     totalPatients: patients.length,
     totalRecords,
     totalSessions,
     totalUnimported,
-    recentActivity: recentActivity.slice(0, 15)
+    recentActivity: recentActivity.slice(0, 15),
+    // CRM
+    statusCounts: counts,
+    retentionRate,
+    churnRate,
+    followList,
   });
 });
 
@@ -859,6 +948,8 @@ app.post('/api/intake/:code', async (req, res) => {
       submittedAt: new Date().toISOString()
     },
     tags: ['問診票'],
+    status: '見込み',   // 問診票記入＝見込み客
+    followedAt: null,
     createdAt: new Date().toISOString(),
     records: [],
     sessions: [],
