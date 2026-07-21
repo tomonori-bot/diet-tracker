@@ -1,0 +1,38 @@
+name: Daily Backup
+
+on:
+  schedule:
+    - cron: '0 18 * * *'  # 毎日 03:00 JST（UTC 18:00）
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Supabaseからデータを書き出し
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: node backup.js
+
+      - name: バックアップリポジトリへ保存
+        env:
+          BACKUP_REPO_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+          BACKUP_REPO: ${{ vars.BACKUP_REPO || 'tomonori-bot/bodylog-backups' }}
+        run: |
+          git config --global user.name "bodylog-backup-bot"
+          git config --global user.email "backup-bot@users.noreply.github.com"
+          git clone "https://x-access-token:${BACKUP_REPO_TOKEN}@github.com/${BACKUP_REPO}.git" backup-repo
+          mkdir -p backup-repo/daily
+          cp backup-output/*.json backup-repo/daily/
+          cd backup-repo
+          git add daily
+          git diff --cached --quiet && echo "変更なし（スキップ）" && exit 0
+          git commit -m "backup: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
