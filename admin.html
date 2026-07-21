@@ -134,16 +134,37 @@ input,select,textarea{
 }
 input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(14,165,233,.1)}
 textarea{resize:vertical;line-height:1.6}
-.purpose-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.purpose-check{
-  display:flex;align-items:center;justify-content:center;min-height:38px;
-  padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
-  background:var(--surface2);color:var(--text2);font-size:12px;font-weight:700;
-  text-align:center;line-height:1.35;cursor:pointer;transition:all .15s;user-select:none
+.purpose-select{position:relative}
+.purpose-trigger{
+  width:100%;min-height:42px;padding:9px 12px;border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-size:13px;font-weight:700;text-align:left;transition:border-color .15s,box-shadow .15s,background .15s
 }
-.purpose-check:hover{border-color:rgba(14,165,233,.35);background:#fff;color:var(--text)}
+.purpose-trigger:hover,.purpose-select.open .purpose-trigger{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(14,165,233,.1)}
+.purpose-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.purpose-caret{color:var(--text3);font-size:13px;transition:transform .15s}
+.purpose-select.open .purpose-caret{transform:rotate(180deg)}
+.purpose-menu{
+  display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:80;
+  padding:6px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);max-height:260px;overflow:auto
+}
+.purpose-select.open .purpose-menu{display:flex;flex-direction:column;gap:2px}
+.purpose-check{
+  display:flex;align-items:center;justify-content:flex-start;min-height:36px;
+  padding:8px 11px;border:1px solid transparent;border-radius:8px;
+  background:transparent;color:var(--text2);font-size:13px;font-weight:700;
+  text-align:left;line-height:1.35;cursor:pointer;transition:all .15s;user-select:none
+}
+.purpose-check::before{
+  content:'';width:16px;height:16px;border-radius:5px;border:1.5px solid var(--border);
+  background:var(--surface2);margin-right:9px;flex-shrink:0;transition:all .15s
+}
+.purpose-check:hover{background:rgba(14,165,233,.05);color:var(--text)}
 .purpose-check input{display:none}
-.purpose-check.on{border-color:var(--accent);background:rgba(14,165,233,.1);color:var(--accent);box-shadow:0 0 0 3px rgba(14,165,233,.08)}
+.purpose-check.on{background:rgba(14,165,233,.08);color:var(--accent)}
+.purpose-check.on::before{content:'✓';display:flex;align-items:center;justify-content:center;background:var(--accent);border-color:var(--accent);color:#fff;font-size:11px;font-weight:900}
 .purpose-custom{margin-top:8px}
 .input-group{display:flex;gap:8px;align-items:center}
 .range-wrap{display:flex;align-items:center;gap:10px;margin-top:4px}
@@ -723,15 +744,21 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="form-group"><label class="fl">生年月日</label><input type="date" id="ap-birthdate" /></div>
       <div class="form-group"><label class="fl">身長 (cm)</label><input type="number" id="ap-height" placeholder="162" step="0.1" /></div>
       <div class="form-group full"><label class="fl">来院目的</label>
-        <div class="purpose-checks" id="ap-purposeChecks">
-          <label class="purpose-check"><input type="checkbox" value="ダイエット"><span>ダイエット</span></label>
-          <label class="purpose-check"><input type="checkbox" value="姿勢改善"><span>姿勢改善</span></label>
-          <label class="purpose-check"><input type="checkbox" value="腰痛改善"><span>腰痛改善</span></label>
-          <label class="purpose-check"><input type="checkbox" value="肩こり改善"><span>肩こり改善</span></label>
-          <label class="purpose-check"><input type="checkbox" value="体力向上"><span>体力向上</span></label>
-          <label class="purpose-check"><input type="checkbox" value="体型改善"><span>体型改善</span></label>
-          <label class="purpose-check"><input type="checkbox" value="健康増進"><span>健康増進</span></label>
-          <label class="purpose-check"><input type="checkbox" value="スポーツパフォーマンス向上"><span>スポーツパフォーマンス向上</span></label>
+        <div class="purpose-select" id="ap-purposeSelect">
+          <button type="button" class="purpose-trigger" onclick="togglePurposeDropdown('ap')">
+            <span class="purpose-label" id="ap-purposeLabel">選択してください</span>
+            <span class="purpose-caret">⌄</span>
+          </button>
+          <div class="purpose-menu" id="ap-purposeChecks">
+            <label class="purpose-check"><input type="checkbox" value="ダイエット"><span>ダイエット</span></label>
+            <label class="purpose-check"><input type="checkbox" value="姿勢改善"><span>姿勢改善</span></label>
+            <label class="purpose-check"><input type="checkbox" value="腰痛改善"><span>腰痛改善</span></label>
+            <label class="purpose-check"><input type="checkbox" value="肩こり改善"><span>肩こり改善</span></label>
+            <label class="purpose-check"><input type="checkbox" value="体力向上"><span>体力向上</span></label>
+            <label class="purpose-check"><input type="checkbox" value="体型改善"><span>体型改善</span></label>
+            <label class="purpose-check"><input type="checkbox" value="健康増進"><span>健康増進</span></label>
+            <label class="purpose-check"><input type="checkbox" value="スポーツパフォーマンス向上"><span>スポーツパフォーマンス向上</span></label>
+          </div>
         </div>
         <input class="purpose-custom" id="ap-purposeCustom" placeholder="その他の目的があれば入力">
       </div>
@@ -772,15 +799,21 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="form-group"><label class="fl">生年月日</label><input type="date" id="ep-birthdate" /></div>
       <div class="form-group"><label class="fl">身長 (cm)</label><input type="number" id="ep-height" step="0.1" /></div>
       <div class="form-group full"><label class="fl">来院目的</label>
-        <div class="purpose-checks" id="ep-purposeChecks">
-          <label class="purpose-check"><input type="checkbox" value="ダイエット"><span>ダイエット</span></label>
-          <label class="purpose-check"><input type="checkbox" value="姿勢改善"><span>姿勢改善</span></label>
-          <label class="purpose-check"><input type="checkbox" value="腰痛改善"><span>腰痛改善</span></label>
-          <label class="purpose-check"><input type="checkbox" value="肩こり改善"><span>肩こり改善</span></label>
-          <label class="purpose-check"><input type="checkbox" value="体力向上"><span>体力向上</span></label>
-          <label class="purpose-check"><input type="checkbox" value="体型改善"><span>体型改善</span></label>
-          <label class="purpose-check"><input type="checkbox" value="健康増進"><span>健康増進</span></label>
-          <label class="purpose-check"><input type="checkbox" value="スポーツパフォーマンス向上"><span>スポーツパフォーマンス向上</span></label>
+        <div class="purpose-select" id="ep-purposeSelect">
+          <button type="button" class="purpose-trigger" onclick="togglePurposeDropdown('ep')">
+            <span class="purpose-label" id="ep-purposeLabel">選択してください</span>
+            <span class="purpose-caret">⌄</span>
+          </button>
+          <div class="purpose-menu" id="ep-purposeChecks">
+            <label class="purpose-check"><input type="checkbox" value="ダイエット"><span>ダイエット</span></label>
+            <label class="purpose-check"><input type="checkbox" value="姿勢改善"><span>姿勢改善</span></label>
+            <label class="purpose-check"><input type="checkbox" value="腰痛改善"><span>腰痛改善</span></label>
+            <label class="purpose-check"><input type="checkbox" value="肩こり改善"><span>肩こり改善</span></label>
+            <label class="purpose-check"><input type="checkbox" value="体力向上"><span>体力向上</span></label>
+            <label class="purpose-check"><input type="checkbox" value="体型改善"><span>体型改善</span></label>
+            <label class="purpose-check"><input type="checkbox" value="健康増進"><span>健康増進</span></label>
+            <label class="purpose-check"><input type="checkbox" value="スポーツパフォーマンス向上"><span>スポーツパフォーマンス向上</span></label>
+          </div>
         </div>
         <input class="purpose-custom" id="ep-purposeCustom" placeholder="その他の目的があれば入力">
       </div>
@@ -1390,6 +1423,7 @@ function setPurposeChecks(prefix, value = '') {
   });
   const custom = values.filter(v => !known.has(v)).join('、');
   document.getElementById(`${prefix}-purposeCustom`).value = custom;
+  updatePurposeLabel(prefix);
 }
 
 function getPurposeValue(prefix) {
@@ -1398,10 +1432,39 @@ function getPurposeValue(prefix) {
   return [...selected, ...custom].join('、');
 }
 
+function updatePurposeLabel(prefix) {
+  const label = document.getElementById(`${prefix}-purposeLabel`);
+  if (!label) return;
+  const value = getPurposeValue(prefix);
+  label.textContent = value || '選択してください';
+}
+
+function togglePurposeDropdown(prefix) {
+  const target = document.getElementById(`${prefix}-purposeSelect`);
+  const willOpen = !target?.classList.contains('open');
+  document.querySelectorAll('.purpose-select.open').forEach(el => el.classList.remove('open'));
+  if (willOpen) {
+    target?.classList.add('open');
+    const menu = target?.querySelector('.purpose-menu');
+    if (menu) menu.scrollTop = 0;
+  }
+}
+
 function initPurposeChecks() {
   document.querySelectorAll('.purpose-check').forEach(label => {
     const input = label.querySelector('input');
-    input.addEventListener('change', () => label.classList.toggle('on', input.checked));
+    input.addEventListener('change', () => {
+      label.classList.toggle('on', input.checked);
+      const prefix = input.closest('.purpose-menu')?.id.replace('-purposeChecks', '');
+      if (prefix) updatePurposeLabel(prefix);
+    });
+  });
+  document.querySelectorAll('.purpose-custom').forEach(input => {
+    input.addEventListener('input', () => updatePurposeLabel(input.id.replace('-purposeCustom', '')));
+  });
+  document.addEventListener('click', e => {
+    if (e.target.closest('.purpose-select')) return;
+    document.querySelectorAll('.purpose-select.open').forEach(el => el.classList.remove('open'));
   });
 }
 
