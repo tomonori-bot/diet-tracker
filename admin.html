@@ -134,6 +134,17 @@ input,select,textarea{
 }
 input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(14,165,233,.1)}
 textarea{resize:vertical;line-height:1.6}
+.purpose-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.purpose-check{
+  display:flex;align-items:center;justify-content:center;min-height:38px;
+  padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface2);color:var(--text2);font-size:12px;font-weight:700;
+  text-align:center;line-height:1.35;cursor:pointer;transition:all .15s;user-select:none
+}
+.purpose-check:hover{border-color:rgba(14,165,233,.35);background:#fff;color:var(--text)}
+.purpose-check input{display:none}
+.purpose-check.on{border-color:var(--accent);background:rgba(14,165,233,.1);color:var(--accent);box-shadow:0 0 0 3px rgba(14,165,233,.08)}
+.purpose-custom{margin-top:8px}
 .input-group{display:flex;gap:8px;align-items:center}
 .range-wrap{display:flex;align-items:center;gap:10px;margin-top:4px}
 .range-wrap input[type=range]{
@@ -711,13 +722,18 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <div class="form-group"><label class="fl">生年月日</label><input type="date" id="ap-birthdate" /></div>
       <div class="form-group"><label class="fl">身長 (cm)</label><input type="number" id="ap-height" placeholder="162" step="0.1" /></div>
-      <div class="form-group"><label class="fl">来院目的</label>
-        <select id="ap-purpose">
-          <option value="">選択または入力</option>
-          <option>ダイエット</option><option>姿勢改善</option><option>腰痛改善</option>
-          <option>肩こり改善</option><option>体力向上</option><option>体型改善</option>
-          <option>健康増進</option><option>スポーツパフォーマンス向上</option>
-        </select>
+      <div class="form-group full"><label class="fl">来院目的</label>
+        <div class="purpose-checks" id="ap-purposeChecks">
+          <label class="purpose-check"><input type="checkbox" value="ダイエット"><span>ダイエット</span></label>
+          <label class="purpose-check"><input type="checkbox" value="姿勢改善"><span>姿勢改善</span></label>
+          <label class="purpose-check"><input type="checkbox" value="腰痛改善"><span>腰痛改善</span></label>
+          <label class="purpose-check"><input type="checkbox" value="肩こり改善"><span>肩こり改善</span></label>
+          <label class="purpose-check"><input type="checkbox" value="体力向上"><span>体力向上</span></label>
+          <label class="purpose-check"><input type="checkbox" value="体型改善"><span>体型改善</span></label>
+          <label class="purpose-check"><input type="checkbox" value="健康増進"><span>健康増進</span></label>
+          <label class="purpose-check"><input type="checkbox" value="スポーツパフォーマンス向上"><span>スポーツパフォーマンス向上</span></label>
+        </div>
+        <input class="purpose-custom" id="ap-purposeCustom" placeholder="その他の目的があれば入力">
       </div>
     </div>
     <hr class="divider" style="margin:16px 0">
@@ -755,7 +771,19 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="form-group"><label class="fl">性別</label><select id="ep-gender"><option value="">選択</option><option>女性</option><option>男性</option><option>その他</option></select></div>
       <div class="form-group"><label class="fl">生年月日</label><input type="date" id="ep-birthdate" /></div>
       <div class="form-group"><label class="fl">身長 (cm)</label><input type="number" id="ep-height" step="0.1" /></div>
-      <div class="form-group"><label class="fl">来院目的</label><input id="ep-purpose" /></div>
+      <div class="form-group full"><label class="fl">来院目的</label>
+        <div class="purpose-checks" id="ep-purposeChecks">
+          <label class="purpose-check"><input type="checkbox" value="ダイエット"><span>ダイエット</span></label>
+          <label class="purpose-check"><input type="checkbox" value="姿勢改善"><span>姿勢改善</span></label>
+          <label class="purpose-check"><input type="checkbox" value="腰痛改善"><span>腰痛改善</span></label>
+          <label class="purpose-check"><input type="checkbox" value="肩こり改善"><span>肩こり改善</span></label>
+          <label class="purpose-check"><input type="checkbox" value="体力向上"><span>体力向上</span></label>
+          <label class="purpose-check"><input type="checkbox" value="体型改善"><span>体型改善</span></label>
+          <label class="purpose-check"><input type="checkbox" value="健康増進"><span>健康増進</span></label>
+          <label class="purpose-check"><input type="checkbox" value="スポーツパフォーマンス向上"><span>スポーツパフォーマンス向上</span></label>
+        </div>
+        <input class="purpose-custom" id="ep-purposeCustom" placeholder="その他の目的があれば入力">
+      </div>
       <div class="form-group"><label class="fl">開始体重 (kg)</label><input type="number" id="ep-startWeight" step="0.1" /></div>
       <div class="form-group"><label class="fl">目標体重 (kg)</label><input type="number" id="ep-targetWeight" step="0.1" /></div>
       <div class="form-group"><label class="fl">開始日</label><input type="date" id="ep-startDate" /></div>
@@ -1344,13 +1372,48 @@ function handleSearch(val) {
 /* ════════════════════════════════
    ADD / DELETE PATIENT
 ════════════════════════════════ */
+const PURPOSE_OPTIONS = ['ダイエット','姿勢改善','腰痛改善','肩こり改善','体力向上','体型改善','健康増進','スポーツパフォーマンス向上'];
+
+function splitPurpose(value) {
+  return String(value || '')
+    .split(/[、,]/)
+    .map(v => v.trim())
+    .filter(Boolean);
+}
+
+function setPurposeChecks(prefix, value = '') {
+  const values = splitPurpose(value);
+  const known = new Set(PURPOSE_OPTIONS);
+  document.querySelectorAll(`#${prefix}-purposeChecks input`).forEach(input => {
+    input.checked = values.includes(input.value);
+    input.closest('.purpose-check')?.classList.toggle('on', input.checked);
+  });
+  const custom = values.filter(v => !known.has(v)).join('、');
+  document.getElementById(`${prefix}-purposeCustom`).value = custom;
+}
+
+function getPurposeValue(prefix) {
+  const selected = [...document.querySelectorAll(`#${prefix}-purposeChecks input:checked`)].map(input => input.value);
+  const custom = splitPurpose(document.getElementById(`${prefix}-purposeCustom`).value);
+  return [...selected, ...custom].join('、');
+}
+
+function initPurposeChecks() {
+  document.querySelectorAll('.purpose-check').forEach(label => {
+    const input = label.querySelector('input');
+    input.addEventListener('change', () => label.classList.toggle('on', input.checked));
+  });
+}
+
+initPurposeChecks();
+
 function openAddPatientModal() {
   document.getElementById('ap-name').value = '';
   document.getElementById('ap-kana').value = '';
   document.getElementById('ap-gender').value = '';
   document.getElementById('ap-birthdate').value = '';
   document.getElementById('ap-height').value = '';
-  document.getElementById('ap-purpose').value = '';
+  setPurposeChecks('ap');
   document.getElementById('ap-startWeight').value = '';
   document.getElementById('ap-targetWeight').value = '';
   document.getElementById('ap-startDate').value = new Date().toISOString().slice(0,10);
@@ -1371,7 +1434,7 @@ async function submitAddPatient() {
       gender: document.getElementById('ap-gender').value,
       birthdate: document.getElementById('ap-birthdate').value,
       height: parseFloat(document.getElementById('ap-height').value) || null,
-      purpose: document.getElementById('ap-purpose').value,
+      purpose: getPurposeValue('ap'),
       startWeight: parseFloat(document.getElementById('ap-startWeight').value) || null,
       targetWeight: parseFloat(document.getElementById('ap-targetWeight').value) || null,
       startDate: document.getElementById('ap-startDate').value,
@@ -2145,10 +2208,11 @@ function renderCharts() {
 ════════════════════════════════ */
 function openEditPatientModal() {
   const p = currentPatient;
-  ['name','kana','gender','birthdate','purpose'].forEach(f => {
+  ['name','kana','gender','birthdate'].forEach(f => {
     const el = document.getElementById('ep-' + f);
     if (el) el.value = p[f] || '';
   });
+  setPurposeChecks('ep', p.purpose || '');
   document.getElementById('ep-height').value = p.height || '';
   document.getElementById('ep-startWeight').value = p.startWeight || '';
   document.getElementById('ep-targetWeight').value = p.targetWeight || '';
@@ -2168,7 +2232,7 @@ async function submitEditPatient() {
       gender: document.getElementById('ep-gender').value,
       birthdate: document.getElementById('ep-birthdate').value,
       height: parseFloat(document.getElementById('ep-height').value) || null,
-      purpose: document.getElementById('ep-purpose').value,
+      purpose: getPurposeValue('ep'),
       startWeight: parseFloat(document.getElementById('ep-startWeight').value) || null,
       targetWeight: parseFloat(document.getElementById('ep-targetWeight').value) || null,
       startDate: document.getElementById('ep-startDate').value,
