@@ -28,7 +28,10 @@ jobs:
         run: |
           git config --global user.name "bodylog-backup-bot"
           git config --global user.email "backup-bot@users.noreply.github.com"
-          git clone "https://x-access-token:${BACKUP_REPO_TOKEN}@github.com/${BACKUP_REPO}.git" backup-repo
+          # トークンにコピペ由来の空白・改行が混ざっていても動くよう除去する
+          TOKEN=$(printf '%s' "$BACKUP_REPO_TOKEN" | tr -d '[:space:]')
+          REPO=$(printf '%s' "$BACKUP_REPO" | tr -d '[:space:]')
+          git clone "https://x-access-token:${TOKEN}@github.com/${REPO}.git" backup-repo
           mkdir -p backup-repo/daily
           cp backup-output/*.json backup-repo/daily/
           cd backup-repo
